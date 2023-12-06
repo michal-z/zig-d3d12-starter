@@ -12,3 +12,5 @@ zig build run
 * D3D12 debug layer support
 * No libc usage
 * Small output binary (~25 KB in `ReleaseFast` configuration)
+
+![image](screenshot.png)

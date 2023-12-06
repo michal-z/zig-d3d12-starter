@@ -5,6 +5,7 @@
 !*.zig
 !LICENSE*
 !*.md
+!*.png
 
 !.ignore
 !.gitkeep
