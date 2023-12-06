@@ -52,7 +52,7 @@ fn makeDxcCmd(
     comptime profile: []const u8,
     comptime define: []const u8,
 ) void {
-    const shader_ver = "6_6";
+    const shader_ver = "6_0";
 
     const dxc_command = [9][]const u8{
         "bin/dxc.exe",
