@@ -1,8 +1,8 @@
 const std = @import("std");
-const w32 = @import("win32.zig");
-const d3d12 = @import("d3d12.zig");
-const d3d12d = @import("d3d12sdklayers.zig");
-const dxgi = @import("dxgi.zig");
+const w32 = @import("win32/win32.zig");
+const d3d12 = @import("win32/d3d12.zig");
+const d3d12d = @import("win32/d3d12sdklayers.zig");
+const dxgi = @import("win32/dxgi.zig");
 
 export const D3D12SDKVersion: u32 = 611;
 export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
