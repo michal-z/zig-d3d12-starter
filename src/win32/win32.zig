@@ -7,8 +7,8 @@ pub extern "ole32" fn CoUninitialize() callconv(WINAPI) void;
 pub extern "ole32" fn CoTaskMemAlloc(size: SIZE_T) callconv(WINAPI) ?LPVOID;
 pub extern "ole32" fn CoTaskMemFree(pv: LPVOID) callconv(WINAPI) void;
 
+pub const COINIT_MULTITHREADED = 0x0;
 pub const COINIT_APARTMENTTHREADED = 0x2;
-pub const COINIT_MULTITHREADED = 0x3;
 pub const COINIT_DISABLE_OLE1DDE = 0x4;
 pub const COINIT_SPEED_OVER_MEMORY = 0x8;
 
@@ -89,23 +89,6 @@ pub const E_HANDLE = @as(c_long, @bitCast(@as(c_ulong, 0x80070006)));
 pub const E_OUTOFMEMORY = @as(c_long, @bitCast(@as(c_ulong, 0x8007000E)));
 pub const E_INVALIDARG = @as(c_long, @bitCast(@as(c_ulong, 0x80070057)));
 pub const E_FILE_NOT_FOUND = @as(HRESULT, @bitCast(@as(c_ulong, 0x80070002)));
-
-pub const Error = error{
-    UNEXPECTED,
-    NOTIMPL,
-    OUTOFMEMORY,
-    INVALIDARG,
-    POINTER,
-    HANDLE,
-    ABORT,
-    FAIL,
-    ACCESSDENIED,
-};
-
-pub const MiscError = error{
-    E_FILE_NOT_FOUND,
-    S_FALSE,
-};
 
 pub const ERROR_SUCCESS = @as(LONG, 0);
 pub const ERROR_DEVICE_NOT_CONNECTED = @as(LONG, 1167);

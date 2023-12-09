@@ -3,6 +3,7 @@
 !*/
 
 !*.zig
+!*.hlsl
 !LICENSE*
 !*.md
 !*.png
