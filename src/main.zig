@@ -135,9 +135,6 @@ pub fn main() !void {
     var frac: f32 = 0.0;
     var frac_delta: f32 = 0.005;
 
-    var window_rect: w32.RECT = undefined;
-    _ = w32.GetClientRect(window, &window_rect);
-
     //
     // Main Loop
     //
@@ -152,43 +149,9 @@ pub fn main() !void {
                 }
             }
 
-            var rect: w32.RECT = undefined;
-            _ = w32.GetClientRect(window, &rect);
-            if (rect.right == 0 and rect.bottom == 0) {
-                // Window is minimized
-                w32.Sleep(10);
+            dx12.maybeResize();
+            if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0)
                 continue :main_loop;
-            }
-
-            if (rect.right != window_rect.right or rect.bottom != window_rect.bottom) {
-                rect.right = @max(1, rect.right);
-                rect.bottom = @max(1, rect.bottom);
-                std.log.info("Window resized to {d}x{d}", .{ rect.right, rect.bottom });
-
-                dx12.finishGpuCommands();
-
-                for (dx12.swap_chain_textures) |texture| _ = texture.Release();
-
-                vhr(dx12.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, .{}));
-
-                for (&dx12.swap_chain_textures, 0..) |*texture, i| {
-                    vhr(dx12.swap_chain.GetBuffer(
-                        @intCast(i),
-                        &d3d12.IID_IResource,
-                        @ptrCast(&texture.*),
-                    ));
-                }
-
-                for (dx12.swap_chain_textures, 0..) |texture, i| {
-                    dx12.device.CreateRenderTargetView(
-                        texture,
-                        null,
-                        .{ .ptr = dx12.rtv_heap_start.ptr +
-                            i * dx12.device.GetDescriptorHandleIncrementSize(.RTV) },
-                    );
-                }
-            }
-            window_rect = rect;
         }
 
         const command_allocator = dx12.command_allocators[dx12.frame_index];
@@ -199,16 +162,16 @@ pub fn main() !void {
         dx12.command_list.RSSetViewports(1, &[_]d3d12.VIEWPORT{.{
             .TopLeftX = 0.0,
             .TopLeftY = 0.0,
-            .Width = @floatFromInt(window_rect.right),
-            .Height = @floatFromInt(window_rect.bottom),
+            .Width = @floatFromInt(dx12.window_rect.right),
+            .Height = @floatFromInt(dx12.window_rect.bottom),
             .MinDepth = 0.0,
             .MaxDepth = 1.0,
         }});
         dx12.command_list.RSSetScissorRects(1, &[_]d3d12.RECT{.{
             .left = 0,
             .top = 0,
-            .right = @intCast(window_rect.right),
-            .bottom = @intCast(window_rect.bottom),
+            .right = @intCast(dx12.window_rect.right),
+            .bottom = @intCast(dx12.window_rect.bottom),
         }});
 
         const back_buffer_index = dx12.swap_chain.GetCurrentBackBufferIndex();
@@ -271,6 +234,9 @@ pub fn main() !void {
 }
 
 const Dx12State = struct {
+    window: w32.HWND,
+    window_rect: w32.RECT,
+
     dxgi_factory: *dxgi.IFactory6,
     device: *d3d12.IDevice9,
 
@@ -454,6 +420,8 @@ const Dx12State = struct {
         vhr(command_list.Close());
 
         return .{
+            .window = window,
+            .window_rect = rect,
             .dxgi_factory = dxgi_factory,
             .device = device,
             .command_queue = command_queue,
@@ -504,5 +472,48 @@ const Dx12State = struct {
         vhr(dx12.frame_fence.SetEventOnCompletion(dx12.frame_fence_counter, dx12.frame_fence_event));
 
         _ = w32.WaitForSingleObject(dx12.frame_fence_event, w32.INFINITE);
+    }
+
+    fn maybeResize(dx12: *Dx12State) void {
+        var rect: w32.RECT = undefined;
+        _ = w32.GetClientRect(dx12.window, &rect);
+
+        if (rect.right == 0 and rect.bottom == 0) {
+            if (dx12.window_rect.right > 0 and dx12.window_rect.bottom > 0) {
+                std.log.info("Window minimized", .{});
+            }
+            dx12.window_rect = rect;
+            w32.Sleep(10);
+            return;
+        }
+
+        if (rect.right != dx12.window_rect.right or rect.bottom != dx12.window_rect.bottom) {
+            std.log.info("Window resized to {d}x{d}", .{ rect.right, rect.bottom });
+
+            dx12.finishGpuCommands();
+
+            for (dx12.swap_chain_textures) |texture| _ = texture.Release();
+
+            vhr(dx12.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, .{}));
+
+            for (&dx12.swap_chain_textures, 0..) |*texture, i| {
+                vhr(dx12.swap_chain.GetBuffer(
+                    @intCast(i),
+                    &d3d12.IID_IResource,
+                    @ptrCast(&texture.*),
+                ));
+            }
+
+            for (dx12.swap_chain_textures, 0..) |texture, i| {
+                dx12.device.CreateRenderTargetView(
+                    texture,
+                    null,
+                    .{ .ptr = dx12.rtv_heap_start.ptr +
+                        i * dx12.device.GetDescriptorHandleIncrementSize(.RTV) },
+                );
+            }
+        }
+
+        dx12.window_rect = rect;
     }
 };
