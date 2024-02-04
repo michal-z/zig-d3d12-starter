@@ -262,11 +262,7 @@ const Dx12State = struct {
         // DXGI Factory
         //
         var dxgi_factory: *dxgi.IFactory6 = undefined;
-        vhr(dxgi.CreateDXGIFactory2(
-            0,
-            &dxgi.IID_IFactory6,
-            @ptrCast(&dxgi_factory),
-        ));
+        vhr(dxgi.CreateFactory2(0, &dxgi.IID_IFactory6, @ptrCast(&dxgi_factory)));
 
         std.log.info("DXGI factory created", .{});
 

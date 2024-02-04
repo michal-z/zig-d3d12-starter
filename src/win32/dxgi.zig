@@ -1694,8 +1694,11 @@ pub const IDevice1 = extern struct {
 };
 
 pub const CREATE_FACTORY_DEBUG = 0x1;
-pub extern "dxgi" fn CreateDXGIFactory2(UINT, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT;
+
+extern "dxgi" fn CreateDXGIFactory2(UINT, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT;
 extern "dxgi" fn DXGIGetDebugInterface1(UINT, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT;
+
+pub const CreateFactory2 = CreateDXGIFactory2;
 pub const GetDebugInterface1 = DXGIGetDebugInterface1;
 
 pub const SCALING = enum(UINT) {
