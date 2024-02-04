@@ -8079,3 +8079,7 @@ pub const IDebugDevice = extern struct {
         ReportLiveDeviceObjects: *const fn (*IDebugDevice, RLDO_FLAGS) callconv(WINAPI) HRESULT,
     };
 };
+
+// https://docs.microsoft.com/en-us/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues
+pub const ERROR_ADAPTER_NOT_FOUND = @as(HRESULT, @bitCast(@as(c_ulong, 0x887E0001)));
+pub const ERROR_DRIVER_VERSION_MISMATCH = @as(HRESULT, @bitCast(@as(c_ulong, 0x887E0002)));

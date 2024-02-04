@@ -2042,12 +2042,12 @@ pub const ISwapChain3 = extern struct {
     };
 };
 
-// Status return codes as defined here: https://docs.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-status
+// https://docs.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-status
 pub const STATUS_OCCLUDED = @as(HRESULT, @bitCast(@as(c_ulong, 0x087A0001)));
 pub const STATUS_MODE_CHANGED = @as(HRESULT, @bitCast(@as(c_ulong, 0x087A0007)));
 pub const STATUS_MODE_CHANGE_IN_PROGRESS = @as(HRESULT, @bitCast(@as(c_ulong, 0x087A0008)));
 
-// Return codes as defined here: https://docs.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-error
+// https://docs.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-error
 pub const ERROR_ACCESS_DENIED = @as(HRESULT, @bitCast(@as(c_ulong, 0x887A002B)));
 pub const ERROR_ACCESS_LOST = @as(HRESULT, @bitCast(@as(c_ulong, 0x887A0026)));
 pub const ERROR_ALREADY_EXISTS = @as(HRESULT, @bitCast(@as(c_ulong, 0x887A0036)));
