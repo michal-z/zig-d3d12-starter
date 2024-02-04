@@ -533,12 +533,17 @@ pub const SWAP_CHAIN_DESC = extern struct {
 pub const IObject = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn SetPrivateData(
                 self: *T,
                 guid: *const GUID,
@@ -546,44 +551,50 @@ pub const IObject = extern struct {
                 data: *const anyopaque,
             ) HRESULT {
                 return @as(*const IObject.VTable, @ptrCast(self.__v))
-                    .SetPrivateData(@as(*IObject, @ptrCast(self)), guid, data_size, data);
+                    .SetPrivateData(@ptrCast(self), guid, data_size, data);
             }
             pub inline fn SetPrivateDataInterface(self: *T, guid: *const GUID, data: ?*const IUnknown) HRESULT {
                 return @as(*const IObject.VTable, @ptrCast(self.__v))
-                    .SetPrivateDataInterface(@as(*IObject, @ptrCast(self)), guid, data);
+                    .SetPrivateDataInterface(@ptrCast(self), guid, data);
             }
             pub inline fn GetPrivateData(self: *T, guid: *const GUID, data_size: *UINT, data: *anyopaque) HRESULT {
                 return @as(*const IObject.VTable, @ptrCast(self.__v))
-                    .GetPrivateData(@as(*IObject, @ptrCast(self)), guid, data_size, data);
+                    .GetPrivateData(@ptrCast(self), guid, data_size, data);
             }
             pub inline fn GetParent(self: *T, guid: *const GUID, parent: *?*anyopaque) HRESULT {
-                return @as(*const IObject.VTable, @ptrCast(self.__v)).GetParent(@as(*IObject, @ptrCast(self)), guid, parent);
+                return @as(*const IObject.VTable, @ptrCast(self.__v)).GetParent(@ptrCast(self), guid, parent);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IObject;
         base: IUnknown.VTable,
-        SetPrivateData: *const fn (*T, *const GUID, UINT, *const anyopaque) callconv(WINAPI) HRESULT,
-        SetPrivateDataInterface: *const fn (*T, *const GUID, ?*const IUnknown) callconv(WINAPI) HRESULT,
-        GetPrivateData: *const fn (*T, *const GUID, *UINT, *anyopaque) callconv(WINAPI) HRESULT,
-        GetParent: *const fn (*T, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT,
+        SetPrivateData: *const fn (*IObject, *const GUID, UINT, *const anyopaque) callconv(WINAPI) HRESULT,
+        SetPrivateDataInterface: *const fn (*IObject, *const GUID, ?*const IUnknown) callconv(WINAPI) HRESULT,
+        GetPrivateData: *const fn (*IObject, *const GUID, *UINT, *anyopaque) callconv(WINAPI) HRESULT,
+        GetParent: *const fn (*IObject, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT,
     };
 };
 
 pub const IDeviceSubObject = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn GetDevice(self: *T, guid: *const GUID, parent: *?*anyopaque) HRESULT {
                 return @as(*const IDeviceSubObject.VTable, @ptrCast(self.__v))
-                    .GetDevice(@as(*IDeviceSubObject, @ptrCast(self)), guid, parent);
+                    .GetDevice(@ptrCast(self), guid, parent);
             }
         };
     }
@@ -597,55 +608,76 @@ pub const IDeviceSubObject = extern struct {
 pub const IResource = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const GetSharedHandle = IResource.Methods(@This()).GetSharedHandle;
+    pub const GetUsage = IResource.Methods(@This()).GetUsage;
+    pub const SetEvictionPriority = IResource.Methods(@This()).SetEvictionPriority;
+    pub const GetEvictionPriority = IResource.Methods(@This()).GetEvictionPriority;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceSubObject.Methods(T);
-
             pub inline fn GetSharedHandle(self: *T, handle: *HANDLE) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v))
-                    .GetSharedHandle(@as(*IResource, @ptrCast(self)), handle);
+                    .GetSharedHandle(@ptrCast(self), handle);
             }
             pub inline fn GetUsage(self: *T, usage: *USAGE) HRESULT {
-                return @as(*const IResource.VTable, @ptrCast(self.__v)).GetUsage(@as(*IResource, @ptrCast(self)), usage);
+                return @as(*const IResource.VTable, @ptrCast(self.__v)).GetUsage(@ptrCast(self), usage);
             }
             pub inline fn SetEvictionPriority(self: *T, priority: UINT) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v))
-                    .SetEvictionPriority(@as(*IResource, @ptrCast(self)), priority);
+                    .SetEvictionPriority(@ptrCast(self), priority);
             }
             pub inline fn GetEvictionPriority(self: *T, priority: *UINT) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v))
-                    .GetEvictionPriority(@as(*IResource, @ptrCast(self)), priority);
+                    .GetEvictionPriority(@ptrCast(self), priority);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IResource;
         base: IDeviceSubObject.VTable,
-        GetSharedHandle: *const fn (*T, *HANDLE) callconv(WINAPI) HRESULT,
-        GetUsage: *const fn (*T, *USAGE) callconv(WINAPI) HRESULT,
-        SetEvictionPriority: *const fn (*T, UINT) callconv(WINAPI) HRESULT,
-        GetEvictionPriority: *const fn (*T, *UINT) callconv(WINAPI) HRESULT,
+        GetSharedHandle: *const fn (*IResource, *HANDLE) callconv(WINAPI) HRESULT,
+        GetUsage: *const fn (*IResource, *USAGE) callconv(WINAPI) HRESULT,
+        SetEvictionPriority: *const fn (*IResource, UINT) callconv(WINAPI) HRESULT,
+        GetEvictionPriority: *const fn (*IResource, *UINT) callconv(WINAPI) HRESULT,
     };
 };
 
 pub const IKeyedMutex = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const AcquireSync = IKeyedMutex.Methods(@This()).AcquireSync;
+    pub const ReleaseSync = IKeyedMutex.Methods(@This()).ReleaseSync;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceSubObject.Methods(T);
-
             pub inline fn AcquireSync(self: *T, key: UINT64, milliseconds: DWORD) HRESULT {
                 return @as(*const IKeyedMutex.VTable, @ptrCast(self.__v))
-                    .AcquireSync(@as(*IKeyedMutex, @ptrCast(self)), key, milliseconds);
+                    .AcquireSync(@ptrCast(self), key, milliseconds);
             }
             pub inline fn ReleaseSync(self: *T, key: UINT64) HRESULT {
-                return @as(*const IKeyedMutex.VTable, @ptrCast(self.__v)).ReleaseSync(@as(*IKeyedMutex, @ptrCast(self)), key);
+                return @as(*const IKeyedMutex.VTable, @ptrCast(self.__v)).ReleaseSync(@ptrCast(self), key);
             }
         };
     }
@@ -667,20 +699,31 @@ pub const MAP_FLAG = packed struct(UINT) {
 pub const ISurface = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const GetDesc = ISurface.Methods(@This()).GetDesc;
+    pub const Map = ISurface.Methods(@This()).Map;
+    pub const Unmap = ISurface.Methods(@This()).Unmap;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceSubObject.Methods(T);
-
             pub inline fn GetDesc(self: *T, desc: *SURFACE_DESC) HRESULT {
-                return @as(*const ISurface.VTable, @ptrCast(self.__v)).GetDesc(@as(*ISurface, @ptrCast(self)), desc);
+                return @as(*const ISurface.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), desc);
             }
             pub inline fn Map(self: *T, locked_rect: *MAPPED_RECT, flags: MAP_FLAG) HRESULT {
-                return @as(*const ISurface.VTable, @ptrCast(self.__v)).Map(@as(*ISurface, @ptrCast(self)), locked_rect, flags);
+                return @as(*const ISurface.VTable, @ptrCast(self.__v)).Map(@ptrCast(self), locked_rect, flags);
             }
             pub inline fn Unmap(self: *T) HRESULT {
-                return @as(*const ISurface.VTable, @ptrCast(self.__v)).Unmap(@as(*ISurface, @ptrCast(self)));
+                return @as(*const ISurface.VTable, @ptrCast(self.__v)).Unmap(@ptrCast(self));
             }
         };
     }
@@ -696,22 +739,31 @@ pub const ISurface = extern struct {
 pub const IAdapter = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumOutputs = IAdapter.Methods(@This()).EnumOutputs;
+    pub const GetDesc = IAdapter.Methods(@This()).GetDesc;
+    pub const CheckInterfaceSupport = IAdapter.Methods(@This()).CheckInterfaceSupport;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn EnumOutputs(self: *T, index: UINT, output: *?*IOutput) HRESULT {
                 return @as(*const IAdapter.VTable, @ptrCast(self.__v))
-                    .EnumOutputs(@as(*IAdapter, @ptrCast(self)), index, output);
+                    .EnumOutputs(@ptrCast(self), index, output);
             }
             pub inline fn GetDesc(self: *T, desc: *ADAPTER_DESC) HRESULT {
-                return @as(*const IAdapter.VTable, @ptrCast(self.__v)).GetDesc(@as(*IAdapter, @ptrCast(self)), desc);
+                return @as(*const IAdapter.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), desc);
             }
             pub inline fn CheckInterfaceSupport(self: *T, guid: *const GUID, umd_ver: *LARGE_INTEGER) HRESULT {
                 return @as(*const IAdapter.VTable, @ptrCast(self.__v))
-                    .CheckInterfaceSupport(@as(*IAdapter, @ptrCast(self)), guid, umd_ver);
+                    .CheckInterfaceSupport(@ptrCast(self), guid, umd_ver);
             }
         };
     }
@@ -735,14 +787,32 @@ pub const ENUM_MODES = packed struct(UINT) {
 pub const IOutput = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDesc = IOutput.Methods(@This()).GetDesc;
+    pub const GetDisplayModeList = IOutput.Methods(@This()).GetDisplayModeList;
+    pub const FindClosestMatchingMode = IOutput.Methods(@This()).FindClosestMatchingMode;
+    pub const WaitForVBlank = IOutput.Methods(@This()).WaitForVBlank;
+    pub const TakeOwnership = IOutput.Methods(@This()).TakeOwnership;
+    pub const ReleaseOwnership = IOutput.Methods(@This()).ReleaseOwnership;
+    pub const GetGammaControlCapabilities = IOutput.Methods(@This()).GetGammaControlCapabilities;
+    pub const SetGammaControl = IOutput.Methods(@This()).SetGammaControl;
+    pub const GetGammaControl = IOutput.Methods(@This()).GetGammaControl;
+    pub const SetDisplaySurface = IOutput.Methods(@This()).SetDisplaySurface;
+    pub const GetDisplaySurfaceData = IOutput.Methods(@This()).GetDisplaySurfaceData;
+    pub const GetFrameStatistics = IOutput.Methods(@This()).GetFrameStatistics;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn GetDesc(self: *T, desc: *OUTPUT_DESC) HRESULT {
-                return @as(*const IOutput.VTable, @ptrCast(self.__v)).GetDesc(@as(*IOutput, @ptrCast(self)), desc);
+                return @as(*const IOutput.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), desc);
             }
             pub inline fn GetDisplayModeList(
                 self: *T,
@@ -752,7 +822,7 @@ pub const IOutput = extern struct {
                 desc: ?*MODE_DESC,
             ) HRESULT {
                 return @as(*const IOutput.VTable, @ptrCast(self.__v))
-                    .GetDisplayModeList(@as(*IOutput, @ptrCast(self)), enum_format, flags, num_nodes, desc);
+                    .GetDisplayModeList(@ptrCast(self), enum_format, flags, num_nodes, desc);
             }
             pub inline fn FindClosestMatchingMode(
                 self: *T,
@@ -761,66 +831,65 @@ pub const IOutput = extern struct {
                 concerned_device: ?*IUnknown,
             ) HRESULT {
                 return @as(*const IOutput.VTable, @ptrCast(self.__v)).FindClosestMatchingMode(
-                    @as(*IOutput, @ptrCast(self)),
+                    @ptrCast(self),
                     mode_to_match,
                     closest_match,
                     concerned_device,
                 );
             }
             pub inline fn WaitForVBlank(self: *T) HRESULT {
-                return @as(*const IOutput.VTable, @ptrCast(self.__v)).WaitForVBlank(@as(*IOutput, @ptrCast(self)));
+                return @as(*const IOutput.VTable, @ptrCast(self.__v)).WaitForVBlank(@ptrCast(self));
             }
             pub inline fn TakeOwnership(self: *T, device: *IUnknown, exclusive: BOOL) HRESULT {
                 return @as(*const IOutput.VTable, @ptrCast(self.__v))
-                    .TakeOwnership(@as(*IOutput, @ptrCast(self)), device, exclusive);
+                    .TakeOwnership(@ptrCast(self), device, exclusive);
             }
             pub inline fn ReleaseOwnership(self: *T) void {
-                @as(*const IOutput.VTable, @ptrCast(self.__v)).ReleaseOwnership(@as(*IOutput, @ptrCast(self)));
+                @as(*const IOutput.VTable, @ptrCast(self.__v)).ReleaseOwnership(@ptrCast(self));
             }
             pub inline fn GetGammaControlCapabilities(self: *T, gamma_caps: *GAMMA_CONTROL_CAPABILITIES) HRESULT {
                 return @as(*const IOutput.VTable, @ptrCast(self.__v))
-                    .GetGammaControlCapabilities(@as(*IOutput, @ptrCast(self)), gamma_caps);
+                    .GetGammaControlCapabilities(@ptrCast(self), gamma_caps);
             }
             pub inline fn SetGammaControl(self: *T, array: *const GAMMA_CONTROL) HRESULT {
-                return @as(*const IOutput.VTable, @ptrCast(self.__v)).SetGammaControl(@as(*IOutput, @ptrCast(self)), array);
+                return @as(*const IOutput.VTable, @ptrCast(self.__v)).SetGammaControl(@ptrCast(self), array);
             }
             pub inline fn GetGammaControl(self: *T, array: *GAMMA_CONTROL) HRESULT {
-                return @as(*const IOutput.VTable, @ptrCast(self.__v)).GetGammaControl(@as(*IOutput, @ptrCast(self)), array);
+                return @as(*const IOutput.VTable, @ptrCast(self.__v)).GetGammaControl(@ptrCast(self), array);
             }
             pub inline fn SetDisplaySurface(self: *T, scanout_surface: *ISurface) HRESULT {
                 return @as(*const IOutput.VTable, @ptrCast(self.__v))
-                    .SetDisplaySurface(@as(*IOutput, @ptrCast(self)), scanout_surface);
+                    .SetDisplaySurface(@ptrCast(self), scanout_surface);
             }
             pub inline fn GetDisplaySurfaceData(self: *T, destination: *ISurface) HRESULT {
                 return @as(*const IOutput.VTable, @ptrCast(self.__v))
-                    .GetDisplaySurfaceData(@as(*IOutput, @ptrCast(self)), destination);
+                    .GetDisplaySurfaceData(@ptrCast(self), destination);
             }
             pub inline fn GetFrameStatistics(self: *T, stats: *FRAME_STATISTICS) HRESULT {
-                return @as(*const IOutput.VTable, @ptrCast(self.__v)).GetFrameStatistics(@as(*IOutput, @ptrCast(self)), stats);
+                return @as(*const IOutput.VTable, @ptrCast(self.__v)).GetFrameStatistics(@ptrCast(self), stats);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IOutput;
         base: IObject.VTable,
-        GetDesc: *const fn (self: *T, desc: *OUTPUT_DESC) callconv(WINAPI) HRESULT,
-        GetDisplayModeList: *const fn (*T, FORMAT, ENUM_MODES, *UINT, ?*MODE_DESC) callconv(WINAPI) HRESULT,
+        GetDesc: *const fn (self: *IOutput, desc: *OUTPUT_DESC) callconv(WINAPI) HRESULT,
+        GetDisplayModeList: *const fn (*IOutput, FORMAT, ENUM_MODES, *UINT, ?*MODE_DESC) callconv(WINAPI) HRESULT,
         FindClosestMatchingMode: *const fn (
-            *T,
+            *IOutput,
             *const MODE_DESC,
             *MODE_DESC,
             ?*IUnknown,
         ) callconv(WINAPI) HRESULT,
-        WaitForVBlank: *const fn (*T) callconv(WINAPI) HRESULT,
-        TakeOwnership: *const fn (*T, *IUnknown, BOOL) callconv(WINAPI) HRESULT,
-        ReleaseOwnership: *const fn (*T) callconv(WINAPI) void,
-        GetGammaControlCapabilities: *const fn (*T, *GAMMA_CONTROL_CAPABILITIES) callconv(WINAPI) HRESULT,
-        SetGammaControl: *const fn (*T, *const GAMMA_CONTROL) callconv(WINAPI) HRESULT,
-        GetGammaControl: *const fn (*T, *GAMMA_CONTROL) callconv(WINAPI) HRESULT,
-        SetDisplaySurface: *const fn (*T, *ISurface) callconv(WINAPI) HRESULT,
-        GetDisplaySurfaceData: *const fn (*T, *ISurface) callconv(WINAPI) HRESULT,
-        GetFrameStatistics: *const fn (*T, *FRAME_STATISTICS) callconv(WINAPI) HRESULT,
+        WaitForVBlank: *const fn (*IOutput) callconv(WINAPI) HRESULT,
+        TakeOwnership: *const fn (*IOutput, *IUnknown, BOOL) callconv(WINAPI) HRESULT,
+        ReleaseOwnership: *const fn (*IOutput) callconv(WINAPI) void,
+        GetGammaControlCapabilities: *const fn (*IOutput, *GAMMA_CONTROL_CAPABILITIES) callconv(WINAPI) HRESULT,
+        SetGammaControl: *const fn (*IOutput, *const GAMMA_CONTROL) callconv(WINAPI) HRESULT,
+        GetGammaControl: *const fn (*IOutput, *GAMMA_CONTROL) callconv(WINAPI) HRESULT,
+        SetDisplaySurface: *const fn (*IOutput, *ISurface) callconv(WINAPI) HRESULT,
+        GetDisplaySurfaceData: *const fn (*IOutput, *ISurface) callconv(WINAPI) HRESULT,
+        GetFrameStatistics: *const fn (*IOutput, *FRAME_STATISTICS) callconv(WINAPI) HRESULT,
     };
 };
 
@@ -843,30 +912,47 @@ pub const PRESENT_FLAG = packed struct(UINT) {
 pub const ISwapChain = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const Present = ISwapChain.Methods(@This()).Present;
+    pub const GetBuffer = ISwapChain.Methods(@This()).GetBuffer;
+    pub const SetFullscreenState = ISwapChain.Methods(@This()).SetFullscreenState;
+    pub const GetFullscreenState = ISwapChain.Methods(@This()).GetFullscreenState;
+    pub const GetDesc = ISwapChain.Methods(@This()).GetDesc;
+    pub const ResizeBuffers = ISwapChain.Methods(@This()).ResizeBuffers;
+    pub const ResizeTarget = ISwapChain.Methods(@This()).ResizeTarget;
+    pub const GetContainingOutput = ISwapChain.Methods(@This()).GetContainingOutput;
+    pub const GetFrameStatistics = ISwapChain.Methods(@This()).GetFrameStatistics;
+    pub const GetLastPresentCount = ISwapChain.Methods(@This()).GetLastPresentCount;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceSubObject.Methods(T);
-
             pub inline fn Present(self: *T, sync_interval: UINT, flags: PRESENT_FLAG) HRESULT {
                 return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .Present(@as(*ISwapChain, @ptrCast(self)), sync_interval, flags);
+                    .Present(@ptrCast(self), sync_interval, flags);
             }
             pub inline fn GetBuffer(self: *T, index: u32, guid: *const GUID, surface: *?*anyopaque) HRESULT {
                 return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .GetBuffer(@as(*ISwapChain, @ptrCast(self)), index, guid, surface);
+                    .GetBuffer(@ptrCast(self), index, guid, surface);
             }
             pub inline fn SetFullscreenState(self: *T, target: ?*IOutput) HRESULT {
-                return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .SetFullscreenState(@as(*ISwapChain, @ptrCast(self)), target);
+                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).SetFullscreenState(@ptrCast(self), target);
             }
             pub inline fn GetFullscreenState(self: *T, fullscreen: ?*BOOL, target: ?*?*IOutput) HRESULT {
                 return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .GetFullscreenState(@as(*ISwapChain, @ptrCast(self)), fullscreen, target);
+                    .GetFullscreenState(@ptrCast(self), fullscreen, target);
             }
             pub inline fn GetDesc(self: *T, desc: *SWAP_CHAIN_DESC) HRESULT {
-                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).GetDesc(@as(*ISwapChain, @ptrCast(self)), desc);
+                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), desc);
             }
             pub inline fn ResizeBuffers(
                 self: *T,
@@ -877,40 +963,35 @@ pub const ISwapChain = extern struct {
                 flags: SWAP_CHAIN_FLAG,
             ) HRESULT {
                 return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .ResizeBuffers(@as(*ISwapChain, @ptrCast(self)), count, width, height, format, flags);
+                    .ResizeBuffers(@ptrCast(self), count, width, height, format, flags);
             }
             pub inline fn ResizeTarget(self: *T, params: *const MODE_DESC) HRESULT {
-                return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .ResizeTarget(@as(*ISwapChain, @ptrCast(self)), params);
+                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).ResizeTarget(@ptrCast(self), params);
             }
             pub inline fn GetContainingOutput(self: *T, output: *?*IOutput) HRESULT {
-                return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .GetContainingOutput(@as(*ISwapChain, @ptrCast(self)), output);
+                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).GetContainingOutput(@ptrCast(self), output);
             }
             pub inline fn GetFrameStatistics(self: *T, stats: *FRAME_STATISTICS) HRESULT {
-                return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .GetFrameStatistics(@as(*ISwapChain, @ptrCast(self)), stats);
+                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).GetFrameStatistics(@ptrCast(self), stats);
             }
             pub inline fn GetLastPresentCount(self: *T, count: *UINT) HRESULT {
-                return @as(*const ISwapChain.VTable, @ptrCast(self.__v))
-                    .GetLastPresentCount(@as(*ISwapChain, @ptrCast(self)), count);
+                return @as(*const ISwapChain.VTable, @ptrCast(self.__v)).GetLastPresentCount(@ptrCast(self), count);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = ISwapChain;
         base: IDeviceSubObject.VTable,
-        Present: *const fn (*T, UINT, PRESENT_FLAG) callconv(WINAPI) HRESULT,
-        GetBuffer: *const fn (*T, u32, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT,
-        SetFullscreenState: *const fn (*T, ?*IOutput) callconv(WINAPI) HRESULT,
-        GetFullscreenState: *const fn (*T, ?*BOOL, ?*?*IOutput) callconv(WINAPI) HRESULT,
-        GetDesc: *const fn (*T, *SWAP_CHAIN_DESC) callconv(WINAPI) HRESULT,
-        ResizeBuffers: *const fn (*T, UINT, UINT, UINT, FORMAT, SWAP_CHAIN_FLAG) callconv(WINAPI) HRESULT,
-        ResizeTarget: *const fn (*T, *const MODE_DESC) callconv(WINAPI) HRESULT,
-        GetContainingOutput: *const fn (*T, *?*IOutput) callconv(WINAPI) HRESULT,
-        GetFrameStatistics: *const fn (*T, *FRAME_STATISTICS) callconv(WINAPI) HRESULT,
-        GetLastPresentCount: *const fn (*T, *UINT) callconv(WINAPI) HRESULT,
+        Present: *const fn (*ISwapChain, UINT, PRESENT_FLAG) callconv(WINAPI) HRESULT,
+        GetBuffer: *const fn (*ISwapChain, u32, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT,
+        SetFullscreenState: *const fn (*ISwapChain, ?*IOutput) callconv(WINAPI) HRESULT,
+        GetFullscreenState: *const fn (*ISwapChain, ?*BOOL, ?*?*IOutput) callconv(WINAPI) HRESULT,
+        GetDesc: *const fn (*ISwapChain, *SWAP_CHAIN_DESC) callconv(WINAPI) HRESULT,
+        ResizeBuffers: *const fn (*ISwapChain, UINT, UINT, UINT, FORMAT, SWAP_CHAIN_FLAG) callconv(WINAPI) HRESULT,
+        ResizeTarget: *const fn (*ISwapChain, *const MODE_DESC) callconv(WINAPI) HRESULT,
+        GetContainingOutput: *const fn (*ISwapChain, *?*IOutput) callconv(WINAPI) HRESULT,
+        GetFrameStatistics: *const fn (*ISwapChain, *FRAME_STATISTICS) callconv(WINAPI) HRESULT,
+        GetLastPresentCount: *const fn (*ISwapChain, *UINT) callconv(WINAPI) HRESULT,
     };
 };
 
@@ -924,23 +1005,32 @@ pub const MWA_FLAGS = packed struct(UINT) {
 pub const IFactory = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn EnumAdapters(self: *T, index: UINT, adapter: *?*IAdapter) HRESULT {
-                return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .EnumAdapters(@as(*IFactory, @ptrCast(self)), index, adapter);
+                return @as(*const IFactory.VTable, @ptrCast(self.__v)).EnumAdapters(@ptrCast(self), index, adapter);
             }
             pub inline fn MakeWindowAssociation(self: *T, window: HWND, flags: MWA_FLAGS) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .MakeWindowAssociation(@as(*IFactory, @ptrCast(self)), window, flags);
+                    .MakeWindowAssociation(@ptrCast(self), window, flags);
             }
             pub inline fn GetWindowAssociation(self: *T, window: *HWND) HRESULT {
-                return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .GetWindowAssociation(@as(*IFactory, @ptrCast(self)), window);
+                return @as(*const IFactory.VTable, @ptrCast(self.__v)).GetWindowAssociation(@ptrCast(self), window);
             }
             pub inline fn CreateSwapChain(
                 self: *T,
@@ -949,37 +1039,49 @@ pub const IFactory = extern struct {
                 swapchain: *?*ISwapChain,
             ) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateSwapChain(@as(*IFactory, @ptrCast(self)), device, desc, swapchain);
+                    .CreateSwapChain(@ptrCast(self), device, desc, swapchain);
             }
             pub inline fn CreateSoftwareAdapter(self: *T, adapter: *?*IAdapter) HRESULT {
-                return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateSoftwareAdapter(@as(*IFactory, @ptrCast(self)), adapter);
+                return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreateSoftwareAdapter(
+                    @ptrCast(self),
+                    adapter,
+                );
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IFactory;
         base: IObject.VTable,
-        EnumAdapters: *const fn (*T, UINT, *?*IAdapter) callconv(WINAPI) HRESULT,
-        MakeWindowAssociation: *const fn (*T, HWND, MWA_FLAGS) callconv(WINAPI) HRESULT,
-        GetWindowAssociation: *const fn (*T, *HWND) callconv(WINAPI) HRESULT,
-        CreateSwapChain: *const fn (*T, *IUnknown, *SWAP_CHAIN_DESC, *?*ISwapChain) callconv(WINAPI) HRESULT,
-        CreateSoftwareAdapter: *const fn (*T, *?*IAdapter) callconv(WINAPI) HRESULT,
+        EnumAdapters: *const fn (*IFactory, UINT, *?*IAdapter) callconv(WINAPI) HRESULT,
+        MakeWindowAssociation: *const fn (*IFactory, HWND, MWA_FLAGS) callconv(WINAPI) HRESULT,
+        GetWindowAssociation: *const fn (*IFactory, *HWND) callconv(WINAPI) HRESULT,
+        CreateSwapChain: *const fn (*IFactory, *IUnknown, *SWAP_CHAIN_DESC, *?*ISwapChain) callconv(WINAPI) HRESULT,
+        CreateSoftwareAdapter: *const fn (*IFactory, *?*IAdapter) callconv(WINAPI) HRESULT,
     };
 };
 
 pub const IDevice = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetAdapter = IDevice.Methods(@This()).GetAdapter;
+    pub const CreateSurface = IDevice.Methods(@This()).CreateSurface;
+    pub const QueryResourceResidency = IDevice.Methods(@This()).QueryResourceResidency;
+    pub const SetGPUThreadPriority = IDevice.Methods(@This()).SetGPUThreadPriority;
+    pub const GetGPUThreadPriority = IDevice.Methods(@This()).GetGPUThreadPriority;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn GetAdapter(self: *T, adapter: *?*IAdapter) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetAdapter(@as(*IDevice, @ptrCast(self)), adapter);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetAdapter(@ptrCast(self), adapter);
             }
             pub inline fn CreateSurface(
                 self: *T,
@@ -990,7 +1092,7 @@ pub const IDevice = extern struct {
                 surface: *?*ISurface,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v)).CreateSurface(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     num_surfaces,
                     usage,
@@ -1005,25 +1107,28 @@ pub const IDevice = extern struct {
                 num_resources: UINT,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .QueryResourceResidency(@as(*IDevice, @ptrCast(self)), resources, status, num_resources);
+                    .QueryResourceResidency(@ptrCast(self), resources, status, num_resources);
             }
             pub inline fn SetGPUThreadPriority(self: *T, priority: INT) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .SetGPUThreadPriority(@as(*IDevice, @ptrCast(self)), priority);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).SetGPUThreadPriority(
+                    @ptrCast(self),
+                    priority,
+                );
             }
             pub inline fn GetGPUThreadPriority(self: *T, priority: *INT) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .GetGPUThreadPriority(@as(*IDevice, @ptrCast(self)), priority);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetGPUThreadPriority(
+                    @ptrCast(self),
+                    priority,
+                );
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IDevice;
         base: IObject.VTable,
-        GetAdapter: *const fn (self: *T, adapter: *?*IAdapter) callconv(WINAPI) HRESULT,
+        GetAdapter: *const fn (self: *IDevice, adapter: *?*IAdapter) callconv(WINAPI) HRESULT,
         CreateSurface: *const fn (
-            *T,
+            *IDevice,
             *const SURFACE_DESC,
             UINT,
             USAGE,
@@ -1031,13 +1136,13 @@ pub const IDevice = extern struct {
             *?*ISurface,
         ) callconv(WINAPI) HRESULT,
         QueryResourceResidency: *const fn (
-            *T,
+            *IDevice,
             *const *IUnknown,
             [*]RESIDENCY,
             UINT,
         ) callconv(WINAPI) HRESULT,
-        SetGPUThreadPriority: *const fn (self: *T, priority: INT) callconv(WINAPI) HRESULT,
-        GetGPUThreadPriority: *const fn (self: *T, priority: *INT) callconv(WINAPI) HRESULT,
+        SetGPUThreadPriority: *const fn (self: *IDevice, priority: INT) callconv(WINAPI) HRESULT,
+        GetGPUThreadPriority: *const fn (self: *IDevice, priority: *INT) callconv(WINAPI) HRESULT,
     };
 };
 
@@ -1094,19 +1199,32 @@ pub const ADAPTER_DESC2 = extern struct {
 pub const IFactory1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
+
+    pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
+    pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IFactory.Methods(T);
-
             pub inline fn EnumAdapters1(self: *T, index: UINT, adapter: *?*IAdapter1) HRESULT {
                 return @as(*const IFactory1.VTable, @ptrCast(self.__v))
-                    .EnumAdapters1(@as(*IFactory1, @ptrCast(self)), index, adapter);
+                    .EnumAdapters1(@ptrCast(self), index, adapter);
             }
             pub inline fn IsCurrent(self: *T) BOOL {
-                return @as(*const IFactory1.VTable, @ptrCast(self.__v))
-                    .IsCurrent(@as(*IFactory1, @ptrCast(self)));
+                return @as(*const IFactory1.VTable, @ptrCast(self.__v)).IsCurrent(@ptrCast(self));
             }
         };
     }
@@ -1121,13 +1239,25 @@ pub const IFactory1 = extern struct {
 pub const IFactory2 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IFactory1.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
+
+    pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
+    pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
+
+    // TODO: Add IFactory2 methods
 
     pub const VTable = extern struct {
         base: IFactory1.VTable,
@@ -1148,13 +1278,27 @@ pub const IFactory2 = extern struct {
 pub const IFactory3 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IFactory2.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
+
+    pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
+    pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
+
+    // TODO: Add IFactory2 methods
+
+    // TODO: Add IFactory3 methods
 
     pub const VTable = extern struct {
         base: IFactory2.VTable,
@@ -1165,13 +1309,29 @@ pub const IFactory3 = extern struct {
 pub const IFactory4 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IFactory3.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
+
+    pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
+    pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
+
+    // TODO: Add IFactory2 methods
+
+    // TODO: Add IFactory3 methods
+
+    // TODO: Add IFactory4 methods
 
     pub const VTable = extern struct {
         base: IFactory3.VTable,
@@ -1188,12 +1348,34 @@ pub const IID_IFactory5 = GUID.parse("{7632e1f5-ee65-4dca-87fd-84cd75f8838d}");
 pub const IFactory5 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
+
+    pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
+    pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
+
+    // TODO: Add IFactory2 methods
+
+    // TODO: Add IFactory3 methods
+
+    // TODO: Add IFactory4 methods
+
+    pub const CheckFeatureSupport = IFactory5.Methods(@This()).CheckFeatureSupport;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IFactory4.Methods(T);
-
             pub inline fn CheckFeatureSupport(
                 self: *T,
                 feature: FEATURE,
@@ -1201,7 +1383,7 @@ pub const IFactory5 = extern struct {
                 support_data_size: UINT,
             ) HRESULT {
                 return @as(*const IFactory5.VTable, @ptrCast(self.__v)).CheckFeatureSupport(
-                    @as(*IFactory5, @ptrCast(self)),
+                    @ptrCast(self),
                     feature,
                     support_data,
                     support_data_size,
@@ -1226,12 +1408,36 @@ pub const IID_IFactory6 = GUID.parse("{c1b6694f-ff09-44a9-b03c-77900a0a1d17}");
 pub const IFactory6 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumAdapters = IFactory.Methods(@This()).EnumAdapters;
+    pub const MakeWindowAssociation = IFactory.Methods(@This()).MakeWindowAssociation;
+    pub const GetWindowAssociation = IFactory.Methods(@This()).GetWindowAssociation;
+    pub const CreateSwapChain = IFactory.Methods(@This()).CreateSwapChain;
+    pub const CreateSoftwareAdapter = IFactory.Methods(@This()).CreateSoftwareAdapter;
+
+    pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
+    pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
+
+    // TODO: Add IFactory2 methods
+
+    // TODO: Add IFactory3 methods
+
+    // TODO: Add IFactory4 methods
+
+    pub const CheckFeatureSupport = IFactory5.Methods(@This()).CheckFeatureSupport;
+
+    pub const EnumAdapterByGpuPreference = IFactory6.Methods(@This()).EnumAdapterByGpuPreference;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IFactory5.Methods(T);
-
             pub inline fn EnumAdapterByGpuPreference(
                 self: *T,
                 adapter_index: UINT,
@@ -1240,7 +1446,7 @@ pub const IFactory6 = extern struct {
                 adapter: *?*IAdapter3,
             ) HRESULT {
                 return @as(*const IFactory6.VTable, @ptrCast(self.__v)).EnumAdapterByGpuPreference(
-                    @as(*IFactory6, @ptrCast(self)),
+                    @ptrCast(self),
                     adapter_index,
                     gpu_preference,
                     riid,
@@ -1266,15 +1472,25 @@ pub const IID_IAdapter1 = GUID.parse("{29038f61-3839-4626-91fd-086879011a05}");
 pub const IAdapter1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumOutputs = IAdapter.Methods(@This()).EnumOutputs;
+    pub const GetDesc = IAdapter.Methods(@This()).GetDesc;
+    pub const CheckInterfaceSupport = IAdapter.Methods(@This()).CheckInterfaceSupport;
+
+    pub const GetDesc1 = IAdapter1.Methods(@This()).GetDesc1;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IAdapter.Methods(T);
-
             pub inline fn GetDesc1(self: *T, desc: *ADAPTER_DESC1) HRESULT {
-                return @as(*const IAdapter1.VTable, @ptrCast(self.__v))
-                    .GetDesc1(@as(*IAdapter1, @ptrCast(self)), desc);
+                return @as(*const IAdapter1.VTable, @ptrCast(self.__v)).GetDesc1(@ptrCast(self), desc);
             }
         };
     }
@@ -1289,15 +1505,27 @@ pub const IID_IAdapter2 = GUID.parse("{0AA1AE0A-FA0E-4B84-8644-E05FF8E5ACB5}");
 pub const IAdapter2 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumOutputs = IAdapter.Methods(@This()).EnumOutputs;
+    pub const GetDesc = IAdapter.Methods(@This()).GetDesc;
+    pub const CheckInterfaceSupport = IAdapter.Methods(@This()).CheckInterfaceSupport;
+
+    pub const GetDesc1 = IAdapter1.Methods(@This()).GetDesc1;
+
+    pub const GetDesc2 = IAdapter2.Methods(@This()).GetDesc2;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IAdapter1.Methods(T);
-
             pub inline fn GetDesc2(self: *T, desc: *ADAPTER_DESC2) HRESULT {
-                return @as(*const IAdapter2.VTable, @ptrCast(self.__v))
-                    .GetDesc2(@as(*IAdapter2, @ptrCast(self)), desc);
+                return @as(*const IAdapter2.VTable, @ptrCast(self.__v)).GetDesc2(@ptrCast(self), desc);
             }
         };
     }
@@ -1324,51 +1552,102 @@ pub const IID_IAdapter3 = GUID.parse("{645967A4-1392-4310-A798-8053CE3E93FD}");
 pub const IAdapter3 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const EnumOutputs = IAdapter.Methods(@This()).EnumOutputs;
+    pub const GetDesc = IAdapter.Methods(@This()).GetDesc;
+    pub const CheckInterfaceSupport = IAdapter.Methods(@This()).CheckInterfaceSupport;
+
+    pub const GetDesc1 = IAdapter1.Methods(@This()).GetDesc1;
+
+    pub const GetDesc2 = IAdapter2.Methods(@This()).GetDesc2;
+
+    pub const RegisterHardwareContentProtectionTeardownStatusEvent = IAdapter3.Methods(@This()).RegisterHardwareContentProtectionTeardownStatusEvent;
+    pub const UnregisterHardwareContentProtectionTeardownStatus = IAdapter3.Methods(@This()).UnregisterHardwareContentProtectionTeardownStatus;
+    pub const QueryVideoMemoryInfo = IAdapter3.Methods(@This()).QueryVideoMemoryInfo;
+    pub const SetVideoMemoryReservation = IAdapter3.Methods(@This()).SetVideoMemoryReservation;
+    pub const RegisterVideoMemoryBudgetChangeNotificationEvent = IAdapter3.Methods(@This()).RegisterVideoMemoryBudgetChangeNotificationEvent;
+    pub const UnregisterVideoMemoryBudgetChangeNotification = IAdapter3.Methods(@This()).UnregisterVideoMemoryBudgetChangeNotification;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IAdapter2.Methods(T);
-
-            pub inline fn RegisterHardwareContentProtectionTeardownStatusEvent(self: *T, event: HANDLE, cookie: *DWORD) HRESULT {
+            pub inline fn RegisterHardwareContentProtectionTeardownStatusEvent(
+                self: *T,
+                event: HANDLE,
+                cookie: *DWORD,
+            ) HRESULT {
                 return @as(*const IAdapter3.VTable, @ptrCast(self.__v))
-                    .RegisterHardwareContentProtectionTeardownStatusEvent(@as(*IAdapter3, @ptrCast(self)), event, cookie);
+                    .RegisterHardwareContentProtectionTeardownStatusEvent(@ptrCast(self), event, cookie);
             }
-
             pub inline fn UnregisterHardwareContentProtectionTeardownStatus(self: *T, cookie: DWORD) void {
                 return @as(*const IAdapter3.VTable, @ptrCast(self.__v))
-                    .UnregisterHardwareContentProtectionTeardownStatus(@as(*IAdapter3, @ptrCast(self)), cookie);
+                    .UnregisterHardwareContentProtectionTeardownStatus(@ptrCast(self), cookie);
             }
-
-            pub inline fn QueryVideoMemoryInfo(self: *T, node_index: UINT, memory_segment_group: MEMORY_SEGMENT_GROUP, video_memory_info: *QUERY_VIDEO_MEMORY_INFO) HRESULT {
+            pub inline fn QueryVideoMemoryInfo(
+                self: *T,
+                node_index: UINT,
+                memory_segment_group: MEMORY_SEGMENT_GROUP,
+                video_memory_info: *QUERY_VIDEO_MEMORY_INFO,
+            ) HRESULT {
                 return @as(*const IAdapter3.VTable, @ptrCast(self.__v))
-                    .QueryVideoMemoryInfo(@as(*IAdapter3, @ptrCast(self)), node_index, memory_segment_group, video_memory_info);
+                    .QueryVideoMemoryInfo(@ptrCast(self), node_index, memory_segment_group, video_memory_info);
             }
-
-            pub inline fn SetVideoMemoryReservation(self: *T, node_index: UINT, memory_segment_group: MEMORY_SEGMENT_GROUP, reservation: UINT64) HRESULT {
+            pub inline fn SetVideoMemoryReservation(
+                self: *T,
+                node_index: UINT,
+                memory_segment_group: MEMORY_SEGMENT_GROUP,
+                reservation: UINT64,
+            ) HRESULT {
                 return @as(*const IAdapter3.VTable, @ptrCast(self.__v))
-                    .SetVideoMemoryReservation(@as(*IAdapter3, @ptrCast(self)), node_index, memory_segment_group, reservation);
+                    .SetVideoMemoryReservation(@ptrCast(self), node_index, memory_segment_group, reservation);
             }
-
-            pub inline fn RegisterVideoMemoryBudgetChangeNotificationEvent(self: *T, event: HANDLE, cookie: *DWORD) HRESULT {
+            pub inline fn RegisterVideoMemoryBudgetChangeNotificationEvent(
+                self: *T,
+                event: HANDLE,
+                cookie: *DWORD,
+            ) HRESULT {
                 return @as(*const IAdapter3.VTable, @ptrCast(self.__v))
-                    .RegisterVideoMemoryBudgetChangeNotificationEvent(@as(*IAdapter3, @ptrCast(self)), event, cookie);
+                    .RegisterVideoMemoryBudgetChangeNotificationEvent(@ptrCast(self), event, cookie);
             }
-
             pub inline fn UnregisterVideoMemoryBudgetChangeNotification(self: *T, cookie: DWORD) void {
                 return @as(*const IAdapter3.VTable, @ptrCast(self.__v))
-                    .UnregisterVideoMemoryBudgetChangeNotification(@as(*IAdapter3, @ptrCast(self)), cookie);
+                    .UnregisterVideoMemoryBudgetChangeNotification(@ptrCast(self), cookie);
             }
         };
     }
 
     pub const VTable = extern struct {
         base: IAdapter2.VTable,
-        RegisterHardwareContentProtectionTeardownStatusEvent: *const fn (*IAdapter3, HANDLE, *DWORD) callconv(WINAPI) HRESULT,
+        RegisterHardwareContentProtectionTeardownStatusEvent: *const fn (
+            *IAdapter3,
+            HANDLE,
+            *DWORD,
+        ) callconv(WINAPI) HRESULT,
         UnregisterHardwareContentProtectionTeardownStatus: *const fn (*IAdapter3, DWORD) callconv(WINAPI) void,
-        QueryVideoMemoryInfo: *const fn (*IAdapter3, UINT, MEMORY_SEGMENT_GROUP, *QUERY_VIDEO_MEMORY_INFO) callconv(WINAPI) HRESULT,
-        SetVideoMemoryReservation: *const fn (*IAdapter3, UINT, MEMORY_SEGMENT_GROUP, UINT64) callconv(WINAPI) HRESULT,
-        RegisterVideoMemoryBudgetChangeNotificationEvent: *const fn (*IAdapter3, HANDLE, *DWORD) callconv(WINAPI) HRESULT,
+        QueryVideoMemoryInfo: *const fn (
+            *IAdapter3,
+            UINT,
+            MEMORY_SEGMENT_GROUP,
+            *QUERY_VIDEO_MEMORY_INFO,
+        ) callconv(WINAPI) HRESULT,
+        SetVideoMemoryReservation: *const fn (
+            *IAdapter3,
+            UINT,
+            MEMORY_SEGMENT_GROUP,
+            UINT64,
+        ) callconv(WINAPI) HRESULT,
+        RegisterVideoMemoryBudgetChangeNotificationEvent: *const fn (
+            *IAdapter3,
+            HANDLE,
+            *DWORD,
+        ) callconv(WINAPI) HRESULT,
         UnregisterVideoMemoryBudgetChangeNotification: *const fn (*IAdapter3, DWORD) callconv(WINAPI) void,
     };
 };
@@ -1376,19 +1655,33 @@ pub const IAdapter3 = extern struct {
 pub const IDevice1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetAdapter = IDevice.Methods(@This()).GetAdapter;
+    pub const CreateSurface = IDevice.Methods(@This()).CreateSurface;
+    pub const QueryResourceResidency = IDevice.Methods(@This()).QueryResourceResidency;
+    pub const SetGPUThreadPriority = IDevice.Methods(@This()).SetGPUThreadPriority;
+    pub const GetGPUThreadPriority = IDevice.Methods(@This()).GetGPUThreadPriority;
+
+    pub const SetMaximumFrameLatency = IDevice1.Methods(@This()).SetMaximumFrameLatency;
+    pub const GetMaximumFrameLatency = IDevice1.Methods(@This()).GetMaximumFrameLatency;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice.Methods(T);
-
             pub inline fn SetMaximumFrameLatency(self: *T, max_latency: UINT) HRESULT {
                 return @as(*const IDevice1.VTable, @ptrCast(self.__v))
-                    .SetMaximumFrameLatency(@as(*IDevice1, @ptrCast(self)), max_latency);
+                    .SetMaximumFrameLatency(@ptrCast(self), max_latency);
             }
             pub inline fn GetMaximumFrameLatency(self: *T, max_latency: *UINT) HRESULT {
                 return @as(*const IDevice1.VTable, @ptrCast(self.__v))
-                    .GetMaximumFrameLatency(@as(*IDevice1, @ptrCast(self)), max_latency);
+                    .GetMaximumFrameLatency(@ptrCast(self), max_latency);
             }
         };
     }
@@ -1398,27 +1691,6 @@ pub const IDevice1 = extern struct {
         SetMaximumFrameLatency: *const fn (self: *IDevice1, max_latency: UINT) callconv(WINAPI) HRESULT,
         GetMaximumFrameLatency: *const fn (self: *IDevice1, max_latency: *UINT) callconv(WINAPI) HRESULT,
     };
-};
-
-pub const IID_IFactory1 = GUID{
-    .Data1 = 0x770aae78,
-    .Data2 = 0xf26f,
-    .Data3 = 0x4dba,
-    .Data4 = .{ 0xa8, 0x29, 0x25, 0x3c, 0x83, 0xd1, 0xb3, 0x87 },
-};
-
-pub const IID_IDevice = GUID{
-    .Data1 = 0x54ec77fa,
-    .Data2 = 0x1377,
-    .Data3 = 0x44e6,
-    .Data4 = .{ 0x8c, 0x32, 0x88, 0xfd, 0x5f, 0x44, 0xc8, 0x4c },
-};
-
-pub const IID_ISurface = GUID{
-    .Data1 = 0xcafcb56c,
-    .Data2 = 0x6ac3,
-    .Data3 = 0x4889,
-    .Data4 = .{ 0xbf, 0x47, 0x9e, 0x23, 0xbb, 0xd2, 0x60, 0xec },
 };
 
 pub const CREATE_FACTORY_DEBUG = 0x1;
@@ -1470,25 +1742,54 @@ pub const PRESENT_PARAMETERS = extern struct {
 pub const ISwapChain1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const Present = ISwapChain.Methods(@This()).Present;
+    pub const GetBuffer = ISwapChain.Methods(@This()).GetBuffer;
+    pub const SetFullscreenState = ISwapChain.Methods(@This()).SetFullscreenState;
+    pub const GetFullscreenState = ISwapChain.Methods(@This()).GetFullscreenState;
+    pub const GetDesc = ISwapChain.Methods(@This()).GetDesc;
+    pub const ResizeBuffers = ISwapChain.Methods(@This()).ResizeBuffers;
+    pub const ResizeTarget = ISwapChain.Methods(@This()).ResizeTarget;
+    pub const GetContainingOutput = ISwapChain.Methods(@This()).GetContainingOutput;
+    pub const GetFrameStatistics = ISwapChain.Methods(@This()).GetFrameStatistics;
+    pub const GetLastPresentCount = ISwapChain.Methods(@This()).GetLastPresentCount;
+
+    pub const GetDesc1 = ISwapChain1.Methods(@This()).GetDesc1;
+    pub const GetFullscreenDesc = ISwapChain1.Methods(@This()).GetFullscreenDesc;
+    pub const GetHwnd = ISwapChain1.Methods(@This()).GetHwnd;
+    pub const GetCoreWindow = ISwapChain1.Methods(@This()).GetCoreWindow;
+    pub const Present1 = ISwapChain1.Methods(@This()).Present1;
+    pub const IsTemporaryMonoSupported = ISwapChain1.Methods(@This()).IsTemporaryMonoSupported;
+    pub const GetRestrictToOutput = ISwapChain1.Methods(@This()).GetRestrictToOutput;
+    pub const SetBackgroundColor = ISwapChain1.Methods(@This()).SetBackgroundColor;
+    pub const GetBackgroundColor = ISwapChain1.Methods(@This()).GetBackgroundColor;
+    pub const SetRotation = ISwapChain1.Methods(@This()).SetRotation;
+    pub const GetRotation = ISwapChain1.Methods(@This()).GetRotation;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace ISwapChain.Methods(T);
-
             pub inline fn GetDesc1(self: *T, desc: *SWAP_CHAIN_DESC1) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetDesc1(@as(*ISwapChain1, @ptrCast(self)), desc);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetDesc1(@ptrCast(self), desc);
             }
             pub inline fn GetFullscreenDesc(self: *T, desc: *SWAP_CHAIN_FULLSCREEN_DESC) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .GetFullscreenDesc(@as(*ISwapChain1, @ptrCast(self)), desc);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetFullscreenDesc(@ptrCast(self), desc);
             }
             pub inline fn GetHwnd(self: *T, hwnd: *HWND) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetHwnd(@as(*ISwapChain1, @ptrCast(self)), hwnd);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetHwnd(@ptrCast(self), hwnd);
             }
             pub inline fn GetCoreWindow(self: *T, guid: *const GUID, unknown: *?*anyopaque) HRESULT {
                 return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .GetCoreWindow(@as(*ISwapChain1, @ptrCast(self)), guid, unknown);
+                    .GetCoreWindow(@ptrCast(self), guid, unknown);
             }
             pub inline fn Present1(
                 self: *T,
@@ -1497,57 +1798,44 @@ pub const ISwapChain1 = extern struct {
                 params: *const PRESENT_PARAMETERS,
             ) HRESULT {
                 return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .Present1(@as(*ISwapChain1, @ptrCast(self)), sync_interval, flags, params);
+                    .Present1(@ptrCast(self), sync_interval, flags, params);
             }
             pub inline fn IsTemporaryMonoSupported(self: *T) BOOL {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .IsTemporaryMonoSupported(@as(*ISwapChain1, @ptrCast(self)));
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).IsTemporaryMonoSupported(@ptrCast(self));
             }
             pub inline fn GetRestrictToOutput(self: *T, output: *?*IOutput) HRESULT {
                 return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .GetRestrictToOutput(@as(*ISwapChain1, @ptrCast(self)), output);
+                    .GetRestrictToOutput(@ptrCast(self), output);
             }
             pub inline fn SetBackgroundColor(self: *T, color: *const RGBA) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .SetBackgroundColor(@as(*ISwapChain1, @ptrCast(self)), color);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).SetBackgroundColor(@ptrCast(self), color);
             }
             pub inline fn GetBackgroundColor(self: *T, color: *RGBA) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .GetBackgroundColor(@as(*ISwapChain1, @ptrCast(self)), color);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetBackgroundColor(@ptrCast(self), color);
             }
             pub inline fn SetRotation(self: *T, rotation: MODE_ROTATION) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .SetRotation(@as(*ISwapChain1, @ptrCast(self)), rotation);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).SetRotation(@ptrCast(self), rotation);
             }
             pub inline fn GetRotation(self: *T, rotation: *MODE_ROTATION) HRESULT {
-                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v))
-                    .GetRotation(@as(*ISwapChain1, @ptrCast(self)), rotation);
+                return @as(*const ISwapChain1.VTable, @ptrCast(self.__v)).GetRotation(@ptrCast(self), rotation);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = ISwapChain1;
         base: ISwapChain.VTable,
-        GetDesc1: *const fn (*T, *SWAP_CHAIN_DESC1) callconv(WINAPI) HRESULT,
-        GetFullscreenDesc: *const fn (*T, *SWAP_CHAIN_FULLSCREEN_DESC) callconv(WINAPI) HRESULT,
-        GetHwnd: *const fn (*T, *HWND) callconv(WINAPI) HRESULT,
-        GetCoreWindow: *const fn (*T, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT,
-        Present1: *const fn (*T, UINT, PRESENT_FLAG, *const PRESENT_PARAMETERS) callconv(WINAPI) HRESULT,
-        IsTemporaryMonoSupported: *const fn (*T) callconv(WINAPI) BOOL,
-        GetRestrictToOutput: *const fn (*T, *?*IOutput) callconv(WINAPI) HRESULT,
-        SetBackgroundColor: *const fn (*T, *const RGBA) callconv(WINAPI) HRESULT,
-        GetBackgroundColor: *const fn (*T, *RGBA) callconv(WINAPI) HRESULT,
-        SetRotation: *const fn (*T, MODE_ROTATION) callconv(WINAPI) HRESULT,
-        GetRotation: *const fn (*T, *MODE_ROTATION) callconv(WINAPI) HRESULT,
+        GetDesc1: *const fn (*ISwapChain1, *SWAP_CHAIN_DESC1) callconv(WINAPI) HRESULT,
+        GetFullscreenDesc: *const fn (*ISwapChain1, *SWAP_CHAIN_FULLSCREEN_DESC) callconv(WINAPI) HRESULT,
+        GetHwnd: *const fn (*ISwapChain1, *HWND) callconv(WINAPI) HRESULT,
+        GetCoreWindow: *const fn (*ISwapChain1, *const GUID, *?*anyopaque) callconv(WINAPI) HRESULT,
+        Present1: *const fn (*ISwapChain1, UINT, PRESENT_FLAG, *const PRESENT_PARAMETERS) callconv(WINAPI) HRESULT,
+        IsTemporaryMonoSupported: *const fn (*ISwapChain1) callconv(WINAPI) BOOL,
+        GetRestrictToOutput: *const fn (*ISwapChain1, *?*IOutput) callconv(WINAPI) HRESULT,
+        SetBackgroundColor: *const fn (*ISwapChain1, *const RGBA) callconv(WINAPI) HRESULT,
+        GetBackgroundColor: *const fn (*ISwapChain1, *RGBA) callconv(WINAPI) HRESULT,
+        SetRotation: *const fn (*ISwapChain1, MODE_ROTATION) callconv(WINAPI) HRESULT,
+        GetRotation: *const fn (*ISwapChain1, *MODE_ROTATION) callconv(WINAPI) HRESULT,
     };
-};
-
-pub const IID_ISwapChain1 = GUID{
-    .Data1 = 0x790a45f7,
-    .Data2 = 0x0d41,
-    .Data3 = 0x4876,
-    .Data4 = .{ 0x98, 0x3a, 0x0a, 0x55, 0xcf, 0xe6, 0xf4, 0xaa },
 };
 
 pub const MATRIX_3X2_F = extern struct {
@@ -1562,83 +1850,155 @@ pub const MATRIX_3X2_F = extern struct {
 pub const ISwapChain2 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const Present = ISwapChain.Methods(@This()).Present;
+    pub const GetBuffer = ISwapChain.Methods(@This()).GetBuffer;
+    pub const SetFullscreenState = ISwapChain.Methods(@This()).SetFullscreenState;
+    pub const GetFullscreenState = ISwapChain.Methods(@This()).GetFullscreenState;
+    pub const GetDesc = ISwapChain.Methods(@This()).GetDesc;
+    pub const ResizeBuffers = ISwapChain.Methods(@This()).ResizeBuffers;
+    pub const ResizeTarget = ISwapChain.Methods(@This()).ResizeTarget;
+    pub const GetContainingOutput = ISwapChain.Methods(@This()).GetContainingOutput;
+    pub const GetFrameStatistics = ISwapChain.Methods(@This()).GetFrameStatistics;
+    pub const GetLastPresentCount = ISwapChain.Methods(@This()).GetLastPresentCount;
+
+    pub const GetDesc1 = ISwapChain1.Methods(@This()).GetDesc1;
+    pub const GetFullscreenDesc = ISwapChain1.Methods(@This()).GetFullscreenDesc;
+    pub const GetHwnd = ISwapChain1.Methods(@This()).GetHwnd;
+    pub const GetCoreWindow = ISwapChain1.Methods(@This()).GetCoreWindow;
+    pub const Present1 = ISwapChain1.Methods(@This()).Present1;
+    pub const IsTemporaryMonoSupported = ISwapChain1.Methods(@This()).IsTemporaryMonoSupported;
+    pub const GetRestrictToOutput = ISwapChain1.Methods(@This()).GetRestrictToOutput;
+    pub const SetBackgroundColor = ISwapChain1.Methods(@This()).SetBackgroundColor;
+    pub const GetBackgroundColor = ISwapChain1.Methods(@This()).GetBackgroundColor;
+    pub const SetRotation = ISwapChain1.Methods(@This()).SetRotation;
+    pub const GetRotation = ISwapChain1.Methods(@This()).GetRotation;
+
+    pub const SetSourceSize = ISwapChain2.Methods(@This()).SetSourceSize;
+    pub const GetSourceSize = ISwapChain2.Methods(@This()).GetSourceSize;
+    pub const SetMaximumFrameLatency = ISwapChain2.Methods(@This()).SetMaximumFrameLatency;
+    pub const GetMaximumFrameLatency = ISwapChain2.Methods(@This()).GetMaximumFrameLatency;
+    pub const GetFrameLatencyWaitableObject = ISwapChain2.Methods(@This()).GetFrameLatencyWaitableObject;
+    pub const SetMatrixTransform = ISwapChain2.Methods(@This()).SetMatrixTransform;
+    pub const GetMatrixTransform = ISwapChain2.Methods(@This()).GetMatrixTransform;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace ISwapChain1.Methods(T);
-
             pub inline fn SetSourceSize(self: *T, width: UINT, height: UINT) HRESULT {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .SetSourceSize(@as(*ISwapChain2, @ptrCast(self)), width, height);
+                    .SetSourceSize(@ptrCast(self), width, height);
             }
             pub inline fn GetSourceSize(self: *T, width: *UINT, height: *UINT) HRESULT {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .GetSourceSize(@as(*ISwapChain2, @ptrCast(self)), width, height);
+                    .GetSourceSize(@ptrCast(self), width, height);
             }
             pub inline fn SetMaximumFrameLatency(self: *T, max_latency: UINT) HRESULT {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .SetMaximumFrameLatency(@as(*ISwapChain2, @ptrCast(self)), max_latency);
+                    .SetMaximumFrameLatency(@ptrCast(self), max_latency);
             }
             pub inline fn GetMaximumFrameLatency(self: *T, max_latency: *UINT) HRESULT {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .GetMaximumFrameLatency(@as(*ISwapChain2, @ptrCast(self)), max_latency);
+                    .GetMaximumFrameLatency(@ptrCast(self), max_latency);
             }
             pub inline fn GetFrameLatencyWaitableObject(self: *T) HANDLE {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .GetFrameLatencyWaitableObject(@as(*ISwapChain2, @ptrCast(self)));
+                    .GetFrameLatencyWaitableObject(@ptrCast(self));
             }
             pub inline fn SetMatrixTransform(self: *T, matrix: *const MATRIX_3X2_F) HRESULT {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .SetMatrixTransform(@as(*ISwapChain2, @ptrCast(self)), matrix);
+                    .SetMatrixTransform(@ptrCast(self), matrix);
             }
             pub inline fn GetMatrixTransform(self: *T, matrix: *MATRIX_3X2_F) HRESULT {
                 return @as(*const ISwapChain2.VTable, @ptrCast(self.__v))
-                    .GetMatrixTransform(@as(*ISwapChain2, @ptrCast(self)), matrix);
+                    .GetMatrixTransform(@ptrCast(self), matrix);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = ISwapChain2;
         base: ISwapChain1.VTable,
-        SetSourceSize: *const fn (*T, UINT, UINT) callconv(WINAPI) HRESULT,
-        GetSourceSize: *const fn (*T, *UINT, *UINT) callconv(WINAPI) HRESULT,
-        SetMaximumFrameLatency: *const fn (*T, UINT) callconv(WINAPI) HRESULT,
-        GetMaximumFrameLatency: *const fn (*T, *UINT) callconv(WINAPI) HRESULT,
-        GetFrameLatencyWaitableObject: *const fn (*T) callconv(WINAPI) HANDLE,
-        SetMatrixTransform: *const fn (*T, *const MATRIX_3X2_F) callconv(WINAPI) HRESULT,
-        GetMatrixTransform: *const fn (*T, *MATRIX_3X2_F) callconv(WINAPI) HRESULT,
+        SetSourceSize: *const fn (*ISwapChain2, UINT, UINT) callconv(WINAPI) HRESULT,
+        GetSourceSize: *const fn (*ISwapChain2, *UINT, *UINT) callconv(WINAPI) HRESULT,
+        SetMaximumFrameLatency: *const fn (*ISwapChain2, UINT) callconv(WINAPI) HRESULT,
+        GetMaximumFrameLatency: *const fn (*ISwapChain2, *UINT) callconv(WINAPI) HRESULT,
+        GetFrameLatencyWaitableObject: *const fn (*ISwapChain2) callconv(WINAPI) HANDLE,
+        SetMatrixTransform: *const fn (*ISwapChain2, *const MATRIX_3X2_F) callconv(WINAPI) HRESULT,
+        GetMatrixTransform: *const fn (*ISwapChain2, *MATRIX_3X2_F) callconv(WINAPI) HRESULT,
     };
 };
 
-pub const IID_ISwapChain2 = GUID{
-    .Data1 = 0xa8be2ac4,
-    .Data2 = 0x199f,
-    .Data3 = 0x4946,
-    .Data4 = .{ 0xb3, 0x31, 0x79, 0x59, 0x9f, 0xb9, 0x8d, 0xe7 },
-};
-
+pub const IID_ISwapChain3 = GUID.parse("{94d99bdb-f1f8-4ab0-b236-7da0170edab1}");
 pub const ISwapChain3 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const GetParent = IObject.Methods(@This()).GetParent;
+
+    pub const GetDevice = IDeviceSubObject.Methods(@This()).GetDevice;
+
+    pub const Present = ISwapChain.Methods(@This()).Present;
+    pub const GetBuffer = ISwapChain.Methods(@This()).GetBuffer;
+    pub const SetFullscreenState = ISwapChain.Methods(@This()).SetFullscreenState;
+    pub const GetFullscreenState = ISwapChain.Methods(@This()).GetFullscreenState;
+    pub const GetDesc = ISwapChain.Methods(@This()).GetDesc;
+    pub const ResizeBuffers = ISwapChain.Methods(@This()).ResizeBuffers;
+    pub const ResizeTarget = ISwapChain.Methods(@This()).ResizeTarget;
+    pub const GetContainingOutput = ISwapChain.Methods(@This()).GetContainingOutput;
+    pub const GetFrameStatistics = ISwapChain.Methods(@This()).GetFrameStatistics;
+    pub const GetLastPresentCount = ISwapChain.Methods(@This()).GetLastPresentCount;
+
+    pub const GetDesc1 = ISwapChain1.Methods(@This()).GetDesc1;
+    pub const GetFullscreenDesc = ISwapChain1.Methods(@This()).GetFullscreenDesc;
+    pub const GetHwnd = ISwapChain1.Methods(@This()).GetHwnd;
+    pub const GetCoreWindow = ISwapChain1.Methods(@This()).GetCoreWindow;
+    pub const Present1 = ISwapChain1.Methods(@This()).Present1;
+    pub const IsTemporaryMonoSupported = ISwapChain1.Methods(@This()).IsTemporaryMonoSupported;
+    pub const GetRestrictToOutput = ISwapChain1.Methods(@This()).GetRestrictToOutput;
+    pub const SetBackgroundColor = ISwapChain1.Methods(@This()).SetBackgroundColor;
+    pub const GetBackgroundColor = ISwapChain1.Methods(@This()).GetBackgroundColor;
+    pub const SetRotation = ISwapChain1.Methods(@This()).SetRotation;
+    pub const GetRotation = ISwapChain1.Methods(@This()).GetRotation;
+
+    pub const SetSourceSize = ISwapChain2.Methods(@This()).SetSourceSize;
+    pub const GetSourceSize = ISwapChain2.Methods(@This()).GetSourceSize;
+    pub const SetMaximumFrameLatency = ISwapChain2.Methods(@This()).SetMaximumFrameLatency;
+    pub const GetMaximumFrameLatency = ISwapChain2.Methods(@This()).GetMaximumFrameLatency;
+    pub const GetFrameLatencyWaitableObject = ISwapChain2.Methods(@This()).GetFrameLatencyWaitableObject;
+    pub const SetMatrixTransform = ISwapChain2.Methods(@This()).SetMatrixTransform;
+    pub const GetMatrixTransform = ISwapChain2.Methods(@This()).GetMatrixTransform;
+
+    pub const GetCurrentBackBufferIndex = ISwapChain3.Methods(@This()).GetCurrentBackBufferIndex;
+    pub const CheckColorSpaceSupport = ISwapChain3.Methods(@This()).CheckColorSpaceSupport;
+    pub const SetColorSpace1 = ISwapChain3.Methods(@This()).SetColorSpace1;
+    pub const ResizeBuffers1 = ISwapChain3.Methods(@This()).ResizeBuffers1;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace ISwapChain2.Methods(T);
-
             pub inline fn GetCurrentBackBufferIndex(self: *T) UINT {
-                return @as(*const ISwapChain3.VTable, @ptrCast(self.__v))
-                    .GetCurrentBackBufferIndex(@as(*ISwapChain3, @ptrCast(self)));
+                return @as(*const ISwapChain3.VTable, @ptrCast(self.__v)).GetCurrentBackBufferIndex(@ptrCast(self));
             }
             pub inline fn CheckColorSpaceSupport(self: *T, space: COLOR_SPACE_TYPE, support: *UINT) HRESULT {
                 return @as(*const ISwapChain3.VTable, @ptrCast(self.__v))
-                    .CheckColorSpaceSupport(@as(*const ISwapChain3.VTable, @ptrCast(self.__v)), space, support);
+                    .CheckColorSpaceSupport(@ptrCast(self), space, support);
             }
             pub inline fn SetColorSpace1(self: *T, space: COLOR_SPACE_TYPE) HRESULT {
-                return @as(*const ISwapChain3.VTable, @ptrCast(self.__v))
-                    .SetColorSpace1(@as(*const ISwapChain3.VTable, @ptrCast(self.__v)), space);
+                return @as(*const ISwapChain3.VTable, @ptrCast(self.__v)).SetColorSpace1(@ptrCast(self), space);
             }
             pub inline fn ResizeBuffers1(
                 self: *T,
@@ -1651,7 +2011,7 @@ pub const ISwapChain3 = extern struct {
                 present_queue: [*]const *IUnknown,
             ) HRESULT {
                 return @as(*const ISwapChain3.VTable, @ptrCast(self.__v)).ResizeBuffers1(
-                    @as(*const ISwapChain3.VTable, @ptrCast(self.__v)),
+                    @ptrCast(self),
                     buffer_count,
                     width,
                     height,
@@ -1665,13 +2025,12 @@ pub const ISwapChain3 = extern struct {
     }
 
     pub const VTable = extern struct {
-        const T = ISwapChain3;
         base: ISwapChain2.VTable,
-        GetCurrentBackBufferIndex: *const fn (*T) callconv(WINAPI) UINT,
-        CheckColorSpaceSupport: *const fn (*T, COLOR_SPACE_TYPE, *UINT) callconv(WINAPI) HRESULT,
-        SetColorSpace1: *const fn (*T, COLOR_SPACE_TYPE) callconv(WINAPI) HRESULT,
+        GetCurrentBackBufferIndex: *const fn (*ISwapChain3) callconv(WINAPI) UINT,
+        CheckColorSpaceSupport: *const fn (*ISwapChain3, COLOR_SPACE_TYPE, *UINT) callconv(WINAPI) HRESULT,
+        SetColorSpace1: *const fn (*ISwapChain3, COLOR_SPACE_TYPE) callconv(WINAPI) HRESULT,
         ResizeBuffers1: *const fn (
-            *T,
+            *ISwapChain3,
             UINT,
             UINT,
             UINT,
@@ -1681,13 +2040,6 @@ pub const ISwapChain3 = extern struct {
             [*]const *IUnknown,
         ) callconv(WINAPI) HRESULT,
     };
-};
-
-pub const IID_ISwapChain3 = GUID{
-    .Data1 = 0x94d99bdb,
-    .Data2 = 0xf1f8,
-    .Data3 = 0x4ab0,
-    .Data4 = .{ 0xb2, 0x36, 0x7d, 0xa0, 0x17, 0x0e, 0xda, 0xb1 },
 };
 
 // Status return codes as defined here: https://docs.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-status

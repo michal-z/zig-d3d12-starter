@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
     });
     exe.rdynamic = true;
     if (optimize == .ReleaseFast)
-        exe.strip = true;
+        exe.root_module.strip = true;
 
     b.installArtifact(exe);
 

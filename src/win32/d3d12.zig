@@ -1865,15 +1865,20 @@ pub const CLEAR_VALUE = extern struct {
 pub const IObject = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn GetPrivateData(self: *T, guid: *const GUID, data_size: *UINT, data: ?*anyopaque) HRESULT {
                 return @as(*const IObject.VTable, @ptrCast(self.__v))
-                    .GetPrivateData(@as(*IObject, @ptrCast(self)), guid, data_size, data);
+                    .GetPrivateData(@ptrCast(self), guid, data_size, data);
             }
             pub inline fn SetPrivateData(
                 self: *T,
@@ -1882,14 +1887,14 @@ pub const IObject = extern struct {
                 data: ?*const anyopaque,
             ) HRESULT {
                 return @as(*const IObject.VTable, @ptrCast(self.__v))
-                    .SetPrivateData(@as(*IObject, @ptrCast(self)), guid, data_size, data);
+                    .SetPrivateData(@ptrCast(self), guid, data_size, data);
             }
             pub inline fn SetPrivateDataInterface(self: *T, guid: *const GUID, data: ?*const IUnknown) HRESULT {
                 return @as(*const IObject.VTable, @ptrCast(self.__v))
-                    .SetPrivateDataInterface(@as(*IObject, @ptrCast(self)), guid, data);
+                    .SetPrivateDataInterface(@ptrCast(self), guid, data);
             }
             pub inline fn SetName(self: *T, name: LPCWSTR) HRESULT {
-                return @as(*const IObject.VTable, @ptrCast(self.__v)).SetName(@as(*IObject, @ptrCast(self)), name);
+                return @as(*const IObject.VTable, @ptrCast(self.__v)).SetName(@ptrCast(self), name);
             }
         };
     }
@@ -1906,15 +1911,21 @@ pub const IObject = extern struct {
 pub const IDeviceChild = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn GetDevice(self: *T, guid: *const GUID, device: *?*anyopaque) HRESULT {
-                return @as(*const IDeviceChild.VTable, @ptrCast(self.__v))
-                    .GetDevice(@as(*IDeviceChild, @ptrCast(self)), guid, device);
+                return @as(*const IDeviceChild.VTable, @ptrCast(self.__v)).GetDevice(@ptrCast(self), guid, device);
             }
         };
     }
@@ -1928,45 +1939,56 @@ pub const IDeviceChild = extern struct {
 pub const IPageable = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IDeviceChild.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
 
     pub const VTable = extern struct {
         base: IDeviceChild.VTable,
     };
 };
 
+pub const IID_IRootSignature = GUID.parse("{c54a6b66-72df-4ee8-8be5-a946a1429214}");
 pub const IRootSignature = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IDeviceChild.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
 
     pub const VTable = extern struct {
         base: IDeviceChild.VTable,
     };
 };
 
+pub const IID_IQueryHeap = GUID.parse("{0d9658ae-ed45-469e-a61d-970ec583cab4}");
 pub const IQueryHeap = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
 
     pub const VTable = extern struct {
         base: IPageable.VTable,
@@ -1976,31 +1998,44 @@ pub const IQueryHeap = extern struct {
 pub const ICommandSignature = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
 
     pub const VTable = extern struct {
         base: IPageable.VTable,
     };
 };
 
+pub const IID_IHeap = GUID.parse("{6b3b2502-6e51-45b3-90ee-9884265e8df3}");
 pub const IHeap = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetDesc = IHeap.Methods(@This()).GetDesc;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn GetDesc(self: *T) HEAP_DESC {
                 var desc: HEAP_DESC = undefined;
-                _ = @as(*const IHeap.VTable, @ptrCast(self.__v)).GetDesc(@as(*IHeap, @ptrCast(self)), &desc);
+                _ = @as(*const IHeap.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), &desc);
                 return desc;
             }
         };
@@ -2012,30 +2047,46 @@ pub const IHeap = extern struct {
     };
 };
 
+pub const IID_IResource = GUID.parse("{696442be-a72e-4059-bc79-5b5c98040fad}");
 pub const IResource = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const Map = IResource.Methods(@This()).Map;
+    pub const Unmap = IResource.Methods(@This()).Unmap;
+    pub const GetDesc = IResource.Methods(@This()).GetDesc;
+    pub const GetGPUVirtualAddress = IResource.Methods(@This()).GetGPUVirtualAddress;
+    pub const WriteToSubresource = IResource.Methods(@This()).WriteToSubresource;
+    pub const ReadFromSubresource = IResource.Methods(@This()).ReadFromSubresource;
+    pub const GetHeapProperties = IResource.Methods(@This()).GetHeapProperties;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn Map(self: *T, subresource: UINT, read_range: ?*const RANGE, data: *?*anyopaque) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v))
-                    .Map(@as(*IResource, @ptrCast(self)), subresource, read_range, data);
+                    .Map(@ptrCast(self), subresource, read_range, data);
             }
             pub inline fn Unmap(self: *T, subresource: UINT, written_range: ?*const RANGE) void {
                 @as(*const IResource.VTable, @ptrCast(self.__v))
-                    .Unmap(@as(*IResource, @ptrCast(self)), subresource, written_range);
+                    .Unmap(@ptrCast(self), subresource, written_range);
             }
             pub inline fn GetDesc(self: *T) RESOURCE_DESC {
                 var desc: RESOURCE_DESC = undefined;
-                _ = @as(*const IResource.VTable, @ptrCast(self.__v)).GetDesc(@as(*IResource, @ptrCast(self)), &desc);
+                _ = @as(*const IResource.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), &desc);
                 return desc;
             }
             pub inline fn GetGPUVirtualAddress(self: *T) GPU_VIRTUAL_ADDRESS {
-                return @as(*const IResource.VTable, @ptrCast(self.__v)).GetGPUVirtualAddress(@as(*IResource, @ptrCast(self)));
+                return @as(*const IResource.VTable, @ptrCast(self.__v)).GetGPUVirtualAddress(@ptrCast(self));
             }
             pub inline fn WriteToSubresource(
                 self: *T,
@@ -2046,7 +2097,7 @@ pub const IResource = extern struct {
                 src_depth_pitch: UINT,
             ) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v)).WriteToSubresource(
-                    @as(*IResource, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_subresource,
                     dst_box,
                     src_data,
@@ -2063,7 +2114,7 @@ pub const IResource = extern struct {
                 src_box: ?*const BOX,
             ) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v)).ReadFromSubresource(
-                    @as(*IResource, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_data,
                     dst_row_pitch,
                     dst_depth_pitch,
@@ -2077,7 +2128,7 @@ pub const IResource = extern struct {
                 flags: ?*HEAP_FLAGS,
             ) HRESULT {
                 return @as(*const IResource.VTable, @ptrCast(self.__v))
-                    .GetHeapProperties(@as(*IResource, @ptrCast(self)), properties, flags);
+                    .GetHeapProperties(@ptrCast(self), properties, flags);
             }
         };
     }
@@ -2111,15 +2162,32 @@ pub const IResource = extern struct {
 pub const IResource1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const Map = IResource.Methods(@This()).Map;
+    pub const Unmap = IResource.Methods(@This()).Unmap;
+    pub const GetDesc = IResource.Methods(@This()).GetDesc;
+    pub const GetGPUVirtualAddress = IResource.Methods(@This()).GetGPUVirtualAddress;
+    pub const WriteToSubresource = IResource.Methods(@This()).WriteToSubresource;
+    pub const ReadFromSubresource = IResource.Methods(@This()).ReadFromSubresource;
+    pub const GetHeapProperties = IResource.Methods(@This()).GetHeapProperties;
+
+    pub const GetProtectedResourceSession = IResource1.Methods(@This()).GetProtectedResourceSession;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IResource.Methods(T);
-
             pub inline fn GetProtectedResourceSession(self: *T, guid: *const GUID, session: *?*anyopaque) HRESULT {
                 return @as(*const IResource1.VTable, @ptrCast(self.__v))
-                    .GetProtectedResourceSession(@as(*IResource1, @ptrCast(self)), guid, session);
+                    .GetProtectedResourceSession(@ptrCast(self), guid, session);
             }
         };
     }
@@ -2130,17 +2198,27 @@ pub const IResource1 = extern struct {
     };
 };
 
+pub const IID_ICommandAllocator = GUID.parse("{6102dee4-af59-4b09-b999-b44d73f09b24}");
 pub const ICommandAllocator = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const Reset = ICommandAllocator.Methods(@This()).Reset;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn Reset(self: *T) HRESULT {
-                return @as(*const ICommandAllocator.VTable, @ptrCast(self.__v)).Reset(@as(*ICommandAllocator, @ptrCast(self)));
+                return @as(*const ICommandAllocator.VTable, @ptrCast(self.__v)).Reset(@ptrCast(self));
             }
         };
     }
@@ -2151,24 +2229,36 @@ pub const ICommandAllocator = extern struct {
     };
 };
 
+pub const IID_IFence = GUID.parse("{0a753dcf-c4d8-4b91-adf6-be5a60d95a76}");
 pub const IFence = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetCompletedValue = IFence.Methods(@This()).GetCompletedValue;
+    pub const SetEventOnCompletion = IFence.Methods(@This()).SetEventOnCompletion;
+    pub const Signal = IFence.Methods(@This()).Signal;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn GetCompletedValue(self: *T) UINT64 {
-                return @as(*const IFence.VTable, @ptrCast(self.__v)).GetCompletedValue(@as(*IFence, @ptrCast(self)));
+                return @as(*const IFence.VTable, @ptrCast(self.__v)).GetCompletedValue(@ptrCast(self));
             }
             pub inline fn SetEventOnCompletion(self: *T, value: UINT64, event: HANDLE) HRESULT {
                 return @as(*const IFence.VTable, @ptrCast(self.__v))
-                    .SetEventOnCompletion(@as(*IFence, @ptrCast(self)), value, event);
+                    .SetEventOnCompletion(@ptrCast(self), value, event);
             }
             pub inline fn Signal(self: *T, value: UINT64) HRESULT {
-                return @as(*const IFence.VTable, @ptrCast(self.__v)).Signal(@as(*IFence, @ptrCast(self)), value);
+                return @as(*const IFence.VTable, @ptrCast(self.__v)).Signal(@ptrCast(self), value);
             }
         };
     }
@@ -2184,14 +2274,27 @@ pub const IFence = extern struct {
 pub const IFence1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetCompletedValue = IFence.Methods(@This()).GetCompletedValue;
+    pub const SetEventOnCompletion = IFence.Methods(@This()).SetEventOnCompletion;
+    pub const Signal = IFence.Methods(@This()).Signal;
+
+    pub const GetCreationFlags = IFence1.Methods(@This()).GetCreationFlags;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IFence.Methods(T);
-
             pub inline fn GetCreationFlags(self: *T) FENCE_FLAGS {
-                return @as(*const IFence1.VTable, @ptrCast(self.__v)).GetCreationFlags(@as(*IFence1, @ptrCast(self)));
+                return @as(*const IFence1.VTable, @ptrCast(self.__v)).GetCreationFlags(@ptrCast(self));
             }
         };
     }
@@ -2202,18 +2305,27 @@ pub const IFence1 = extern struct {
     };
 };
 
+pub const IID_IPipelineState = GUID.parse("{765a30f3-f624-4c6f-a828-ace948622445}");
 pub const IPipelineState = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetCachedBlob = IPipelineState.Methods(@This()).GetCachedBlob;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn GetCachedBlob(self: *T, blob: **d3d.IBlob) HRESULT {
-                return @as(*const IPipelineState.VTable, @ptrCast(self.__v))
-                    .GetCachedBlob(@as(*IPipelineState, @ptrCast(self)), blob);
+                return @as(*const IPipelineState.VTable, @ptrCast(self.__v)).GetCachedBlob(@ptrCast(self), blob);
             }
         };
     }
@@ -2224,31 +2336,42 @@ pub const IPipelineState = extern struct {
     };
 };
 
+pub const IID_IDescriptorHeap = GUID.parse("{8efb471d-616c-4f49-90f7-127bb763fa51}");
 pub const IDescriptorHeap = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetDesc = IDescriptorHeap.Methods(@This()).GetDesc;
+    pub const GetCPUDescriptorHandleForHeapStart = IDescriptorHeap.Methods(@This()).GetCPUDescriptorHandleForHeapStart;
+    pub const GetGPUDescriptorHandleForHeapStart = IDescriptorHeap.Methods(@This()).GetGPUDescriptorHandleForHeapStart;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn GetDesc(self: *T) DESCRIPTOR_HEAP_DESC {
                 var desc: DESCRIPTOR_HEAP_DESC = undefined;
-                _ = @as(*const IDescriptorHeap.VTable, @ptrCast(self.__v))
-                    .GetDesc(@as(*IDescriptorHeap, @ptrCast(self)), &desc);
+                _ = @as(*const IDescriptorHeap.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), &desc);
                 return desc;
             }
             pub inline fn GetCPUDescriptorHandleForHeapStart(self: *T) CPU_DESCRIPTOR_HANDLE {
                 var handle: CPU_DESCRIPTOR_HANDLE = undefined;
                 _ = @as(*const IDescriptorHeap.VTable, @ptrCast(self.__v))
-                    .GetCPUDescriptorHandleForHeapStart(@as(*IDescriptorHeap, @ptrCast(self)), &handle);
+                    .GetCPUDescriptorHandleForHeapStart(@ptrCast(self), &handle);
                 return handle;
             }
             pub inline fn GetGPUDescriptorHandleForHeapStart(self: *T) GPU_DESCRIPTOR_HANDLE {
                 var handle: GPU_DESCRIPTOR_HANDLE = undefined;
                 _ = @as(*const IDescriptorHeap.VTable, @ptrCast(self.__v))
-                    .GetGPUDescriptorHandleForHeapStart(@as(*IDescriptorHeap, @ptrCast(self)), &handle);
+                    .GetGPUDescriptorHandleForHeapStart(@ptrCast(self), &handle);
                 return handle;
             }
         };
@@ -2271,14 +2394,23 @@ pub const IDescriptorHeap = extern struct {
 pub const ICommandList = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceChild.Methods(T);
-
             pub inline fn GetType(self: *T) COMMAND_LIST_TYPE {
-                return @as(*const ICommandList.VTable, @ptrCast(self.__v)).GetType(@as(*ICommandList, @ptrCast(self)));
+                return @as(*const ICommandList.VTable, @ptrCast(self.__v)).GetType(@ptrCast(self));
             }
         };
     }
@@ -2293,23 +2425,82 @@ pub const IID_IGraphicsCommandList = GUID.parse("{5b160d0f-ac1b-4185-8ba8-b3ae42
 pub const IGraphicsCommandList = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace ICommandList.Methods(T);
-
             pub inline fn Close(self: *T) HRESULT {
-                return @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .Close(@as(*IGraphicsCommandList, @ptrCast(self)));
+                return @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).Close(@ptrCast(self));
             }
             pub inline fn Reset(self: *T, alloc: *ICommandAllocator, initial_state: ?*IPipelineState) HRESULT {
                 return @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .Reset(@as(*IGraphicsCommandList, @ptrCast(self)), alloc, initial_state);
+                    .Reset(@ptrCast(self), alloc, initial_state);
             }
             pub inline fn ClearState(self: *T, pso: ?*IPipelineState) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .ClearState(@as(*IGraphicsCommandList, @ptrCast(self)), pso);
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ClearState(@ptrCast(self), pso);
             }
             pub inline fn DrawInstanced(
                 self: *T,
@@ -2319,7 +2510,7 @@ pub const IGraphicsCommandList = extern struct {
                 start_instance_location: UINT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).DrawInstanced(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     vertex_count_per_instance,
                     instance_count,
                     start_vertex_location,
@@ -2335,7 +2526,7 @@ pub const IGraphicsCommandList = extern struct {
                 start_instance_location: UINT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).DrawIndexedInstanced(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index_count_per_instance,
                     instance_count,
                     start_index_location,
@@ -2345,7 +2536,7 @@ pub const IGraphicsCommandList = extern struct {
             }
             pub inline fn Dispatch(self: *T, count_x: UINT, count_y: UINT, count_z: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .Dispatch(@as(*IGraphicsCommandList, @ptrCast(self)), count_x, count_y, count_z);
+                    .Dispatch(@ptrCast(self), count_x, count_y, count_z);
             }
             pub inline fn CopyBufferRegion(
                 self: *T,
@@ -2356,7 +2547,7 @@ pub const IGraphicsCommandList = extern struct {
                 num_bytes: UINT64,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).CopyBufferRegion(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_buffer,
                     dst_offset,
                     src_buffer,
@@ -2374,7 +2565,7 @@ pub const IGraphicsCommandList = extern struct {
                 src_box: ?*const BOX,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).CopyTextureRegion(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     dst,
                     dst_x,
                     dst_y,
@@ -2384,8 +2575,7 @@ pub const IGraphicsCommandList = extern struct {
                 );
             }
             pub inline fn CopyResource(self: *T, dst: *IResource, src: *IResource) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .CopyResource(@as(*IGraphicsCommandList, @ptrCast(self)), dst, src);
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).CopyResource(@ptrCast(self), dst, src);
             }
             pub inline fn CopyTiles(
                 self: *T,
@@ -2397,7 +2587,7 @@ pub const IGraphicsCommandList = extern struct {
                 flags: TILE_COPY_FLAGS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).CopyTiles(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     tiled_resource,
                     tile_region_start_coordinate,
                     tile_region_size,
@@ -2415,7 +2605,7 @@ pub const IGraphicsCommandList = extern struct {
                 format: dxgi.FORMAT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ResolveSubresource(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_resource,
                     dst_subresource,
                     src_resource,
@@ -2425,47 +2615,44 @@ pub const IGraphicsCommandList = extern struct {
             }
             pub inline fn IASetPrimitiveTopology(self: *T, topology: PRIMITIVE_TOPOLOGY) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .IASetPrimitiveTopology(@as(*IGraphicsCommandList, @ptrCast(self)), topology);
+                    .IASetPrimitiveTopology(@ptrCast(self), topology);
             }
             pub inline fn RSSetViewports(self: *T, num: UINT, viewports: [*]const VIEWPORT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .RSSetViewports(@as(*IGraphicsCommandList, @ptrCast(self)), num, viewports);
+                    .RSSetViewports(@ptrCast(self), num, viewports);
             }
             pub inline fn RSSetScissorRects(self: *T, num: UINT, rects: [*]const RECT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .RSSetScissorRects(@as(*IGraphicsCommandList, @ptrCast(self)), num, rects);
+                    .RSSetScissorRects(@ptrCast(self), num, rects);
             }
             pub inline fn OMSetBlendFactor(self: *T, blend_factor: *const [4]FLOAT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .OMSetBlendFactor(@as(*IGraphicsCommandList, @ptrCast(self)), blend_factor);
+                    .OMSetBlendFactor(@ptrCast(self), blend_factor);
             }
             pub inline fn OMSetStencilRef(self: *T, stencil_ref: UINT) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .OMSetStencilRef(@as(*IGraphicsCommandList, @ptrCast(self)), stencil_ref);
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).OMSetStencilRef(@ptrCast(self), stencil_ref);
             }
             pub inline fn SetPipelineState(self: *T, pso: *IPipelineState) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .SetPipelineState(@as(*IGraphicsCommandList, @ptrCast(self)), pso);
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetPipelineState(@ptrCast(self), pso);
             }
             pub inline fn ResourceBarrier(self: *T, num: UINT, barriers: [*]const RESOURCE_BARRIER) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .ResourceBarrier(@as(*IGraphicsCommandList, @ptrCast(self)), num, barriers);
+                    .ResourceBarrier(@ptrCast(self), num, barriers);
             }
             pub inline fn ExecuteBundle(self: *T, cmdlist: *IGraphicsCommandList) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .ExecuteBundle(@as(*IGraphicsCommandList, @ptrCast(self)), cmdlist);
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ExecuteBundle(@ptrCast(self), cmdlist);
             }
             pub inline fn SetDescriptorHeaps(self: *T, num: UINT, heaps: [*]const *IDescriptorHeap) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .SetDescriptorHeaps(@as(*IGraphicsCommandList, @ptrCast(self)), num, heaps);
+                    .SetDescriptorHeaps(@ptrCast(self), num, heaps);
             }
             pub inline fn SetComputeRootSignature(self: *T, root_signature: ?*IRootSignature) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .SetComputeRootSignature(@as(*IGraphicsCommandList, @ptrCast(self)), root_signature);
+                    .SetComputeRootSignature(@ptrCast(self), root_signature);
             }
             pub inline fn SetGraphicsRootSignature(self: *T, root_signature: ?*IRootSignature) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .SetGraphicsRootSignature(@as(*IGraphicsCommandList, @ptrCast(self)), root_signature);
+                    .SetGraphicsRootSignature(@ptrCast(self), root_signature);
             }
             pub inline fn SetComputeRootDescriptorTable(
                 self: *T,
@@ -2473,7 +2660,7 @@ pub const IGraphicsCommandList = extern struct {
                 base_descriptor: GPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetComputeRootDescriptorTable(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     root_index,
                     base_descriptor,
                 );
@@ -2484,14 +2671,14 @@ pub const IGraphicsCommandList = extern struct {
                 base_descriptor: GPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetGraphicsRootDescriptorTable(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     root_index,
                     base_descriptor,
                 );
             }
             pub inline fn SetComputeRoot32BitConstant(self: *T, index: UINT, data: UINT, off: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetComputeRoot32BitConstant(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     data,
                     off,
@@ -2499,7 +2686,7 @@ pub const IGraphicsCommandList = extern struct {
             }
             pub inline fn SetGraphicsRoot32BitConstant(self: *T, index: UINT, data: UINT, off: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetGraphicsRoot32BitConstant(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     data,
                     off,
@@ -2513,7 +2700,7 @@ pub const IGraphicsCommandList = extern struct {
                 offset: UINT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetComputeRoot32BitConstants(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     root_index,
                     num,
                     data,
@@ -2528,7 +2715,7 @@ pub const IGraphicsCommandList = extern struct {
                 offset: UINT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetGraphicsRoot32BitConstants(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     root_index,
                     num,
                     data,
@@ -2541,7 +2728,7 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_location: GPU_VIRTUAL_ADDRESS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetComputeRootConstantBufferView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     buffer_location,
                 );
@@ -2552,7 +2739,7 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_location: GPU_VIRTUAL_ADDRESS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetGraphicsRootConstantBufferView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     buffer_location,
                 );
@@ -2563,7 +2750,7 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_location: GPU_VIRTUAL_ADDRESS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetComputeRootShaderResourceView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     buffer_location,
                 );
@@ -2574,7 +2761,7 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_location: GPU_VIRTUAL_ADDRESS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetGraphicsRootShaderResourceView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     buffer_location,
                 );
@@ -2585,7 +2772,7 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_location: GPU_VIRTUAL_ADDRESS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetComputeRootUnorderedAccessView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     buffer_location,
                 );
@@ -2596,14 +2783,13 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_location: GPU_VIRTUAL_ADDRESS,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetGraphicsRootUnorderedAccessView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     index,
                     buffer_location,
                 );
             }
             pub inline fn IASetIndexBuffer(self: *T, view: ?*const INDEX_BUFFER_VIEW) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .IASetIndexBuffer(@as(*IGraphicsCommandList, @ptrCast(self)), view);
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).IASetIndexBuffer(@ptrCast(self), view);
             }
             pub inline fn IASetVertexBuffers(
                 self: *T,
@@ -2612,7 +2798,7 @@ pub const IGraphicsCommandList = extern struct {
                 views: ?[*]const VERTEX_BUFFER_VIEW,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).IASetVertexBuffers(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     start_slot,
                     num_views,
                     views,
@@ -2625,7 +2811,7 @@ pub const IGraphicsCommandList = extern struct {
                 views: ?[*]const STREAM_OUTPUT_BUFFER_VIEW,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .SOSetTargets(@as(*IGraphicsCommandList, @ptrCast(self)), start_slot, num_views, views);
+                    .SOSetTargets(@ptrCast(self), start_slot, num_views, views);
             }
             pub inline fn OMSetRenderTargets(
                 self: *T,
@@ -2635,7 +2821,7 @@ pub const IGraphicsCommandList = extern struct {
                 ds_descriptors: ?*const CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).OMSetRenderTargets(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     num_rt_descriptors,
                     rt_descriptors,
                     single_handle,
@@ -2652,7 +2838,7 @@ pub const IGraphicsCommandList = extern struct {
                 rects: ?[*]const RECT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ClearDepthStencilView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     ds_view,
                     clear_flags,
                     depth,
@@ -2669,7 +2855,7 @@ pub const IGraphicsCommandList = extern struct {
                 rects: ?[*]const RECT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ClearRenderTargetView(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     rt_view,
                     rgba,
                     num_rects,
@@ -2686,7 +2872,7 @@ pub const IGraphicsCommandList = extern struct {
                 rects: ?[*]const RECT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ClearUnorderedAccessViewUint(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     gpu_view,
                     cpu_view,
                     resource,
@@ -2705,7 +2891,7 @@ pub const IGraphicsCommandList = extern struct {
                 rects: ?[*]const RECT,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ClearUnorderedAccessViewFloat(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     gpu_view,
                     cpu_view,
                     resource,
@@ -2716,15 +2902,15 @@ pub const IGraphicsCommandList = extern struct {
             }
             pub inline fn DiscardResource(self: *T, resource: *IResource, region: ?*const DISCARD_REGION) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .DiscardResource(@as(*IGraphicsCommandList, @ptrCast(self)), resource, region);
+                    .DiscardResource(@ptrCast(self), resource, region);
             }
             pub inline fn BeginQuery(self: *T, query: *IQueryHeap, query_type: QUERY_TYPE, index: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .BeginQuery(@as(*IGraphicsCommandList, @ptrCast(self)), query, query_type, index);
+                    .BeginQuery(@ptrCast(self), query, query_type, index);
             }
             pub inline fn EndQuery(self: *T, query: *IQueryHeap, query_type: QUERY_TYPE, index: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .EndQuery(@as(*IGraphicsCommandList, @ptrCast(self)), query, query_type, index);
+                    .EndQuery(@ptrCast(self), query, query_type, index);
             }
             pub inline fn ResolveQueryData(
                 self: *T,
@@ -2736,7 +2922,7 @@ pub const IGraphicsCommandList = extern struct {
                 buffer_offset: UINT64,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ResolveQueryData(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     query,
                     query_type,
                     start_index,
@@ -2752,7 +2938,7 @@ pub const IGraphicsCommandList = extern struct {
                 operation: PREDICATION_OP,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).SetPredication(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     buffer,
                     buffer_offset,
                     operation,
@@ -2760,15 +2946,14 @@ pub const IGraphicsCommandList = extern struct {
             }
             pub inline fn SetMarker(self: *T, metadata: UINT, data: ?*const anyopaque, size: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .SetMarker(@as(*IGraphicsCommandList, @ptrCast(self)), metadata, data, size);
+                    .SetMarker(@ptrCast(self), metadata, data, size);
             }
             pub inline fn BeginEvent(self: *T, metadata: UINT, data: ?*const anyopaque, size: UINT) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .BeginEvent(@as(*IGraphicsCommandList, @ptrCast(self)), metadata, data, size);
+                    .BeginEvent(@ptrCast(self), metadata, data, size);
             }
             pub inline fn EndEvent(self: *T) void {
-                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v))
-                    .EndEvent(@as(*IGraphicsCommandList, @ptrCast(self)));
+                @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).EndEvent(@ptrCast(self));
             }
             pub inline fn ExecuteIndirect(
                 self: *T,
@@ -2780,7 +2965,7 @@ pub const IGraphicsCommandList = extern struct {
                 count_buffer_offset: UINT64,
             ) void {
                 @as(*const IGraphicsCommandList.VTable, @ptrCast(self.__v)).ExecuteIndirect(
-                    @as(*IGraphicsCommandList, @ptrCast(self)),
+                    @ptrCast(self),
                     command_signature,
                     max_command_count,
                     arg_buffer,
@@ -2945,12 +3130,80 @@ pub const IID_IGraphicsCommandList1 = GUID.parse("{553103fb-1fe7-4557-bb38-946d7
 pub const IGraphicsCommandList1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList.Methods(T);
-
             pub inline fn AtomicCopyBufferUINT(
                 self: *T,
                 dst_buffer: *IResource,
@@ -2962,7 +3215,7 @@ pub const IGraphicsCommandList1 = extern struct {
                 dependent_subresource_ranges: [*]const SUBRESOURCE_RANGE_UINT64,
             ) void {
                 @as(*const IGraphicsCommandList1.VTable, @ptrCast(self.__v)).AtomicCopyBufferUINT(
-                    @as(*IGraphicsCommandList1, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_buffer,
                     dst_offset,
                     src_buffer,
@@ -2983,7 +3236,7 @@ pub const IGraphicsCommandList1 = extern struct {
                 dependent_subresource_ranges: [*]const SUBRESOURCE_RANGE_UINT64,
             ) void {
                 @as(*const IGraphicsCommandList1.VTable, @ptrCast(self.__v)).AtomicCopyBufferUINT64(
-                    @as(*IGraphicsCommandList1, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_buffer,
                     dst_offset,
                     src_buffer,
@@ -2995,7 +3248,7 @@ pub const IGraphicsCommandList1 = extern struct {
             }
             pub inline fn OMSetDepthBounds(self: *T, min: FLOAT, max: FLOAT) void {
                 @as(*const IGraphicsCommandList1.VTable, @ptrCast(self.__v))
-                    .OMSetDepthBounds(@as(*IGraphicsCommandList1, @ptrCast(self)), min, max);
+                    .OMSetDepthBounds(@ptrCast(self), min, max);
             }
             pub inline fn SetSamplePositions(
                 self: *T,
@@ -3004,7 +3257,7 @@ pub const IGraphicsCommandList1 = extern struct {
                 sample_positions: *SAMPLE_POSITION,
             ) void {
                 @as(*const IGraphicsCommandList1.VTable, @ptrCast(self.__v)).SetSamplePositions(
-                    @as(*IGraphicsCommandList1, @ptrCast(self)),
+                    @ptrCast(self),
                     num_samples,
                     num_pixels,
                     sample_positions,
@@ -3023,7 +3276,7 @@ pub const IGraphicsCommandList1 = extern struct {
                 resolve_mode: RESOLVE_MODE,
             ) void {
                 @as(*const IGraphicsCommandList1.VTable, @ptrCast(self.__v)).ResolveSubresourceRegion(
-                    @as(*IGraphicsCommandList1, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_resource,
                     dst_subresource,
                     dst_x,
@@ -3037,7 +3290,7 @@ pub const IGraphicsCommandList1 = extern struct {
             }
             pub inline fn SetViewInstanceMask(self: *T, mask: UINT) void {
                 @as(*const IGraphicsCommandList1.VTable, @ptrCast(self.__v))
-                    .SetViewInstanceMask(@as(*IGraphicsCommandList1, @ptrCast(self)), mask);
+                    .SetViewInstanceMask(@ptrCast(self), mask);
             }
         };
     }
@@ -3098,12 +3351,82 @@ pub const IID_IGraphicsCommandList2 = GUID.parse("{38C3E585-FF17-412C-9150-4FC6F
 pub const IGraphicsCommandList2 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList1.Methods(T);
-
             pub inline fn WriteBufferImmediate(
                 self: *T,
                 count: UINT,
@@ -3111,7 +3434,7 @@ pub const IGraphicsCommandList2 = extern struct {
                 modes: ?[*]const WRITEBUFFERIMMEDIATE_MODE,
             ) void {
                 @as(*const IGraphicsCommandList2.VTable, @ptrCast(self.__v))
-                    .WriteBufferImmediate(@as(*IGraphicsCommandList2, @ptrCast(self)), count, params, modes);
+                    .WriteBufferImmediate(@ptrCast(self), count, params, modes);
             }
         };
     }
@@ -3131,15 +3454,87 @@ pub const IID_IGraphicsCommandList3 = GUID.parse("{6FDA83A7-B84C-4E38-9AC8-C7BD2
 pub const IGraphicsCommandList3 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList2.Methods(T);
-
             pub inline fn SetProtectedResourceSession(self: *T, prsession: ?*IProtectedResourceSession) void {
                 @as(*const IGraphicsCommandList3.VTable, @ptrCast(self.__v))
-                    .SetProtectedResourceSession(@as(*IGraphicsCommandList3, @ptrCast(self)), prsession);
+                    .SetProtectedResourceSession(@ptrCast(self), prsession);
             }
         };
     }
@@ -3283,19 +3678,28 @@ pub const META_COMMAND_DESC = extern struct {
 pub const IMetaCommand = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetRequiredParameterResourceSize = IMetaCommand.Methods(@This()).GetRequiredParameterResourceSize;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceChild.Methods(T);
-
             pub inline fn GetRequiredParameterResourceSize(
                 self: *T,
                 stage: META_COMMAND_PARAMETER_STAGE,
                 param_index: UINT,
             ) UINT64 {
                 return @as(*const IMetaCommand.VTable, @ptrCast(self.__v))
-                    .GetRequiredParameterResourceSize(@as(*IMetaCommand, @ptrCast(self)), stage, param_index);
+                    .GetRequiredParameterResourceSize(@ptrCast(self), stage, param_index);
             }
         };
     }
@@ -3638,13 +4042,16 @@ pub const IID_IStateObject = GUID.parse("{47016943-fca8-4594-93ea-af258b55346d}"
 pub const IStateObject = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IDeviceChild.Methods(T);
-        };
-    }
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
 
     pub const VTable = extern struct {
         base: IDeviceChild.VTable,
@@ -3655,38 +4062,42 @@ pub const IID_IStateObjectProperties = GUID.parse("{de5fa827-9bf9-4f26-89ff-d7f5
 pub const IStateObjectProperties = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetShaderIdentifier = IStateObjectProperties.Methods(@This()).GetShaderIdentifier;
+    pub const GetShaderStackSize = IStateObjectProperties.Methods(@This()).GetShaderStackSize;
+    pub const GetPipelineStackSize = IStateObjectProperties.Methods(@This()).GetPipelineStackSize;
+    pub const SetPipelineStackSize = IStateObjectProperties.Methods(@This()).SetPipelineStackSize;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn GetShaderIdentifier(self: *T, export_name: LPCWSTR) *anyopaque {
                 return @as(*const IStateObjectProperties.VTable, @ptrCast(self.__v))
-                    .GetShaderIdentifier(@as(*IStateObjectProperties, @ptrCast(self)), export_name);
+                    .GetShaderIdentifier(@ptrCast(self), export_name);
             }
             pub inline fn GetShaderStackSize(self: *T, export_name: LPCWSTR) UINT64 {
                 return @as(*const IStateObjectProperties.VTable, @ptrCast(self.__v))
-                    .GetShaderStackSize(@as(*IStateObjectProperties, @ptrCast(self)), export_name);
+                    .GetShaderStackSize(@ptrCast(self), export_name);
             }
             pub inline fn GetPipelineStackSize(self: *T) UINT64 {
                 return @as(*const IStateObjectProperties.VTable, @ptrCast(self.__v))
-                    .GetPipelineStackSize(@as(*IStateObjectProperties, @ptrCast(self)));
+                    .GetPipelineStackSize(@ptrCast(self));
             }
             pub inline fn SetPipelineStackSize(self: *T, stack_size: UINT64) void {
                 @as(*const IStateObjectProperties.VTable, @ptrCast(self.__v))
-                    .SetPipelineStackSize(@as(*IStateObjectProperties, @ptrCast(self)), stack_size);
+                    .SetPipelineStackSize(@ptrCast(self), stack_size);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IStateObjectProperties;
         base: IUnknown.VTable,
-        GetShaderIdentifier: *const fn (*T, LPCWSTR) callconv(WINAPI) *anyopaque,
-        GetShaderStackSize: *const fn (*T, LPCWSTR) callconv(WINAPI) UINT64,
-        GetPipelineStackSize: *const fn (*T) callconv(WINAPI) UINT64,
-        SetPipelineStackSize: *const fn (*T, UINT64) callconv(WINAPI) void,
+        GetShaderIdentifier: *const fn (*IStateObjectProperties, LPCWSTR) callconv(WINAPI) *anyopaque,
+        GetShaderStackSize: *const fn (*IStateObjectProperties, LPCWSTR) callconv(WINAPI) UINT64,
+        GetPipelineStackSize: *const fn (*IStateObjectProperties) callconv(WINAPI) UINT64,
+        SetPipelineStackSize: *const fn (*IStateObjectProperties, UINT64) callconv(WINAPI) void,
     };
 };
 
@@ -3704,12 +4115,94 @@ pub const IID_IGraphicsCommandList4 = GUID.parse("{8754318e-d3a9-4541-98cf-645b5
 pub const IGraphicsCommandList4 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
+
+    pub const BeginRenderPass = IGraphicsCommandList4.Methods(@This()).BeginRenderPass;
+    pub const EndRenderPass = IGraphicsCommandList4.Methods(@This()).EndRenderPass;
+    pub const InitializeMetaCommand = IGraphicsCommandList4.Methods(@This()).InitializeMetaCommand;
+    pub const ExecuteMetaCommand = IGraphicsCommandList4.Methods(@This()).ExecuteMetaCommand;
+    pub const BuildRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).BuildRaytracingAccelerationStructure;
+    pub const EmitRaytracingAccelerationStructurePostbuildInfo = IGraphicsCommandList4.Methods(@This()).EmitRaytracingAccelerationStructurePostbuildInfo;
+    pub const CopyRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).CopyRaytracingAccelerationStructure;
+    pub const SetPipelineState1 = IGraphicsCommandList4.Methods(@This()).SetPipelineState1;
+    pub const DispatchRays = IGraphicsCommandList4.Methods(@This()).DispatchRays;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList3.Methods(T);
-
             pub inline fn BeginRenderPass(
                 self: *T,
                 num_render_targets: UINT,
@@ -3718,7 +4211,7 @@ pub const IGraphicsCommandList4 = extern struct {
                 flags: RENDER_PASS_FLAGS,
             ) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).BeginRenderPass(
-                    @as(*IGraphicsCommandList4, @ptrCast(self)),
+                    @ptrCast(self),
                     num_render_targets,
                     render_targets,
                     depth_stencil,
@@ -3726,8 +4219,7 @@ pub const IGraphicsCommandList4 = extern struct {
                 );
             }
             pub inline fn EndRenderPass(self: *T) void {
-                @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v))
-                    .EndRenderPass(@as(*IGraphicsCommandList4, @ptrCast(self)));
+                @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).EndRenderPass(@ptrCast(self));
             }
             pub inline fn InitializeMetaCommand(
                 self: *T,
@@ -3736,7 +4228,7 @@ pub const IGraphicsCommandList4 = extern struct {
                 data_size: SIZE_T,
             ) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).InitializeMetaCommand(
-                    @as(*IGraphicsCommandList4, @ptrCast(self)),
+                    @ptrCast(self),
                     meta_cmd,
                     init_param_data,
                     data_size,
@@ -3749,7 +4241,7 @@ pub const IGraphicsCommandList4 = extern struct {
                 data_size: SIZE_T,
             ) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).InitializeMetaCommand(
-                    @as(*IGraphicsCommandList4, @ptrCast(self)),
+                    @ptrCast(self),
                     meta_cmd,
                     exe_param_data,
                     data_size,
@@ -3762,7 +4254,7 @@ pub const IGraphicsCommandList4 = extern struct {
                 post_build_descs: ?[*]const RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC,
             ) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).BuildRaytracingAccelerationStructure(
-                    @as(*IGraphicsCommandList4, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     num_post_build_descs,
                     post_build_descs,
@@ -3776,7 +4268,7 @@ pub const IGraphicsCommandList4 = extern struct {
             ) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v))
                     .EmitRaytracingAccelerationStructurePostbuildInfo(
-                    @as(*IGraphicsCommandList4, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     num_src_accel_structs,
                     src_accel_struct_data,
@@ -3789,7 +4281,7 @@ pub const IGraphicsCommandList4 = extern struct {
                 mode: RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE,
             ) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).CopyRaytracingAccelerationStructure(
-                    @as(*IGraphicsCommandList4, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_data,
                     src_data,
                     mode,
@@ -3797,11 +4289,10 @@ pub const IGraphicsCommandList4 = extern struct {
             }
             pub inline fn SetPipelineState1(self: *T, state_obj: *IStateObject) void {
                 @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v))
-                    .SetPipelineState1(@as(*IGraphicsCommandList4, @ptrCast(self)), state_obj);
+                    .SetPipelineState1(@ptrCast(self), state_obj);
             }
             pub inline fn DispatchRays(self: *T, desc: *const DISPATCH_RAYS_DESC) void {
-                @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v))
-                    .DispatchRays(@as(*IGraphicsCommandList4, @ptrCast(self)), desc);
+                @as(*const IGraphicsCommandList4.VTable, @ptrCast(self.__v)).DispatchRays(@ptrCast(self), desc);
             }
         };
     }
@@ -3866,23 +4357,108 @@ pub const IID_IGraphicsCommandList5 = GUID.parse("{55050859-4024-474c-87f5-6472e
 pub const IGraphicsCommandList5 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
+
+    pub const BeginRenderPass = IGraphicsCommandList4.Methods(@This()).BeginRenderPass;
+    pub const EndRenderPass = IGraphicsCommandList4.Methods(@This()).EndRenderPass;
+    pub const InitializeMetaCommand = IGraphicsCommandList4.Methods(@This()).InitializeMetaCommand;
+    pub const ExecuteMetaCommand = IGraphicsCommandList4.Methods(@This()).ExecuteMetaCommand;
+    pub const BuildRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).BuildRaytracingAccelerationStructure;
+    pub const EmitRaytracingAccelerationStructurePostbuildInfo = IGraphicsCommandList4.Methods(@This()).EmitRaytracingAccelerationStructurePostbuildInfo;
+    pub const CopyRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).CopyRaytracingAccelerationStructure;
+    pub const SetPipelineState1 = IGraphicsCommandList4.Methods(@This()).SetPipelineState1;
+    pub const DispatchRays = IGraphicsCommandList4.Methods(@This()).DispatchRays;
+
+    pub const RSSetShadingRate = IGraphicsCommandList5.Methods(@This()).RSSetShadingRate;
+    pub const RSSetShadingRateImage = IGraphicsCommandList5.Methods(@This()).RSSetShadingRateImage;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList4.Methods(T);
-
             pub inline fn RSSetShadingRate(
                 self: *T,
                 base_shading_rate: SHADING_RATE,
                 combiners: ?*const [RS_SET_SHADING_RATE_COMBINER_COUNT]SHADING_RATE_COMBINER,
             ) void {
                 @as(*const IGraphicsCommandList5.VTable, @ptrCast(self.__v))
-                    .RSSetShadingRate(@as(*IGraphicsCommandList5, @ptrCast(self)), base_shading_rate, combiners);
+                    .RSSetShadingRate(@ptrCast(self), base_shading_rate, combiners);
             }
             pub inline fn RSSetShadingRateImage(self: *T, shading_rate_img: ?*IResource) void {
                 @as(*const IGraphicsCommandList5.VTable, @ptrCast(self.__v))
-                    .RSSetShadingRateImage(@as(*IGraphicsCommandList5, @ptrCast(self)), shading_rate_img);
+                    .RSSetShadingRateImage(@ptrCast(self), shading_rate_img);
             }
         };
     }
@@ -3902,12 +4478,99 @@ pub const IID_IGraphicsCommandList6 = GUID.parse("{c3827890-e548-4cfa-96cf-5689a
 pub const IGraphicsCommandList6 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
+
+    pub const BeginRenderPass = IGraphicsCommandList4.Methods(@This()).BeginRenderPass;
+    pub const EndRenderPass = IGraphicsCommandList4.Methods(@This()).EndRenderPass;
+    pub const InitializeMetaCommand = IGraphicsCommandList4.Methods(@This()).InitializeMetaCommand;
+    pub const ExecuteMetaCommand = IGraphicsCommandList4.Methods(@This()).ExecuteMetaCommand;
+    pub const BuildRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).BuildRaytracingAccelerationStructure;
+    pub const EmitRaytracingAccelerationStructurePostbuildInfo = IGraphicsCommandList4.Methods(@This()).EmitRaytracingAccelerationStructurePostbuildInfo;
+    pub const CopyRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).CopyRaytracingAccelerationStructure;
+    pub const SetPipelineState1 = IGraphicsCommandList4.Methods(@This()).SetPipelineState1;
+    pub const DispatchRays = IGraphicsCommandList4.Methods(@This()).DispatchRays;
+
+    pub const RSSetShadingRate = IGraphicsCommandList5.Methods(@This()).RSSetShadingRate;
+    pub const RSSetShadingRateImage = IGraphicsCommandList5.Methods(@This()).RSSetShadingRateImage;
+
+    pub const DispatchMesh = IGraphicsCommandList6.Methods(@This()).DispatchMesh;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList5.Methods(T);
-
             pub inline fn DispatchMesh(
                 self: *T,
                 thread_group_count_x: UINT,
@@ -3915,7 +4578,7 @@ pub const IGraphicsCommandList6 = extern struct {
                 thread_group_count_z: UINT,
             ) void {
                 @as(*const IGraphicsCommandList6.VTable, @ptrCast(self.__v)).DispatchMesh(
-                    @as(*IGraphicsCommandList6, @ptrCast(self)),
+                    @ptrCast(self),
                     thread_group_count_x,
                     thread_group_count_y,
                     thread_group_count_z,
@@ -3934,19 +4597,108 @@ pub const IID_IGraphicsCommandList7 = GUID.parse("{dd171223-8b61-4769-90e3-160cc
 pub const IGraphicsCommandList7 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
+
+    pub const BeginRenderPass = IGraphicsCommandList4.Methods(@This()).BeginRenderPass;
+    pub const EndRenderPass = IGraphicsCommandList4.Methods(@This()).EndRenderPass;
+    pub const InitializeMetaCommand = IGraphicsCommandList4.Methods(@This()).InitializeMetaCommand;
+    pub const ExecuteMetaCommand = IGraphicsCommandList4.Methods(@This()).ExecuteMetaCommand;
+    pub const BuildRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).BuildRaytracingAccelerationStructure;
+    pub const EmitRaytracingAccelerationStructurePostbuildInfo = IGraphicsCommandList4.Methods(@This()).EmitRaytracingAccelerationStructurePostbuildInfo;
+    pub const CopyRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).CopyRaytracingAccelerationStructure;
+    pub const SetPipelineState1 = IGraphicsCommandList4.Methods(@This()).SetPipelineState1;
+    pub const DispatchRays = IGraphicsCommandList4.Methods(@This()).DispatchRays;
+
+    pub const RSSetShadingRate = IGraphicsCommandList5.Methods(@This()).RSSetShadingRate;
+    pub const RSSetShadingRateImage = IGraphicsCommandList5.Methods(@This()).RSSetShadingRateImage;
+
+    pub const DispatchMesh = IGraphicsCommandList6.Methods(@This()).DispatchMesh;
+
+    pub const Barrier = IGraphicsCommandList7.Methods(@This()).Barrier;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList6.Methods(T);
-
             pub inline fn Barrier(
                 self: *T,
                 num_barrier_groups: UINT32,
                 barrier_groups: [*]const BARRIER_GROUP,
             ) void {
                 @as(*const IGraphicsCommandList7.VTable, @ptrCast(self.__v)).Barrier(
-                    @as(*IGraphicsCommandList7, @ptrCast(self)),
+                    @ptrCast(self),
                     num_barrier_groups,
                     barrier_groups,
                 );
@@ -3964,19 +4716,110 @@ pub const IID_IGraphicsCommandList8 = GUID.parse("{ee936ef9-599d-4d28-938e-23c4a
 pub const IGraphicsCommandList8 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
+
+    pub const BeginRenderPass = IGraphicsCommandList4.Methods(@This()).BeginRenderPass;
+    pub const EndRenderPass = IGraphicsCommandList4.Methods(@This()).EndRenderPass;
+    pub const InitializeMetaCommand = IGraphicsCommandList4.Methods(@This()).InitializeMetaCommand;
+    pub const ExecuteMetaCommand = IGraphicsCommandList4.Methods(@This()).ExecuteMetaCommand;
+    pub const BuildRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).BuildRaytracingAccelerationStructure;
+    pub const EmitRaytracingAccelerationStructurePostbuildInfo = IGraphicsCommandList4.Methods(@This()).EmitRaytracingAccelerationStructurePostbuildInfo;
+    pub const CopyRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).CopyRaytracingAccelerationStructure;
+    pub const SetPipelineState1 = IGraphicsCommandList4.Methods(@This()).SetPipelineState1;
+    pub const DispatchRays = IGraphicsCommandList4.Methods(@This()).DispatchRays;
+
+    pub const RSSetShadingRate = IGraphicsCommandList5.Methods(@This()).RSSetShadingRate;
+    pub const RSSetShadingRateImage = IGraphicsCommandList5.Methods(@This()).RSSetShadingRateImage;
+
+    pub const DispatchMesh = IGraphicsCommandList6.Methods(@This()).DispatchMesh;
+
+    pub const Barrier = IGraphicsCommandList7.Methods(@This()).Barrier;
+
+    pub const OMSetFrontAndBackStencilRef = IGraphicsCommandList8.Methods(@This()).OMSetFrontAndBackStencilRef;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList7.Methods(T);
-
             pub inline fn OMSetFrontAndBackStencilRef(
                 self: *T,
                 front_stencil_ref: UINT,
                 back_stencil_ref: UINT,
             ) void {
                 @as(*const IGraphicsCommandList8.VTable, @ptrCast(self.__v)).OMSetFrontAndBackStencilRef(
-                    @as(*IGraphicsCommandList8, @ptrCast(self)),
+                    @ptrCast(self),
                     front_stencil_ref,
                     back_stencil_ref,
                 );
@@ -3994,12 +4837,106 @@ pub const IID_IGraphicsCommandList9 = GUID.parse("{34ed2808-ffe6-4c2b-b11a-cabd2
 pub const IGraphicsCommandList9 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const GetType = ICommandList.Methods(@This()).GetType;
+
+    pub const Close = IGraphicsCommandList.Methods(@This()).Close;
+    pub const Reset = IGraphicsCommandList.Methods(@This()).Reset;
+    pub const ClearState = IGraphicsCommandList.Methods(@This()).ClearState;
+    pub const DrawInstanced = IGraphicsCommandList.Methods(@This()).DrawInstanced;
+    pub const DrawIndexedInstanced = IGraphicsCommandList.Methods(@This()).DrawIndexedInstanced;
+    pub const Dispatch = IGraphicsCommandList.Methods(@This()).Dispatch;
+    pub const CopyBufferRegion = IGraphicsCommandList.Methods(@This()).CopyBufferRegion;
+    pub const CopyTextureRegion = IGraphicsCommandList.Methods(@This()).CopyTextureRegion;
+    pub const CopyResource = IGraphicsCommandList.Methods(@This()).CopyResource;
+    pub const CopyTiles = IGraphicsCommandList.Methods(@This()).CopyTiles;
+    pub const ResolveSubresource = IGraphicsCommandList.Methods(@This()).ResolveSubresource;
+    pub const IASetPrimitiveTopology = IGraphicsCommandList.Methods(@This()).IASetPrimitiveTopology;
+    pub const RSSetViewports = IGraphicsCommandList.Methods(@This()).RSSetViewports;
+    pub const RSSetScissorRects = IGraphicsCommandList.Methods(@This()).RSSetScissorRects;
+    pub const OMSetBlendFactor = IGraphicsCommandList.Methods(@This()).OMSetBlendFactor;
+    pub const OMSetStencilRef = IGraphicsCommandList.Methods(@This()).OMSetStencilRef;
+    pub const SetPipelineState = IGraphicsCommandList.Methods(@This()).SetPipelineState;
+    pub const ResourceBarrier = IGraphicsCommandList.Methods(@This()).ResourceBarrier;
+    pub const ExecuteBundle = IGraphicsCommandList.Methods(@This()).ExecuteBundle;
+    pub const SetDescriptorHeaps = IGraphicsCommandList.Methods(@This()).SetDescriptorHeaps;
+    pub const SetComputeRootSignature = IGraphicsCommandList.Methods(@This()).SetComputeRootSignature;
+    pub const SetGraphicsRootSignature = IGraphicsCommandList.Methods(@This()).SetGraphicsRootSignature;
+    pub const SetComputeRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetComputeRootDescriptorTable;
+    pub const SetGraphicsRootDescriptorTable = IGraphicsCommandList.Methods(@This()).SetGraphicsRootDescriptorTable;
+    pub const SetComputeRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstant;
+    pub const SetGraphicsRoot32BitConstant = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstant;
+    pub const SetComputeRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetComputeRoot32BitConstants;
+    pub const SetGraphicsRoot32BitConstants = IGraphicsCommandList.Methods(@This()).SetGraphicsRoot32BitConstants;
+    pub const SetComputeRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetComputeRootConstantBufferView;
+    pub const SetGraphicsRootConstantBufferView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootConstantBufferView;
+    pub const SetComputeRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetComputeRootShaderResourceView;
+    pub const SetGraphicsRootShaderResourceView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootShaderResourceView;
+    pub const SetComputeRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetComputeRootUnorderedAccessView;
+    pub const SetGraphicsRootUnorderedAccessView = IGraphicsCommandList.Methods(@This()).SetGraphicsRootUnorderedAccessView;
+    pub const IASetIndexBuffer = IGraphicsCommandList.Methods(@This()).IASetIndexBuffer;
+    pub const IASetVertexBuffers = IGraphicsCommandList.Methods(@This()).IASetVertexBuffers;
+    pub const SOSetTargets = IGraphicsCommandList.Methods(@This()).SOSetTargets;
+    pub const OMSetRenderTargets = IGraphicsCommandList.Methods(@This()).OMSetRenderTargets;
+    pub const ClearDepthStencilView = IGraphicsCommandList.Methods(@This()).ClearDepthStencilView;
+    pub const ClearRenderTargetView = IGraphicsCommandList.Methods(@This()).ClearRenderTargetView;
+    pub const ClearUnorderedAccessViewUint = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewUint;
+    pub const ClearUnorderedAccessViewFloat = IGraphicsCommandList.Methods(@This()).ClearUnorderedAccessViewFloat;
+    pub const DiscardResource = IGraphicsCommandList.Methods(@This()).DiscardResource;
+    pub const BeginQuery = IGraphicsCommandList.Methods(@This()).BeginQuery;
+    pub const EndQuery = IGraphicsCommandList.Methods(@This()).EndQuery;
+    pub const ResolveQueryData = IGraphicsCommandList.Methods(@This()).ResolveQueryData;
+    pub const SetPredication = IGraphicsCommandList.Methods(@This()).SetPredication;
+    pub const SetMarker = IGraphicsCommandList.Methods(@This()).SetMarker;
+    pub const BeginEvent = IGraphicsCommandList.Methods(@This()).BeginEvent;
+    pub const EndEvent = IGraphicsCommandList.Methods(@This()).EndEvent;
+    pub const ExecuteIndirect = IGraphicsCommandList.Methods(@This()).ExecuteIndirect;
+
+    pub const AtomicCopyBufferUINT = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT;
+    pub const AtomicCopyBufferUINT64 = IGraphicsCommandList1.Methods(@This()).AtomicCopyBufferUINT64;
+    pub const OMSetDepthBounds = IGraphicsCommandList1.Methods(@This()).OMSetDepthBounds;
+    pub const SetSamplePositions = IGraphicsCommandList1.Methods(@This()).SetSamplePositions;
+    pub const ResolveSubresourceRegion = IGraphicsCommandList1.Methods(@This()).ResolveSubresourceRegion;
+    pub const SetViewInstanceMask = IGraphicsCommandList1.Methods(@This()).SetViewInstanceMask;
+
+    pub const WriteBufferImmediate = IGraphicsCommandList2.Methods(@This()).WriteBufferImmediate;
+
+    pub const SetProtectedResourceSession = IGraphicsCommandList3.Methods(@This()).SetProtectedResourceSession;
+
+    pub const BeginRenderPass = IGraphicsCommandList4.Methods(@This()).BeginRenderPass;
+    pub const EndRenderPass = IGraphicsCommandList4.Methods(@This()).EndRenderPass;
+    pub const InitializeMetaCommand = IGraphicsCommandList4.Methods(@This()).InitializeMetaCommand;
+    pub const ExecuteMetaCommand = IGraphicsCommandList4.Methods(@This()).ExecuteMetaCommand;
+    pub const BuildRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).BuildRaytracingAccelerationStructure;
+    pub const EmitRaytracingAccelerationStructurePostbuildInfo = IGraphicsCommandList4.Methods(@This()).EmitRaytracingAccelerationStructurePostbuildInfo;
+    pub const CopyRaytracingAccelerationStructure = IGraphicsCommandList4.Methods(@This()).CopyRaytracingAccelerationStructure;
+    pub const SetPipelineState1 = IGraphicsCommandList4.Methods(@This()).SetPipelineState1;
+    pub const DispatchRays = IGraphicsCommandList4.Methods(@This()).DispatchRays;
+
+    pub const RSSetShadingRate = IGraphicsCommandList5.Methods(@This()).RSSetShadingRate;
+    pub const RSSetShadingRateImage = IGraphicsCommandList5.Methods(@This()).RSSetShadingRateImage;
+
+    pub const DispatchMesh = IGraphicsCommandList6.Methods(@This()).DispatchMesh;
+
+    pub const Barrier = IGraphicsCommandList7.Methods(@This()).Barrier;
+
+    pub const OMSetFrontAndBackStencilRef = IGraphicsCommandList8.Methods(@This()).OMSetFrontAndBackStencilRef;
+
+    pub const RSSetDepthBias = IGraphicsCommandList9.Methods(@This()).RSSetDepthBias;
+    pub const IASetIndexBufferStripCutValue = IGraphicsCommandList9.Methods(@This()).IASetIndexBufferStripCutValue;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IGraphicsCommandList8.Methods(T);
-
             pub inline fn RSSetDepthBias(
                 self: *T,
                 depth_bias: FLOAT,
@@ -4007,7 +4944,7 @@ pub const IGraphicsCommandList9 = extern struct {
                 slope_scaled_depth_bias: FLOAT,
             ) void {
                 @as(*const IGraphicsCommandList9.VTable, @ptrCast(self.__v)).RSSetDepthBias(
-                    @as(*IGraphicsCommandList9, @ptrCast(self)),
+                    @ptrCast(self),
                     depth_bias,
                     depth_bias_clamp,
                     slope_scaled_depth_bias,
@@ -4018,7 +4955,7 @@ pub const IGraphicsCommandList9 = extern struct {
                 cut_value: INDEX_BUFFER_STRIP_CUT_VALUE,
             ) void {
                 @as(*const IGraphicsCommandList9.VTable, @ptrCast(self.__v)).IASetIndexBufferStripCutValue(
-                    @as(*IGraphicsCommandList9, @ptrCast(self)),
+                    @ptrCast(self),
                     cut_value,
                 );
             }
@@ -4035,15 +4972,35 @@ pub const IGraphicsCommandList9 = extern struct {
     };
 };
 
+pub const IID_ICommandQueue = GUID.parse("{0ec870a6-5d7e-4c22-8cfc-5baae07616ed}");
 pub const ICommandQueue = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetDevice = IDeviceChild.Methods(@This()).GetDevice;
+
+    pub const UpdateTileMappings = ICommandQueue.Methods(@This()).UpdateTileMappings;
+    pub const CopyTileMappings = ICommandQueue.Methods(@This()).CopyTileMappings;
+    pub const ExecuteCommandLists = ICommandQueue.Methods(@This()).ExecuteCommandLists;
+    pub const SetMarker = ICommandQueue.Methods(@This()).SetMarker;
+    pub const BeginEvent = ICommandQueue.Methods(@This()).BeginEvent;
+    pub const EndEvent = ICommandQueue.Methods(@This()).EndEvent;
+    pub const Signal = ICommandQueue.Methods(@This()).Signal;
+    pub const Wait = ICommandQueue.Methods(@This()).Wait;
+    pub const GetTimestampFrequency = ICommandQueue.Methods(@This()).GetTimestampFrequency;
+    pub const GetClockCalibration = ICommandQueue.Methods(@This()).GetClockCalibration;
+    pub const GetDesc = ICommandQueue.Methods(@This()).GetDesc;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IPageable.Methods(T);
-
             pub inline fn UpdateTileMappings(
                 self: *T,
                 resource: *IResource,
@@ -4058,7 +5015,7 @@ pub const ICommandQueue = extern struct {
                 flags: TILE_MAPPING_FLAGS,
             ) void {
                 @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).UpdateTileMappings(
-                    @as(*ICommandQueue, @ptrCast(self)),
+                    @ptrCast(self),
                     resource,
                     num_resource_regions,
                     resource_region_start_coordinates,
@@ -4081,7 +5038,7 @@ pub const ICommandQueue = extern struct {
                 flags: TILE_MAPPING_FLAGS,
             ) void {
                 @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).CopyTileMappings(
-                    @as(*ICommandQueue, @ptrCast(self)),
+                    @ptrCast(self),
                     dst_resource,
                     dst_region_start_coordinate,
                     src_resource,
@@ -4092,38 +5049,34 @@ pub const ICommandQueue = extern struct {
             }
             pub inline fn ExecuteCommandLists(self: *T, num: UINT, cmdlists: [*]const *ICommandList) void {
                 @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .ExecuteCommandLists(@as(*ICommandQueue, @ptrCast(self)), num, cmdlists);
+                    .ExecuteCommandLists(@ptrCast(self), num, cmdlists);
             }
             pub inline fn SetMarker(self: *T, metadata: UINT, data: ?*const anyopaque, size: UINT) void {
-                @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .SetMarker(@as(*ICommandQueue, @ptrCast(self)), metadata, data, size);
+                @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).SetMarker(@ptrCast(self), metadata, data, size);
             }
             pub inline fn BeginEvent(self: *T, metadata: UINT, data: ?*const anyopaque, size: UINT) void {
-                @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .BeginEvent(@as(*ICommandQueue, @ptrCast(self)), metadata, data, size);
+                @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).BeginEvent(@ptrCast(self), metadata, data, size);
             }
             pub inline fn EndEvent(self: *T) void {
-                @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).EndEvent(@as(*ICommandQueue, @ptrCast(self)));
+                @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).EndEvent(@ptrCast(self));
             }
             pub inline fn Signal(self: *T, fence: *IFence, value: UINT64) HRESULT {
-                return @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .Signal(@as(*ICommandQueue, @ptrCast(self)), fence, value);
+                return @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).Signal(@ptrCast(self), fence, value);
             }
             pub inline fn Wait(self: *T, fence: *IFence, value: UINT64) HRESULT {
-                return @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .Wait(@as(*ICommandQueue, @ptrCast(self)), fence, value);
+                return @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).Wait(@ptrCast(self), fence, value);
             }
             pub inline fn GetTimestampFrequency(self: *T, frequency: *UINT64) HRESULT {
                 return @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .GetTimestampFrequency(@as(*ICommandQueue, @ptrCast(self)), frequency);
+                    .GetTimestampFrequency(@ptrCast(self), frequency);
             }
             pub inline fn GetClockCalibration(self: *T, gpu_timestamp: *UINT64, cpu_timestamp: *UINT64) HRESULT {
                 return @as(*const ICommandQueue.VTable, @ptrCast(self.__v))
-                    .GetClockCalibration(@as(*ICommandQueue, @ptrCast(self)), gpu_timestamp, cpu_timestamp);
+                    .GetClockCalibration(@ptrCast(self), gpu_timestamp, cpu_timestamp);
             }
             pub inline fn GetDesc(self: *T) COMMAND_QUEUE_DESC {
                 var desc: COMMAND_QUEUE_DESC = undefined;
-                _ = @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).GetDesc(@as(*ICommandQueue, @ptrCast(self)), &desc);
+                _ = @as(*const ICommandQueue.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), &desc);
                 return desc;
             }
         };
@@ -4170,14 +5123,57 @@ pub const IID_IDevice = GUID.parse("{189819f1-1db6-4b57-be54-1821339b85f7}");
 pub const IDevice = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IObject.Methods(T);
-
             pub inline fn GetNodeCount(self: *T) UINT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetNodeCount(@as(*IDevice, @ptrCast(self)));
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetNodeCount(@ptrCast(self));
             }
             pub inline fn CreateCommandQueue(
                 self: *T,
@@ -4186,7 +5182,7 @@ pub const IDevice = extern struct {
                 obj: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateCommandQueue(@as(*IDevice, @ptrCast(self)), desc, guid, obj);
+                    .CreateCommandQueue(@ptrCast(self), desc, guid, obj);
             }
             pub inline fn CreateCommandAllocator(
                 self: *T,
@@ -4195,7 +5191,7 @@ pub const IDevice = extern struct {
                 obj: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateCommandAllocator(@as(*IDevice, @ptrCast(self)), cmdlist_type, guid, obj);
+                    .CreateCommandAllocator(@ptrCast(self), cmdlist_type, guid, obj);
             }
             pub inline fn CreateGraphicsPipelineState(
                 self: *T,
@@ -4204,7 +5200,7 @@ pub const IDevice = extern struct {
                 pso: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateGraphicsPipelineState(@as(*IDevice, @ptrCast(self)), desc, guid, pso);
+                    .CreateGraphicsPipelineState(@ptrCast(self), desc, guid, pso);
             }
             pub inline fn CreateComputePipelineState(
                 self: *T,
@@ -4213,7 +5209,7 @@ pub const IDevice = extern struct {
                 pso: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateComputePipelineState(@as(*IDevice, @ptrCast(self)), desc, guid, pso);
+                    .CreateComputePipelineState(@ptrCast(self), desc, guid, pso);
             }
             pub inline fn CreateCommandList(
                 self: *T,
@@ -4225,7 +5221,7 @@ pub const IDevice = extern struct {
                 cmdlist: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v)).CreateCommandList(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     node_mask,
                     cmdlist_type,
                     cmdalloc,
@@ -4241,7 +5237,7 @@ pub const IDevice = extern struct {
                 data_size: UINT,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CheckFeatureSupport(@as(*IDevice, @ptrCast(self)), feature, data, data_size);
+                    .CheckFeatureSupport(@ptrCast(self), feature, data, data_size);
             }
             pub inline fn CreateDescriptorHeap(
                 self: *T,
@@ -4250,11 +5246,11 @@ pub const IDevice = extern struct {
                 heap: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateDescriptorHeap(@as(*IDevice, @ptrCast(self)), desc, guid, heap);
+                    .CreateDescriptorHeap(@ptrCast(self), desc, guid, heap);
             }
             pub inline fn GetDescriptorHandleIncrementSize(self: *T, heap_type: DESCRIPTOR_HEAP_TYPE) UINT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .GetDescriptorHandleIncrementSize(@as(*IDevice, @ptrCast(self)), heap_type);
+                    .GetDescriptorHandleIncrementSize(@ptrCast(self), heap_type);
             }
             pub inline fn CreateRootSignature(
                 self: *T,
@@ -4265,7 +5261,7 @@ pub const IDevice = extern struct {
                 signature: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateRootSignature(@as(*IDevice, @ptrCast(self)), node_mask, blob, blob_size, guid, signature);
+                    .CreateRootSignature(@ptrCast(self), node_mask, blob, blob_size, guid, signature);
             }
             pub inline fn CreateConstantBufferView(
                 self: *T,
@@ -4273,7 +5269,7 @@ pub const IDevice = extern struct {
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateConstantBufferView(@as(*IDevice, @ptrCast(self)), desc, dst_descriptor);
+                    .CreateConstantBufferView(@ptrCast(self), desc, dst_descriptor);
             }
             pub inline fn CreateShaderResourceView(
                 self: *T,
@@ -4282,7 +5278,7 @@ pub const IDevice = extern struct {
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateShaderResourceView(@as(*IDevice, @ptrCast(self)), resource, desc, dst_descriptor);
+                    .CreateShaderResourceView(@ptrCast(self), resource, desc, dst_descriptor);
             }
             pub inline fn CreateUnorderedAccessView(
                 self: *T,
@@ -4292,7 +5288,7 @@ pub const IDevice = extern struct {
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v)).CreateUnorderedAccessView(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     resource,
                     counter_resource,
                     desc,
@@ -4306,7 +5302,7 @@ pub const IDevice = extern struct {
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateRenderTargetView(@as(*IDevice, @ptrCast(self)), resource, desc, dst_descriptor);
+                    .CreateRenderTargetView(@ptrCast(self), resource, desc, dst_descriptor);
             }
             pub inline fn CreateDepthStencilView(
                 self: *T,
@@ -4315,15 +5311,14 @@ pub const IDevice = extern struct {
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateDepthStencilView(@as(*IDevice, @ptrCast(self)), resource, desc, dst_descriptor);
+                    .CreateDepthStencilView(@ptrCast(self), resource, desc, dst_descriptor);
             }
             pub inline fn CreateSampler(
                 self: *T,
                 desc: *const SAMPLER_DESC,
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
-                @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateSampler(@as(*IDevice, @ptrCast(self)), desc, dst_descriptor);
+                @as(*const IDevice.VTable, @ptrCast(self.__v)).CreateSampler(@ptrCast(self), desc, dst_descriptor);
             }
             pub inline fn CopyDescriptors(
                 self: *T,
@@ -4336,7 +5331,7 @@ pub const IDevice = extern struct {
                 heap_type: DESCRIPTOR_HEAP_TYPE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v)).CopyDescriptors(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     num_dst_ranges,
                     dst_range_starts,
                     dst_range_sizes,
@@ -4354,7 +5349,7 @@ pub const IDevice = extern struct {
                 heap_type: DESCRIPTOR_HEAP_TYPE,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v)).CopyDescriptorsSimple(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     num,
                     dst_range_start,
                     src_range_start,
@@ -4369,7 +5364,7 @@ pub const IDevice = extern struct {
             ) RESOURCE_ALLOCATION_INFO {
                 var info: RESOURCE_ALLOCATION_INFO = undefined;
                 _ = @as(*const IDevice.VTable, @ptrCast(self.__v)).GetResourceAllocationInfo(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     &info,
                     visible_mask,
                     num_descs,
@@ -4384,7 +5379,7 @@ pub const IDevice = extern struct {
             ) HEAP_PROPERTIES {
                 var props: HEAP_PROPERTIES = undefined;
                 @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .GetCustomHeapProperties(@as(*IDevice, @ptrCast(self)), &props, node_mask, heap_type);
+                    .GetCustomHeapProperties(@ptrCast(self), &props, node_mask, heap_type);
                 return props;
             }
             pub inline fn CreateCommittedResource(
@@ -4398,7 +5393,7 @@ pub const IDevice = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v)).CreateCommittedResource(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     heap_props,
                     heap_flags,
                     desc,
@@ -4414,8 +5409,7 @@ pub const IDevice = extern struct {
                 guid: *const GUID,
                 heap: ?*?*anyopaque,
             ) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateHeap(@as(*IDevice, @ptrCast(self)), desc, guid, heap);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).CreateHeap(@ptrCast(self), desc, guid, heap);
             }
             pub inline fn CreatePlacedResource(
                 self: *T,
@@ -4428,7 +5422,7 @@ pub const IDevice = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v)).CreatePlacedResource(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     heap,
                     heap_offset,
                     desc,
@@ -4447,7 +5441,7 @@ pub const IDevice = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateReservedResource(@as(*IDevice, @ptrCast(self)), desc, state, clear_value, guid, resource);
+                    .CreateReservedResource(@ptrCast(self), desc, state, clear_value, guid, resource);
             }
             pub inline fn CreateSharedHandle(
                 self: *T,
@@ -4458,7 +5452,7 @@ pub const IDevice = extern struct {
                 handle: ?*HANDLE,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateSharedHandle(@as(*IDevice, @ptrCast(self)), object, attributes, access, name, handle);
+                    .CreateSharedHandle(@ptrCast(self), object, attributes, access, name, handle);
             }
             pub inline fn OpenSharedHandle(
                 self: *T,
@@ -4467,17 +5461,17 @@ pub const IDevice = extern struct {
                 object: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .OpenSharedHandle(@as(*IDevice, @ptrCast(self)), handle, guid, object);
+                    .OpenSharedHandle(@ptrCast(self), handle, guid, object);
             }
             pub inline fn OpenSharedHandleByName(self: *T, name: LPCWSTR, access: DWORD, handle: ?*HANDLE) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .OpenSharedHandleByName(@as(*IDevice, @ptrCast(self)), name, access, handle);
+                    .OpenSharedHandleByName(@ptrCast(self), name, access, handle);
             }
             pub inline fn MakeResident(self: *T, num: UINT, objects: [*]const *IPageable) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v)).MakeResident(@as(*IDevice, @ptrCast(self)), num, objects);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).MakeResident(@ptrCast(self), num, objects);
             }
             pub inline fn Evict(self: *T, num: UINT, objects: [*]const *IPageable) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v)).Evict(@as(*IDevice, @ptrCast(self)), num, objects);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).Evict(@ptrCast(self), num, objects);
             }
             pub inline fn CreateFence(
                 self: *T,
@@ -4487,10 +5481,10 @@ pub const IDevice = extern struct {
                 fence: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateFence(@as(*IDevice, @ptrCast(self)), initial_value, flags, guid, fence);
+                    .CreateFence(@ptrCast(self), initial_value, flags, guid, fence);
             }
             pub inline fn GetDeviceRemovedReason(self: *T) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetDeviceRemovedReason(@as(*IDevice, @ptrCast(self)));
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).GetDeviceRemovedReason(@ptrCast(self));
             }
             pub inline fn GetCopyableFootprints(
                 self: *T,
@@ -4504,7 +5498,7 @@ pub const IDevice = extern struct {
                 total_sizie: ?*UINT64,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v)).GetCopyableFootprints(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     first_subresource,
                     num_subresources,
@@ -4522,11 +5516,10 @@ pub const IDevice = extern struct {
                 query_heap: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateQueryHeap(@as(*IDevice, @ptrCast(self)), desc, guid, query_heap);
+                    .CreateQueryHeap(@ptrCast(self), desc, guid, query_heap);
             }
             pub inline fn SetStablePowerState(self: *T, enable: BOOL) HRESULT {
-                return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .SetStablePowerState(@as(*IDevice, @ptrCast(self)), enable);
+                return @as(*const IDevice.VTable, @ptrCast(self.__v)).SetStablePowerState(@ptrCast(self), enable);
             }
             pub inline fn CreateCommandSignature(
                 self: *T,
@@ -4536,7 +5529,7 @@ pub const IDevice = extern struct {
                 cmd_signature: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice.VTable, @ptrCast(self.__v))
-                    .CreateCommandSignature(@as(*IDevice, @ptrCast(self)), desc, root_signature, guid, cmd_signature);
+                    .CreateCommandSignature(@ptrCast(self), desc, root_signature, guid, cmd_signature);
             }
             pub inline fn GetResourceTiling(
                 self: *T,
@@ -4549,7 +5542,7 @@ pub const IDevice = extern struct {
                 subresource_tiling_for_non_packed_mips: [*]SUBRESOURCE_TILING,
             ) void {
                 @as(*const IDevice.VTable, @ptrCast(self.__v)).GetResourceTiling(
-                    @as(*IDevice, @ptrCast(self)),
+                    @ptrCast(self),
                     resource,
                     num_resource_tiles,
                     packed_mip_desc,
@@ -4561,7 +5554,7 @@ pub const IDevice = extern struct {
             }
             pub inline fn GetAdapterLuid(self: *T) LUID {
                 var luid: LUID = undefined;
-                @as(*const IDevice.VTable, @ptrCast(self.__v)).GetAdapterLuid(@as(*IDevice, @ptrCast(self)), &luid);
+                @as(*const IDevice.VTable, @ptrCast(self.__v)).GetAdapterLuid(@ptrCast(self), &luid);
                 return luid;
             }
         };
@@ -4775,12 +5768,59 @@ pub const IID_IDevice1 = GUID.parse("{77acce80-638e-4e65-8895-c1f23386863e}");
 pub const IDevice1 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice.Methods(T);
-
             pub inline fn CreatePipelineLibrary(
                 self: *T,
                 blob: *const anyopaque,
@@ -4789,7 +5829,7 @@ pub const IDevice1 = extern struct {
                 library: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice1.VTable, @ptrCast(self.__v))
-                    .CreatePipelineLibrary(@as(*IDevice1, @ptrCast(self)), blob, blob_length, guid, library);
+                    .CreatePipelineLibrary(@ptrCast(self), blob, blob_length, guid, library);
             }
             pub inline fn SetEventOnMultipleFenceCompletion(
                 self: *T,
@@ -4800,7 +5840,7 @@ pub const IDevice1 = extern struct {
                 event: HANDLE,
             ) HRESULT {
                 return @as(*const IDevice1.VTable, @ptrCast(self.__v)).SetEventOnMultipleFenceCompletion(
-                    @as(*IDevice1, @ptrCast(self)),
+                    @ptrCast(self),
                     fences,
                     fence_values,
                     num_fences,
@@ -4815,7 +5855,7 @@ pub const IDevice1 = extern struct {
                 priorities: [*]const RESIDENCY_PRIORITY,
             ) HRESULT {
                 return @as(*const IDevice1.VTable, @ptrCast(self.__v))
-                    .SetResidencyPriority(@as(*IDevice1, @ptrCast(self)), num_objects, objects, priorities);
+                    .SetResidencyPriority(@ptrCast(self), num_objects, objects, priorities);
             }
         };
     }
@@ -4983,12 +6023,61 @@ pub const IID_IDevice2 = GUID.parse("{30baa41e-b15b-475c-a0bb-1af5c5b64328}");
 pub const IDevice2 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice1.Methods(T);
-
             pub inline fn CreatePipelineState(
                 self: *T,
                 desc: *const PIPELINE_STATE_STREAM_DESC,
@@ -4996,7 +6085,7 @@ pub const IDevice2 = extern struct {
                 pso: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice2.VTable, @ptrCast(self.__v))
-                    .CreatePipelineState(@as(*IDevice2, @ptrCast(self)), desc, guid, pso);
+                    .CreatePipelineState(@ptrCast(self), desc, guid, pso);
             }
         };
     }
@@ -5021,12 +6110,65 @@ pub const IID_IDevice3 = GUID.parse("{81dadc15-2bad-4392-93c5-101345c4aa98}");
 pub const IDevice3 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice2.Methods(T);
-
             pub inline fn OpenExistingHeapFromAddress(
                 self: *T,
                 address: *const anyopaque,
@@ -5034,7 +6176,7 @@ pub const IDevice3 = extern struct {
                 heap: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice3.VTable, @ptrCast(self.__v))
-                    .OpenExistingHeapFromAddress(@as(*IDevice3, @ptrCast(self)), address, guid, heap);
+                    .OpenExistingHeapFromAddress(@ptrCast(self), address, guid, heap);
             }
             pub inline fn OpenExistingHeapFromFileMapping(
                 self: *T,
@@ -5043,7 +6185,7 @@ pub const IDevice3 = extern struct {
                 heap: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice3.VTable, @ptrCast(self.__v))
-                    .OpenExistingHeapFromFileMapping(@as(*IDevice3, @ptrCast(self)), file_mapping, guid, heap);
+                    .OpenExistingHeapFromFileMapping(@ptrCast(self), file_mapping, guid, heap);
             }
             pub inline fn EnqueueMakeResident(
                 self: *T,
@@ -5054,7 +6196,7 @@ pub const IDevice3 = extern struct {
                 fence_value_to_signal: UINT64,
             ) HRESULT {
                 return @as(*const IDevice3.VTable, @ptrCast(self.__v)).EnqueueMakeResident(
-                    @as(*IDevice3, @ptrCast(self)),
+                    @ptrCast(self),
                     flags,
                     num_objects,
                     objects,
@@ -5104,12 +6246,72 @@ pub const IID_IDevice4 = GUID.parse("{e865df17-a9ee-46f9-a463-3098315aa2e5}");
 pub const IDevice4 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice3.Methods(T);
-
             pub inline fn CreateCommandList1(
                 self: *T,
                 node_mask: UINT,
@@ -5119,7 +6321,7 @@ pub const IDevice4 = extern struct {
                 cmdlist: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice4.VTable, @ptrCast(self.__v))
-                    .CreateCommandList1(@as(*IDevice4, @ptrCast(self)), node_mask, cmdlist_type, flags, guid, cmdlist);
+                    .CreateCommandList1(@ptrCast(self), node_mask, cmdlist_type, flags, guid, cmdlist);
             }
             pub inline fn CreateProtectedResourceSession(
                 self: *T,
@@ -5128,7 +6330,7 @@ pub const IDevice4 = extern struct {
                 session: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice4.VTable, @ptrCast(self.__v))
-                    .CreateProtectedResourceSession(@as(*IDevice4, @ptrCast(self)), desc, guid, session);
+                    .CreateProtectedResourceSession(@ptrCast(self), desc, guid, session);
             }
             pub inline fn CreateCommittedResource1(
                 self: *T,
@@ -5142,7 +6344,7 @@ pub const IDevice4 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice4.VTable, @ptrCast(self.__v)).CreateCommittedResource1(
-                    @as(*IDevice4, @ptrCast(self)),
+                    @ptrCast(self),
                     heap_properties,
                     heap_flags,
                     desc,
@@ -5161,7 +6363,7 @@ pub const IDevice4 = extern struct {
                 heap: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice4.VTable, @ptrCast(self.__v))
-                    .CreateHeap1(@as(*IDevice4, @ptrCast(self)), desc, psession, guid, heap);
+                    .CreateHeap1(@ptrCast(self), desc, psession, guid, heap);
             }
             pub inline fn CreateReservedResource1(
                 self: *T,
@@ -5173,7 +6375,7 @@ pub const IDevice4 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice4.VTable, @ptrCast(self.__v)).CreateReservedResource1(
-                    @as(*IDevice4, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     initial_state,
                     clear_value,
@@ -5191,7 +6393,7 @@ pub const IDevice4 = extern struct {
             ) RESOURCE_ALLOCATION_INFO {
                 var desc: RESOURCE_ALLOCATION_INFO = undefined;
                 @as(*const IDevice4.VTable, @ptrCast(self.__v)).GetResourceAllocationInfo1(
-                    @as(*IDevice4, @ptrCast(self)),
+                    @ptrCast(self),
                     &desc,
                     visible_mask,
                     num_resource_descs,
@@ -5266,15 +6468,16 @@ pub const LIFETIME_STATE = enum(UINT) {
 pub const ILifetimeOwner = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const LifetimeStateUpdated = ILifetimeOwner.Methods(@This()).LifetimeStateUpdated;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn LifetimeStateUpdated(self: *T, new_state: LIFETIME_STATE) void {
-                @as(*const ILifetimeOwner.VTable, @ptrCast(self.__v))
-                    .LifetimeStateUpdated(@as(*ILifetimeOwner, @ptrCast(self)), new_state);
+                @as(*const ILifetimeOwner.VTable, @ptrCast(self.__v)).LifetimeStateUpdated(@ptrCast(self), new_state);
             }
         };
     }
@@ -5289,12 +6492,81 @@ pub const IID_IDevice5 = GUID.parse("{8b4f173b-2fea-4b80-8f58-4307191ab95d}");
 pub const IDevice5 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice4.Methods(T);
-
             pub inline fn CreateLifetimeTracker(
                 self: *T,
                 owner: *ILifetimeOwner,
@@ -5302,10 +6574,10 @@ pub const IDevice5 = extern struct {
                 tracker: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice5.VTable, @ptrCast(self.__v))
-                    .CreateLifetimeTracker(@as(*IDevice5, @ptrCast(self)), owner, guid, tracker);
+                    .CreateLifetimeTracker(@ptrCast(self), owner, guid, tracker);
             }
             pub inline fn RemoveDevice(self: *T) void {
-                @as(*const IDevice5.VTable, @ptrCast(self.__v)).RemoveDevice(@as(*IDevice5, @ptrCast(self)));
+                @as(*const IDevice5.VTable, @ptrCast(self.__v)).RemoveDevice(@ptrCast(self));
             }
             pub inline fn EnumerateMetaCommands(
                 self: *T,
@@ -5313,7 +6585,7 @@ pub const IDevice5 = extern struct {
                 descs: ?[*]META_COMMAND_DESC,
             ) HRESULT {
                 return @as(*const IDevice5.VTable, @ptrCast(self.__v))
-                    .EnumerateMetaCommands(@as(*IDevice5, @ptrCast(self)), num_meta_cmds, descs);
+                    .EnumerateMetaCommands(@ptrCast(self), num_meta_cmds, descs);
             }
             pub inline fn EnumerateMetaCommandParameters(
                 self: *T,
@@ -5324,7 +6596,7 @@ pub const IDevice5 = extern struct {
                 param_descs: ?[*]META_COMMAND_PARAMETER_DESC,
             ) HRESULT {
                 return @as(*const IDevice5.VTable, @ptrCast(self.__v)).EnumerateMetaCommandParameters(
-                    @as(*IDevice5, @ptrCast(self)),
+                    @ptrCast(self),
                     cmd_id,
                     stage,
                     total_size,
@@ -5342,7 +6614,7 @@ pub const IDevice5 = extern struct {
                 meta_cmd: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice5.VTable, @ptrCast(self.__v)).CreateMetaCommand(
-                    @as(*IDevice5, @ptrCast(self)),
+                    @ptrCast(self),
                     cmd_id,
                     node_mask,
                     creation_param_data,
@@ -5358,7 +6630,7 @@ pub const IDevice5 = extern struct {
                 state_object: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice5.VTable, @ptrCast(self.__v))
-                    .CreateStateObject(@as(*IDevice5, @ptrCast(self)), desc, guid, state_object);
+                    .CreateStateObject(@ptrCast(self), desc, guid, state_object);
             }
             pub inline fn GetRaytracingAccelerationStructurePrebuildInfo(
                 self: *T,
@@ -5366,7 +6638,7 @@ pub const IDevice5 = extern struct {
                 info: *RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO,
             ) void {
                 @as(*const IDevice5.VTable, @ptrCast(self.__v))
-                    .GetRaytracingAccelerationStructurePrebuildInfo(@as(*IDevice5, @ptrCast(self)), desc, info);
+                    .GetRaytracingAccelerationStructurePrebuildInfo(@ptrCast(self), desc, info);
             }
             pub inline fn CheckDriverMatchingIdentifier(
                 self: *T,
@@ -5374,7 +6646,7 @@ pub const IDevice5 = extern struct {
                 identifier_to_check: *const SERIALIZED_DATA_DRIVER_MATCHING_IDENTIFIER,
             ) DRIVER_MATCHING_IDENTIFIER_STATUS {
                 return @as(*const IDevice5.VTable, @ptrCast(self.__v)).CheckDriverMatchingIdentifier(
-                    @as(*IDevice5, @ptrCast(self)),
+                    @ptrCast(self),
                     serialized_data_type,
                     identifier_to_check,
                 );
@@ -5447,12 +6719,83 @@ pub const IID_IDevice6 = GUID.parse("{c70b221b-40e4-4a17-89af-025a0727a6dc}");
 pub const IDevice6 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
+
+    pub const SetBackgroundProcessingMode = IDevice6.Methods(@This()).SetBackgroundProcessingMode;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice5.Methods(T);
-
             pub inline fn SetBackgroundProcessingMode(
                 self: *T,
                 mode: BACKGROUND_PROCESSING_MODE,
@@ -5461,7 +6804,7 @@ pub const IDevice6 = extern struct {
                 further_measurements_desired: ?*BOOL,
             ) HRESULT {
                 return @as(*const IDevice6.VTable, @ptrCast(self.__v)).SetBackgroundProcessingMode(
-                    @as(*IDevice6, @ptrCast(self)),
+                    @ptrCast(self),
                     mode,
                     measurements_action,
                     event_to_signal_upon_completion,
@@ -5493,12 +6836,86 @@ pub const IID_IDevice7 = GUID.parse("{5c014b53-68a1-4b9b-8bd1-dd6046b9358b}");
 pub const IDevice7 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
+
+    pub const SetBackgroundProcessingMode = IDevice6.Methods(@This()).SetBackgroundProcessingMode;
+
+    pub const AddToStateObject = IDevice7.Methods(@This()).AddToStateObject;
+    pub const CreateProtectedResourceSession1 = IDevice7.Methods(@This()).CreateProtectedResourceSession1;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice6.Methods(T);
-
             pub inline fn AddToStateObject(
                 self: *T,
                 addition: *const STATE_OBJECT_DESC,
@@ -5507,7 +6924,7 @@ pub const IDevice7 = extern struct {
                 new_state_object: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice7.VTable, @ptrCast(self.__v))
-                    .AddToStateObject(@as(*IDevice7, @ptrCast(self)), addition, state_object, guid, new_state_object);
+                    .AddToStateObject(@ptrCast(self), addition, state_object, guid, new_state_object);
             }
             pub inline fn CreateProtectedResourceSession1(
                 self: *T,
@@ -5516,7 +6933,7 @@ pub const IDevice7 = extern struct {
                 session: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice7.VTable, @ptrCast(self.__v))
-                    .CreateProtectedResourceSession1(@as(*IDevice7, @ptrCast(self)), desc, guid, session);
+                    .CreateProtectedResourceSession1(@ptrCast(self), desc, guid, session);
             }
         };
     }
@@ -5563,12 +6980,92 @@ pub const IID_IDevice8 = GUID.parse("{9218E6BB-F944-4F7E-A75C-B1B2C7B701F3}");
 pub const IDevice8 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
+
+    pub const SetBackgroundProcessingMode = IDevice6.Methods(@This()).SetBackgroundProcessingMode;
+
+    pub const AddToStateObject = IDevice7.Methods(@This()).AddToStateObject;
+    pub const CreateProtectedResourceSession1 = IDevice7.Methods(@This()).CreateProtectedResourceSession1;
+
+    pub const GetResourceAllocationInfo2 = IDevice8.Methods(@This()).GetResourceAllocationInfo2;
+    pub const CreateCommittedResource2 = IDevice8.Methods(@This()).CreateCommittedResource2;
+    pub const CreatePlacedResource1 = IDevice8.Methods(@This()).CreatePlacedResource1;
+    pub const CreateSamplerFeedbackUnorderedAccessView = IDevice8.Methods(@This()).CreateSamplerFeedbackUnorderedAccessView;
+    pub const GetCopyableFootprints1 = IDevice8.Methods(@This()).GetCopyableFootprints1;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice7.Methods(T);
-
             pub inline fn GetResourceAllocationInfo2(
                 self: *T,
                 visible_mask: UINT,
@@ -5578,7 +7075,7 @@ pub const IDevice8 = extern struct {
             ) RESOURCE_ALLOCATION_INFO {
                 var desc: RESOURCE_ALLOCATION_INFO = undefined;
                 @as(*const IDevice8.VTable, @ptrCast(self.__v)).GetResourceAllocationInfo2(
-                    @as(*IDevice8, @ptrCast(self)),
+                    @ptrCast(self),
                     &desc,
                     visible_mask,
                     num_resource_descs,
@@ -5599,7 +7096,7 @@ pub const IDevice8 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice8.VTable, @ptrCast(self.__v)).CreateCommittedResource2(
-                    @as(*IDevice8, @ptrCast(self)),
+                    @ptrCast(self),
                     heap_properties,
                     heap_flags,
                     desc,
@@ -5621,7 +7118,7 @@ pub const IDevice8 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice8.VTable, @ptrCast(self.__v)).CreatePlacedResource1(
-                    @as(*IDevice8, @ptrCast(self)),
+                    @ptrCast(self),
                     heap,
                     heap_offset,
                     desc,
@@ -5638,7 +7135,7 @@ pub const IDevice8 = extern struct {
                 dest_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice8.VTable, @ptrCast(self.__v)).CreateSamplerFeedbackUnorderedAccessView(
-                    @as(*IDevice8, @ptrCast(self)),
+                    @ptrCast(self),
                     targeted_resource,
                     feedback_resource,
                     dest_descriptor,
@@ -5656,7 +7153,7 @@ pub const IDevice8 = extern struct {
                 total_bytes: ?*UINT64,
             ) void {
                 @as(*const IDevice8.VTable, @ptrCast(self.__v)).GetCopyableFootprints1(
-                    @as(*IDevice8, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     first_subresource,
                     num_subresources,
@@ -5761,12 +7258,96 @@ pub const IID_IDevice9 = GUID.parse("{4c80e962-f032-4f60-bc9e-ebc2cfa1d83c}");
 pub const IDevice9 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
+
+    pub const SetBackgroundProcessingMode = IDevice6.Methods(@This()).SetBackgroundProcessingMode;
+
+    pub const AddToStateObject = IDevice7.Methods(@This()).AddToStateObject;
+    pub const CreateProtectedResourceSession1 = IDevice7.Methods(@This()).CreateProtectedResourceSession1;
+
+    pub const GetResourceAllocationInfo2 = IDevice8.Methods(@This()).GetResourceAllocationInfo2;
+    pub const CreateCommittedResource2 = IDevice8.Methods(@This()).CreateCommittedResource2;
+    pub const CreatePlacedResource1 = IDevice8.Methods(@This()).CreatePlacedResource1;
+    pub const CreateSamplerFeedbackUnorderedAccessView = IDevice8.Methods(@This()).CreateSamplerFeedbackUnorderedAccessView;
+    pub const GetCopyableFootprints1 = IDevice8.Methods(@This()).GetCopyableFootprints1;
+
+    pub const CreateShaderCacheSession = IDevice9.Methods(@This()).CreateShaderCacheSession;
+    pub const ShaderCacheControl = IDevice9.Methods(@This()).ShaderCacheControl;
+    pub const CreateCommandQueue1 = IDevice9.Methods(@This()).CreateCommandQueue1;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice8.Methods(T);
-
             pub inline fn CreateShaderCacheSession(
                 self: *T,
                 desc: *const SHADER_CACHE_SESSION_DESC,
@@ -5774,7 +7355,7 @@ pub const IDevice9 = extern struct {
                 session: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice9.VTable, @ptrCast(self.__v))
-                    .CreateShaderCacheSession(@as(*IDevice9, @ptrCast(self)), desc, guid, session);
+                    .CreateShaderCacheSession(@ptrCast(self), desc, guid, session);
             }
             pub inline fn ShaderCacheControl(
                 self: *T,
@@ -5782,7 +7363,7 @@ pub const IDevice9 = extern struct {
                 control: SHADER_CACHE_CONTROL_FLAGS,
             ) HRESULT {
                 return @as(*const IDevice9.VTable, @ptrCast(self.__v))
-                    .ShaderCacheControl(@as(*IDevice9, @ptrCast(self)), kinds, control);
+                    .ShaderCacheControl(@ptrCast(self), kinds, control);
             }
             pub inline fn CreateCommandQueue1(
                 self: *T,
@@ -5792,7 +7373,7 @@ pub const IDevice9 = extern struct {
                 cmdqueue: *?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice9.VTable, @ptrCast(self.__v))
-                    .CreateCommandQueue1(@as(*IDevice9, @ptrCast(self)), desc, creator_id, guid, cmdqueue);
+                    .CreateCommandQueue1(@ptrCast(self), desc, creator_id, guid, cmdqueue);
             }
         };
     }
@@ -5992,12 +7573,100 @@ pub const IID_IDevice10 = GUID.parse("{517f8718-aa66-49f9-b02b-a7ab89c06031}");
 pub const IDevice10 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
+
+    pub const SetBackgroundProcessingMode = IDevice6.Methods(@This()).SetBackgroundProcessingMode;
+
+    pub const AddToStateObject = IDevice7.Methods(@This()).AddToStateObject;
+    pub const CreateProtectedResourceSession1 = IDevice7.Methods(@This()).CreateProtectedResourceSession1;
+
+    pub const GetResourceAllocationInfo2 = IDevice8.Methods(@This()).GetResourceAllocationInfo2;
+    pub const CreateCommittedResource2 = IDevice8.Methods(@This()).CreateCommittedResource2;
+    pub const CreatePlacedResource1 = IDevice8.Methods(@This()).CreatePlacedResource1;
+    pub const CreateSamplerFeedbackUnorderedAccessView = IDevice8.Methods(@This()).CreateSamplerFeedbackUnorderedAccessView;
+    pub const GetCopyableFootprints1 = IDevice8.Methods(@This()).GetCopyableFootprints1;
+
+    pub const CreateShaderCacheSession = IDevice9.Methods(@This()).CreateShaderCacheSession;
+    pub const ShaderCacheControl = IDevice9.Methods(@This()).ShaderCacheControl;
+    pub const CreateCommandQueue1 = IDevice9.Methods(@This()).CreateCommandQueue1;
+
+    pub const CreateCommittedResource3 = IDevice10.Methods(@This()).CreateCommittedResource3;
+    pub const CreatePlacedResource2 = IDevice10.Methods(@This()).CreatePlacedResource2;
+    pub const CreateReservedResource2 = IDevice10.Methods(@This()).CreateReservedResource2;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice9.Methods(T);
-
             pub inline fn CreateCommittedResource3(
                 self: *T,
                 heap_properties: *const HEAP_PROPERTIES,
@@ -6012,7 +7681,7 @@ pub const IDevice10 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice10.VTable, @ptrCast(self.__v)).CreateCommittedResource3(
-                    @as(*IDevice10, @ptrCast(self)),
+                    @ptrCast(self),
                     heap_properties,
                     heap_flags,
                     desc,
@@ -6038,7 +7707,7 @@ pub const IDevice10 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice10.VTable, @ptrCast(self.__v)).CreatePlacedResource2(
-                    @as(*IDevice10, @ptrCast(self)),
+                    @ptrCast(self),
                     heap,
                     heap_offset,
                     desc,
@@ -6062,7 +7731,7 @@ pub const IDevice10 = extern struct {
                 resource: ?*?*anyopaque,
             ) HRESULT {
                 return @as(*const IDevice10.VTable, @ptrCast(self.__v)).CreateReservedResource2(
-                    @as(*IDevice10, @ptrCast(self)),
+                    @ptrCast(self),
                     desc,
                     initial_layout,
                     clear_value,
@@ -6143,19 +7812,109 @@ pub const IID_IDevice11 = GUID.parse("{5405c344-d457-444e-b4dd-2366e45aee39}");
 pub const IDevice11 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetNodeCount = IDevice.Methods(@This()).GetNodeCount;
+    pub const CreateCommandQueue = IDevice.Methods(@This()).CreateCommandQueue;
+    pub const CreateCommandAllocator = IDevice.Methods(@This()).CreateCommandAllocator;
+    pub const CreateGraphicsPipelineState = IDevice.Methods(@This()).CreateGraphicsPipelineState;
+    pub const CreateComputePipelineState = IDevice.Methods(@This()).CreateComputePipelineState;
+    pub const CreateCommandList = IDevice.Methods(@This()).CreateCommandList;
+    pub const CheckFeatureSupport = IDevice.Methods(@This()).CheckFeatureSupport;
+    pub const CreateDescriptorHeap = IDevice.Methods(@This()).CreateDescriptorHeap;
+    pub const GetDescriptorHandleIncrementSize = IDevice.Methods(@This()).GetDescriptorHandleIncrementSize;
+    pub const CreateRootSignature = IDevice.Methods(@This()).CreateRootSignature;
+    pub const CreateConstantBufferView = IDevice.Methods(@This()).CreateConstantBufferView;
+    pub const CreateShaderResourceView = IDevice.Methods(@This()).CreateShaderResourceView;
+    pub const CreateUnorderedAccessView = IDevice.Methods(@This()).CreateUnorderedAccessView;
+    pub const CreateRenderTargetView = IDevice.Methods(@This()).CreateRenderTargetView;
+    pub const CreateDepthStencilView = IDevice.Methods(@This()).CreateDepthStencilView;
+    pub const CreateSampler = IDevice.Methods(@This()).CreateSampler;
+    pub const CopyDescriptors = IDevice.Methods(@This()).CopyDescriptors;
+    pub const CopyDescriptorsSimple = IDevice.Methods(@This()).CopyDescriptorsSimple;
+    pub const GetResourceAllocationInfo = IDevice.Methods(@This()).GetResourceAllocationInfo;
+    pub const GetCustomHeapProperties = IDevice.Methods(@This()).GetCustomHeapProperties;
+    pub const CreateCommittedResource = IDevice.Methods(@This()).CreateCommittedResource;
+    pub const CreateHeap = IDevice.Methods(@This()).CreateHeap;
+    pub const CreatePlacedResource = IDevice.Methods(@This()).CreatePlacedResource;
+    pub const CreateReservedResource = IDevice.Methods(@This()).CreateReservedResource;
+    pub const CreateSharedHandle = IDevice.Methods(@This()).CreateSharedHandle;
+    pub const OpenSharedHandle = IDevice.Methods(@This()).OpenSharedHandle;
+    pub const OpenSharedHandleByName = IDevice.Methods(@This()).OpenSharedHandleByName;
+    pub const MakeResident = IDevice.Methods(@This()).MakeResident;
+    pub const Evict = IDevice.Methods(@This()).Evict;
+    pub const CreateFence = IDevice.Methods(@This()).CreateFence;
+    pub const GetDeviceRemovedReason = IDevice.Methods(@This()).GetDeviceRemovedReason;
+    pub const GetCopyableFootprints = IDevice.Methods(@This()).GetCopyableFootprints;
+    pub const CreateQueryHeap = IDevice.Methods(@This()).CreateQueryHeap;
+    pub const SetStablePowerState = IDevice.Methods(@This()).SetStablePowerState;
+    pub const CreateCommandSignature = IDevice.Methods(@This()).CreateCommandSignature;
+    pub const GetResourceTiling = IDevice.Methods(@This()).GetResourceTiling;
+    pub const GetAdapterLuid = IDevice.Methods(@This()).GetAdapterLuid;
+
+    pub const CreatePipelineLibrary = IDevice1.Methods(@This()).CreatePipelineLibrary;
+    pub const SetEventOnMultipleFenceCompletion = IDevice1.Methods(@This()).SetEventOnMultipleFenceCompletion;
+    pub const SetResidencyPriority = IDevice1.Methods(@This()).SetResidencyPriority;
+
+    pub const CreatePipelineState = IDevice2.Methods(@This()).CreatePipelineState;
+
+    pub const OpenExistingHeapFromAddress = IDevice3.Methods(@This()).OpenExistingHeapFromAddress;
+    pub const OpenExistingHeapFromFileMapping = IDevice3.Methods(@This()).OpenExistingHeapFromFileMapping;
+    pub const EnqueueMakeResident = IDevice3.Methods(@This()).EnqueueMakeResident;
+
+    pub const CreateCommandList1 = IDevice4.Methods(@This()).CreateCommandList1;
+    pub const CreateProtectedResourceSession = IDevice4.Methods(@This()).CreateProtectedResourceSession;
+    pub const CreateCommittedResource1 = IDevice4.Methods(@This()).CreateCommittedResource1;
+    pub const CreateHeap1 = IDevice4.Methods(@This()).CreateHeap1;
+    pub const CreateReservedResource1 = IDevice4.Methods(@This()).CreateReservedResource1;
+    pub const GetResourceAllocationInfo1 = IDevice4.Methods(@This()).GetResourceAllocationInfo1;
+
+    pub const CreateLifetimeTracker = IDevice5.Methods(@This()).CreateLifetimeTracker;
+    pub const RemoveDevice = IDevice5.Methods(@This()).RemoveDevice;
+    pub const EnumerateMetaCommands = IDevice5.Methods(@This()).EnumerateMetaCommands;
+    pub const EnumerateMetaCommandParameters = IDevice5.Methods(@This()).EnumerateMetaCommandParameters;
+    pub const CreateMetaCommand = IDevice5.Methods(@This()).CreateMetaCommand;
+    pub const CreateStateObject = IDevice5.Methods(@This()).CreateStateObject;
+    pub const GetRaytracingAccelerationStructurePrebuildInfo = IDevice5.Methods(@This()).GetRaytracingAccelerationStructurePrebuildInfo;
+    pub const CheckDriverMatchingIdentifier = IDevice5.Methods(@This()).CheckDriverMatchingIdentifier;
+
+    pub const SetBackgroundProcessingMode = IDevice6.Methods(@This()).SetBackgroundProcessingMode;
+
+    pub const AddToStateObject = IDevice7.Methods(@This()).AddToStateObject;
+    pub const CreateProtectedResourceSession1 = IDevice7.Methods(@This()).CreateProtectedResourceSession1;
+
+    pub const GetResourceAllocationInfo2 = IDevice8.Methods(@This()).GetResourceAllocationInfo2;
+    pub const CreateCommittedResource2 = IDevice8.Methods(@This()).CreateCommittedResource2;
+    pub const CreatePlacedResource1 = IDevice8.Methods(@This()).CreatePlacedResource1;
+    pub const CreateSamplerFeedbackUnorderedAccessView = IDevice8.Methods(@This()).CreateSamplerFeedbackUnorderedAccessView;
+    pub const GetCopyableFootprints1 = IDevice8.Methods(@This()).GetCopyableFootprints1;
+
+    pub const CreateShaderCacheSession = IDevice9.Methods(@This()).CreateShaderCacheSession;
+    pub const ShaderCacheControl = IDevice9.Methods(@This()).ShaderCacheControl;
+    pub const CreateCommandQueue1 = IDevice9.Methods(@This()).CreateCommandQueue1;
+
+    pub const CreateCommittedResource3 = IDevice10.Methods(@This()).CreateCommittedResource3;
+    pub const CreatePlacedResource2 = IDevice10.Methods(@This()).CreatePlacedResource2;
+    pub const CreateReservedResource2 = IDevice10.Methods(@This()).CreateReservedResource2;
+
+    pub const CreateSampler2 = IDevice10.Methods(@This()).CreateSampler2;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDevice10.Methods(T);
-
             pub inline fn CreateSampler2(
                 self: *T,
                 desc: *const SAMPLER_DESC2,
                 dst_descriptor: CPU_DESCRIPTOR_HANDLE,
             ) void {
                 @as(*const IDevice11.VTable, @ptrCast(self.__v))
-                    .CreateSampler2(@as(*IDevice11, @ptrCast(self)), desc, dst_descriptor);
+                    .CreateSampler2(@ptrCast(self), desc, dst_descriptor);
             }
         };
     }
@@ -6174,19 +7933,26 @@ pub const PROTECTED_SESSION_STATUS = enum(UINT) {
 pub const IProtectedSession = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetStatusFence = IProtectedSession.Methods(@This()).GetStatusFence;
+    pub const GetSessionStatus = IProtectedSession.Methods(@This()).GetSessionStatus;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDeviceChild.Methods(T);
-
             pub inline fn GetStatusFence(self: *T, guid: *const GUID, fence: ?*?*anyopaque) HRESULT {
                 return @as(*const IProtectedSession.VTable, @ptrCast(self.__v))
-                    .GetStatusFence(@as(*IProtectedSession, @ptrCast(self)), guid, fence);
+                    .GetStatusFence(@ptrCast(self), guid, fence);
             }
             pub inline fn GetSessionStatus(self: *T) PROTECTED_SESSION_STATUS {
-                return @as(*const IProtectedSession.VTable, @ptrCast(self.__v))
-                    .GetSessionStatus(@as(*IProtectedSession, @ptrCast(self)));
+                return @as(*const IProtectedSession.VTable, @ptrCast(self.__v)).GetSessionStatus(@ptrCast(self));
             }
         };
     }
@@ -6210,16 +7976,25 @@ pub const PROTECTED_RESOURCE_SESSION_DESC = extern struct {
 pub const IProtectedResourceSession = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const GetPrivateData = IObject.Methods(@This()).GetPrivateData;
+    pub const SetPrivateData = IObject.Methods(@This()).SetPrivateData;
+    pub const SetPrivateDataInterface = IObject.Methods(@This()).SetPrivateDataInterface;
+    pub const SetName = IObject.Methods(@This()).SetName;
+
+    pub const GetStatusFence = IProtectedSession.Methods(@This()).GetStatusFence;
+    pub const GetSessionStatus = IProtectedSession.Methods(@This()).GetSessionStatus;
+
+    pub const GetDesc = IProtectedResourceSession.Methods(@This()).GetDesc;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IProtectedSession.Methods(T);
-
             pub inline fn GetDesc(self: *T) PROTECTED_RESOURCE_SESSION_DESC {
                 var desc: PROTECTED_RESOURCE_SESSION_DESC = undefined;
-                _ = @as(*const IProtectedResourceSession.VTable, @ptrCast(self.__v))
-                    .GetDesc(@as(*IProtectedResourceSession, @ptrCast(self)), &desc);
+                _ = @as(*const IProtectedResourceSession.VTable, @ptrCast(self.__v)).GetDesc(@ptrCast(self), &desc);
                 return desc;
             }
         };
@@ -6273,96 +8048,34 @@ pub const IID_IDebugDevice = GUID.parse("{3febd6dd-4973-4787-8194-e45f9e28923e}"
 pub const IDebugDevice = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const SetFeatureMask = IDebugDevice.Methods(@This()).SetFeatureMask;
+    pub const GetFeatureMask = IDebugDevice.Methods(@This()).GetFeatureMask;
+    pub const ReportLiveDeviceObjects = IDebugDevice.Methods(@This()).ReportLiveDeviceObjects;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn SetFeatureMask(self: *T, mask: DEBUG_FEATURE) HRESULT {
                 return @as(*const IDebugDevice.VTable, @ptrCast(self.__v))
-                    .SetFeatureMask(@as(*IDebugDevice, @ptrCast(self)), mask);
+                    .SetFeatureMask(@ptrCast(self), mask);
             }
             pub inline fn GetFeatureMask(self: *T) DEBUG_FEATURE {
-                return @as(*const IDebugDevice.VTable, @ptrCast(self.__v))
-                    .GetFeatureMask(@as(*IDebugDevice, @ptrCast(self)));
+                return @as(*const IDebugDevice.VTable, @ptrCast(self.__v)).GetFeatureMask(@ptrCast(self));
             }
             pub inline fn ReportLiveDeviceObjects(self: *T, flags: RLDO_FLAGS) HRESULT {
                 return @as(*const IDebugDevice.VTable, @ptrCast(self.__v))
-                    .ReportLiveDeviceObjects(@as(*IDebugDevice, @ptrCast(self)), flags);
+                    .ReportLiveDeviceObjects(@ptrCast(self), flags);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IDebugDevice;
         base: IUnknown.VTable,
-        SetFeatureMask: *const fn (*T, DEBUG_FEATURE) callconv(WINAPI) HRESULT,
-        GetFeatureMask: *const fn (*T) callconv(WINAPI) DEBUG_FEATURE,
-        ReportLiveDeviceObjects: *const fn (*T, RLDO_FLAGS) callconv(WINAPI) HRESULT,
+        SetFeatureMask: *const fn (*IDebugDevice, DEBUG_FEATURE) callconv(WINAPI) HRESULT,
+        GetFeatureMask: *const fn (*IDebugDevice) callconv(WINAPI) DEBUG_FEATURE,
+        ReportLiveDeviceObjects: *const fn (*IDebugDevice, RLDO_FLAGS) callconv(WINAPI) HRESULT,
     };
 };
-
-pub const IID_ICommandQueue = GUID{
-    .Data1 = 0x0ec870a6,
-    .Data2 = 0x5d7e,
-    .Data3 = 0x4c22,
-    .Data4 = .{ 0x8c, 0xfc, 0x5b, 0xaa, 0xe0, 0x76, 0x16, 0xed },
-};
-pub const IID_IFence = GUID{
-    .Data1 = 0x0a753dcf,
-    .Data2 = 0xc4d8,
-    .Data3 = 0x4b91,
-    .Data4 = .{ 0xad, 0xf6, 0xbe, 0x5a, 0x60, 0xd9, 0x5a, 0x76 },
-};
-pub const IID_ICommandAllocator = GUID{
-    .Data1 = 0x6102dee4,
-    .Data2 = 0xaf59,
-    .Data3 = 0x4b09,
-    .Data4 = .{ 0xb9, 0x99, 0xb4, 0x4d, 0x73, 0xf0, 0x9b, 0x24 },
-};
-pub const IID_IPipelineState = GUID{
-    .Data1 = 0x765a30f3,
-    .Data2 = 0xf624,
-    .Data3 = 0x4c6f,
-    .Data4 = .{ 0xa8, 0x28, 0xac, 0xe9, 0x48, 0x62, 0x24, 0x45 },
-};
-pub const IID_IDescriptorHeap = GUID{
-    .Data1 = 0x8efb471d,
-    .Data2 = 0x616c,
-    .Data3 = 0x4f49,
-    .Data4 = .{ 0x90, 0xf7, 0x12, 0x7b, 0xb7, 0x63, 0xfa, 0x51 },
-};
-pub const IID_IResource = GUID{
-    .Data1 = 0x696442be,
-    .Data2 = 0xa72e,
-    .Data3 = 0x4059,
-    .Data4 = .{ 0xbc, 0x79, 0x5b, 0x5c, 0x98, 0x04, 0x0f, 0xad },
-};
-pub const IID_IRootSignature = GUID{
-    .Data1 = 0xc54a6b66,
-    .Data2 = 0x72df,
-    .Data3 = 0x4ee8,
-    .Data4 = .{ 0x8b, 0xe5, 0xa9, 0x46, 0xa1, 0x42, 0x92, 0x14 },
-};
-pub const IID_IQueryHeap = GUID{
-    .Data1 = 0x0d9658ae,
-    .Data2 = 0xed45,
-    .Data3 = 0x469e,
-    .Data4 = .{ 0xa6, 0x1d, 0x97, 0x0e, 0xc5, 0x83, 0xca, 0xb4 },
-};
-pub const IID_IHeap = GUID{
-    .Data1 = 0x6b3b2502,
-    .Data2 = 0x6e51,
-    .Data3 = 0x45b3,
-    .Data4 = .{ 0x90, 0xee, 0x98, 0x84, 0x26, 0x5e, 0x8d, 0xf3 },
-};
-
-// Error return codes from:
-// https://docs.microsoft.com/en-us/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues
-pub const ERROR_ADAPTER_NOT_FOUND = @as(HRESULT, @bitCast(@as(c_ulong, 0x887E0001)));
-pub const ERROR_DRIVER_VERSION_MISMATCH = @as(HRESULT, @bitCast(@as(c_ulong, 0x887E0002)));
-
-test {
-    std.testing.refAllDecls(@This());
-}

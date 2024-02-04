@@ -14,97 +14,50 @@ pub const GPU_BASED_VALIDATION_FLAGS = packed struct(UINT) {
 pub const IDebug = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const EnableDebugLayer = IDebug.Methods(@This()).EnableDebugLayer;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn EnableDebugLayer(self: *T) void {
-                @as(*const IDebug.VTable, @ptrCast(self.__v)).EnableDebugLayer(@as(*IDebug, @ptrCast(self)));
+                @as(*const IDebug.VTable, @ptrCast(self.__v)).EnableDebugLayer(@ptrCast(self));
             }
         };
     }
 
     pub const VTable = extern struct {
         base: IUnknown.VTable,
-        EnableDebugLayer: fn (*IDebug) callconv(WINAPI) void,
-    };
-};
-
-pub const IDebug1 = extern struct {
-    __v: *const VTable,
-
-    pub usingnamespace Methods(@This());
-
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
-            pub inline fn EnableDebugLayer(self: *T) void {
-                @as(*const IDebug1.VTable, @ptrCast(self.__v)).EnableDebugLayer(@as(*IDebug1, @ptrCast(self)));
-            }
-            pub inline fn SetEnableGPUBasedValidation(self: *T, enable: BOOL) void {
-                @as(*const IDebug1.VTable, @ptrCast(self.__v))
-                    .SetEnableGPUBasedValidation(@as(*IDebug1, @ptrCast(self)), enable);
-            }
-            pub inline fn SetEnableSynchronizedCommandQueueValidation(self: *T, enable: BOOL) void {
-                @as(*const IDebug1.VTable, @ptrCast(self.__v))
-                    .SetEnableSynchronizedCommandQueueValidation(@as(*IDebug1, @ptrCast(self)), enable);
-            }
-        };
-    }
-
-    pub const VTable = extern struct {
-        base: IUnknown.VTable,
-        EnableDebugLayer: *const fn (*IDebug1) callconv(WINAPI) void,
-        SetEnableGPUBasedValidation: *const fn (*IDebug1, BOOL) callconv(WINAPI) void,
-        SetEnableSynchronizedCommandQueueValidation: *const fn (*IDebug1, BOOL) callconv(WINAPI) void,
-    };
-};
-
-pub const IDebug2 = extern struct {
-    __v: *const VTable,
-
-    pub usingnamespace Methods(@This());
-
-    pub fn Methods(comptime T: type) type {
-        return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
-            pub inline fn SetGPUBasedValidationFlags(self: *T, flags: GPU_BASED_VALIDATION_FLAGS) void {
-                @as(*const IDebug2.VTable, @ptrCast(self.__v))
-                    .SetGPUBasedValidationFlags(@as(*IDebug2, @ptrCast(self)), flags);
-            }
-        };
-    }
-
-    pub const VTable = extern struct {
-        base: IUnknown.VTable,
-        SetGPUBasedValidationFlags: *const fn (*IDebug2, GPU_BASED_VALIDATION_FLAGS) callconv(WINAPI) void,
+        EnableDebugLayer: *const fn (*IDebug) callconv(WINAPI) void,
     };
 };
 
 pub const IDebug3 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const EnableDebugLayer = IDebug.Methods(@This()).EnableDebugLayer;
+
+    pub const SetEnableGPUBasedValidation = IDebug3.Methods(@This()).SetEnableGPUBasedValidation;
+    pub const SetEnableSynchronizedCommandQueueValidation = IDebug3.Methods(@This()).SetEnableSynchronizedCommandQueueValidation;
+    pub const SetGPUBasedValidationFlags = IDebug3.Methods(@This()).SetGPUBasedValidationFlags;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDebug.Methods(T);
-
             pub inline fn SetEnableGPUBasedValidation(self: *T, enable: BOOL) void {
-                @as(*const IDebug3.VTable, @ptrCast(self.__v))
-                    .SetEnableGPUBasedValidation(@as(*IDebug3, @ptrCast(self)), enable);
+                @as(*const IDebug3.VTable, @ptrCast(self.__v)).SetEnableGPUBasedValidation(@ptrCast(self), enable);
             }
             pub inline fn SetEnableSynchronizedCommandQueueValidation(self: *T, enable: BOOL) void {
                 @as(*const IDebug3.VTable, @ptrCast(self.__v))
-                    .SetEnableSynchronizedCommandQueueValidation(@as(*IDebug3, @ptrCast(self)), enable);
+                    .SetEnableSynchronizedCommandQueueValidation(@ptrCast(self), enable);
             }
             pub inline fn SetGPUBasedValidationFlags(self: *T, flags: GPU_BASED_VALIDATION_FLAGS) void {
-                @as(*const IDebug3.VTable, @ptrCast(self.__v))
-                    .SetGPUBasedValidationFlags(@as(*IDebug3, @ptrCast(self)), flags);
+                @as(*const IDebug3.VTable, @ptrCast(self.__v)).SetGPUBasedValidationFlags(@ptrCast(self), flags);
             }
         };
     }
@@ -120,14 +73,22 @@ pub const IDebug3 = extern struct {
 pub const IDebug4 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const EnableDebugLayer = IDebug.Methods(@This()).EnableDebugLayer;
+
+    pub const SetEnableGPUBasedValidation = IDebug3.Methods(@This()).SetEnableGPUBasedValidation;
+    pub const SetEnableSynchronizedCommandQueueValidation = IDebug3.Methods(@This()).SetEnableSynchronizedCommandQueueValidation;
+    pub const SetGPUBasedValidationFlags = IDebug3.Methods(@This()).SetGPUBasedValidationFlags;
+
+    pub const DisableDebugLayer = IDebug4.Methods(@This()).DisableDebugLayer;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDebug3.Methods(T);
-
             pub inline fn DisableDebugLayer(self: *T) void {
-                @as(*const IDebug4.VTable, @ptrCast(self.__v)).DisableDebugLayer(@as(*IDebug4, @ptrCast(self)));
+                @as(*const IDebug4.VTable, @ptrCast(self.__v)).DisableDebugLayer(@ptrCast(self));
             }
         };
     }
@@ -138,17 +99,28 @@ pub const IDebug4 = extern struct {
     };
 };
 
+pub const IID_IDebug5 = GUID.parse("{548d6b12-09fa-40e0-9069-5dcd589a52c9}");
 pub const IDebug5 = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const EnableDebugLayer = IDebug.Methods(@This()).EnableDebugLayer;
+
+    pub const SetEnableGPUBasedValidation = IDebug3.Methods(@This()).SetEnableGPUBasedValidation;
+    pub const SetEnableSynchronizedCommandQueueValidation = IDebug3.Methods(@This()).SetEnableSynchronizedCommandQueueValidation;
+    pub const SetGPUBasedValidationFlags = IDebug3.Methods(@This()).SetGPUBasedValidationFlags;
+
+    pub const DisableDebugLayer = IDebug4.Methods(@This()).DisableDebugLayer;
+
+    pub const SetEnableAutoName = IDebug5.Methods(@This()).SetEnableAutoName;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IDebug4.Methods(T);
-
             pub inline fn SetEnableAutoName(self: *T, enable: BOOL) void {
-                @as(*const IDebug5.VTable, @ptrCast(self.__v)).SetEnableAutoName(@as(*IDebug5, @ptrCast(self)), enable);
+                @as(*const IDebug5.VTable, @ptrCast(self.__v)).SetEnableAutoName(@ptrCast(self), enable);
             }
         };
     }
@@ -201,34 +173,38 @@ pub const INFO_QUEUE_FILTER = extern struct {
     DenyList: INFO_QUEUE_FILTER_DESC,
 };
 
+pub const IID_IInfoQueue = GUID.parse("{0742a90b-c387-483f-b946-30a7e4e61458}");
 pub const IInfoQueue = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const AddStorageFilterEntries = IInfoQueue.Methods(@This()).AddStorageFilterEntries;
+    pub const PushStorageFilter = IInfoQueue.Methods(@This()).PushStorageFilter;
+    pub const PopStorageFilter = IInfoQueue.Methods(@This()).PopStorageFilter;
+    pub const SetMuteDebugOutput = IInfoQueue.Methods(@This()).SetMuteDebugOutput;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub usingnamespace IUnknown.Methods(T);
-
             pub inline fn AddStorageFilterEntries(self: *T, filter: *INFO_QUEUE_FILTER) HRESULT {
                 return @as(*const IInfoQueue.VTable, @ptrCast(self.__v))
-                    .AddStorageFilterEntries(@as(*IInfoQueue, @ptrCast(self)), filter);
+                    .AddStorageFilterEntries(@ptrCast(self), filter);
             }
             pub inline fn PushStorageFilter(self: *T, filter: *INFO_QUEUE_FILTER) HRESULT {
-                return @as(*const IInfoQueue.VTable, @ptrCast(self.__v))
-                    .PushStorageFilter(@as(*IInfoQueue, @ptrCast(self)), filter);
+                return @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).PushStorageFilter(@ptrCast(self), filter);
             }
             pub inline fn PopStorageFilter(self: *T) void {
-                @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).PopStorageFilter(@as(*IInfoQueue, @ptrCast(self)));
+                @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).PopStorageFilter(@ptrCast(self));
             }
             pub inline fn SetMuteDebugOutput(self: *T, mute: BOOL) void {
-                @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).SetMuteDebugOutput(@as(*IInfoQueue, @ptrCast(self)), mute);
+                @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).SetMuteDebugOutput(@ptrCast(self), mute);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IInfoQueue;
         base: IUnknown.VTable,
         SetMessageCountLimit: *anyopaque,
         ClearStoredMessages: *anyopaque,
@@ -239,13 +215,13 @@ pub const IInfoQueue = extern struct {
         GetNumStoredMessagesAllowedByRetrievalFilter: *anyopaque,
         GetNumMessagesDiscardedByMessageCountLimit: *anyopaque,
         GetMessageCountLimit: *anyopaque,
-        AddStorageFilterEntries: *const fn (*T, *INFO_QUEUE_FILTER) callconv(WINAPI) HRESULT,
+        AddStorageFilterEntries: *const fn (*IInfoQueue, *INFO_QUEUE_FILTER) callconv(WINAPI) HRESULT,
         GetStorageFilter: *anyopaque,
         ClearStorageFilter: *anyopaque,
         PushEmptyStorageFilter: *anyopaque,
         PushCopyOfStorageFilter: *anyopaque,
-        PushStorageFilter: *const fn (*T, *INFO_QUEUE_FILTER) callconv(WINAPI) HRESULT,
-        PopStorageFilter: *const fn (*T) callconv(WINAPI) void,
+        PushStorageFilter: *const fn (*IInfoQueue, *INFO_QUEUE_FILTER) callconv(WINAPI) HRESULT,
+        PopStorageFilter: *const fn (*IInfoQueue) callconv(WINAPI) void,
         GetStorageFilterStackSize: *anyopaque,
         AddRetrievalFilterEntries: *anyopaque,
         GetRetrievalFilter: *anyopaque,
@@ -263,50 +239,7 @@ pub const IInfoQueue = extern struct {
         GetBreakOnCategory: *anyopaque,
         GetBreakOnSeverity: *anyopaque,
         GetBreakOnID: *anyopaque,
-        SetMuteDebugOutput: *const fn (*T, BOOL) callconv(WINAPI) void,
+        SetMuteDebugOutput: *const fn (*IInfoQueue, BOOL) callconv(WINAPI) void,
         GetMuteDebugOutput: *anyopaque,
     };
-};
-
-pub const IID_IDebug = GUID{
-    .Data1 = 0x344488b7,
-    .Data2 = 0x6846,
-    .Data3 = 0x474b,
-    .Data4 = .{ 0xb9, 0x89, 0xf0, 0x27, 0x44, 0x82, 0x45, 0xe0 },
-};
-pub const IID_IDebug1 = GUID{
-    .Data1 = 0xaffaa4ca,
-    .Data2 = 0x63fe,
-    .Data3 = 0x4d8e,
-    .Data4 = .{ 0xb8, 0xad, 0x15, 0x90, 0x00, 0xaf, 0x43, 0x04 },
-};
-pub const IID_IDebug2 = GUID{
-    .Data1 = 0x93a665c4,
-    .Data2 = 0xa3b2,
-    .Data3 = 0x4e5d,
-    .Data4 = .{ 0xb6, 0x92, 0xa2, 0x6a, 0xe1, 0x4e, 0x33, 0x74 },
-};
-pub const IID_IDebug3 = GUID{
-    .Data1 = 0x5cf4e58f,
-    .Data2 = 0xf671,
-    .Data3 = 0x4ff0,
-    .Data4 = .{ 0xa5, 0x42, 0x36, 0x86, 0xe3, 0xd1, 0x53, 0xd1 },
-};
-pub const IID_IDebug4 = GUID{
-    .Data1 = 0x014b816e,
-    .Data2 = 0x9ec5,
-    .Data3 = 0x4a2f,
-    .Data4 = .{ 0xa8, 0x45, 0xff, 0xbe, 0x44, 0x1c, 0xe1, 0x3a },
-};
-pub const IID_IDebug5 = GUID{
-    .Data1 = 0x548d6b12,
-    .Data2 = 0x09fa,
-    .Data3 = 0x40e0,
-    .Data4 = .{ 0x90, 0x69, 0x5d, 0xcd, 0x58, 0x9a, 0x52, 0xc9 },
-};
-pub const IID_IInfoQueue = GUID{
-    .Data1 = 0x0742a90b,
-    .Data2 = 0xc387,
-    .Data3 = 0x483f,
-    .Data4 = .{ 0xb9, 0x46, 0x30, 0xa7, 0xe4, 0xe6, 0x14, 0x58 },
 };

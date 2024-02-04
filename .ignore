@@ -1,0 +1,5 @@
+*.dll
+*.pdb
+*.png
+*.exe
+.gitkeep

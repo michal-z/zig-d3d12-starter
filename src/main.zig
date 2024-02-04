@@ -271,8 +271,8 @@ const Dx12State = struct {
         std.log.info("DXGI factory created", .{});
 
         {
-            var maybe_debug: ?*d3d12d.IDebug1 = null;
-            _ = d3d12.GetDebugInterface(&d3d12d.IID_IDebug1, @ptrCast(&maybe_debug));
+            var maybe_debug: ?*d3d12d.IDebug5 = null;
+            _ = d3d12.GetDebugInterface(&d3d12d.IID_IDebug5, @ptrCast(&maybe_debug));
             if (maybe_debug) |debug| {
                 // Uncomment below line to enable debug layer
                 //debug.EnableDebugLayer();

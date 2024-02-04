@@ -447,19 +447,20 @@ pub const IID_IUnknown = GUID.parse("{00000000-0000-0000-C000-000000000046}");
 pub const IUnknown = extern struct {
     __v: *const VTable,
 
-    pub usingnamespace Methods(@This());
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn QueryInterface(self: *T, guid: *const GUID, outobj: ?*?*anyopaque) HRESULT {
-                return @as(*const IUnknown.VTable, @ptrCast(self.__v))
-                    .QueryInterface(@as(*IUnknown, @ptrCast(self)), guid, outobj);
+                return @as(*const IUnknown.VTable, @ptrCast(self.__v)).QueryInterface(@ptrCast(self), guid, outobj);
             }
             pub inline fn AddRef(self: *T) ULONG {
-                return @as(*const IUnknown.VTable, @ptrCast(self.__v)).AddRef(@as(*IUnknown, @ptrCast(self)));
+                return @as(*const IUnknown.VTable, @ptrCast(self.__v)).AddRef(@ptrCast(self));
             }
             pub inline fn Release(self: *T) ULONG {
-                return @as(*const IUnknown.VTable, @ptrCast(self.__v)).Release(@as(*IUnknown, @ptrCast(self)));
+                return @as(*const IUnknown.VTable, @ptrCast(self.__v)).Release(@ptrCast(self));
             }
         };
     }
