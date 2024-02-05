@@ -5,7 +5,7 @@ git clone https://github.com/michal-z/zig-d3d12-starter.git
 cd zig-d3d12-starter
 zig build run
 ```
-* Minimal and ready to use project with no dependency except Zig compiler
+* Minimal and ready to use project with no dependency except [Zig compiler (master)](https://ziglang.org/download/)
 * Shader compiler included
 * Agility SDK support
 * D3D12 bindings
