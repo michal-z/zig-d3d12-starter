@@ -15,6 +15,15 @@ pub fn build(b: *std.Build) void {
     if (optimize == .ReleaseFast)
         exe.root_module.strip = true;
 
+    const d3d12_debug = b.option(bool, "d3d12-debug", "Enable D3D12 debug layer") orelse false;
+    const d3d12_debug_gpu = b.option(bool, "d3d12-debug-gpu", "Enable D3D12 GPU-based validation") orelse false;
+
+    const build_options = b.addOptions();
+    build_options.addOption(bool, "d3d12_debug", d3d12_debug);
+    build_options.addOption(bool, "d3d12_debug_gpu", d3d12_debug_gpu);
+
+    exe.root_module.addOptions("build_options", build_options);
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

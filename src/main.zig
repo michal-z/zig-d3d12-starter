@@ -8,6 +8,8 @@ export const D3D12SDKVersion: u32 = 611;
 export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
 
 const window_name = "zig-d3d12-starter";
+const d3d12_debug = @import("build_options").d3d12_debug;
+const d3d12_debug_gpu = @import("build_options").d3d12_debug_gpu;
 
 fn vhr(hr: w32.HRESULT) void {
     if (hr != 0) @panic("HRESULT error!");
@@ -102,14 +104,17 @@ pub fn main() !void {
         const vs_cso = @embedFile("cso/s00.vs.cso");
         const ps_cso = @embedFile("cso/s00.ps.cso");
 
-        var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.initDefault();
-        pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
-        pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM;
-        pso_desc.NumRenderTargets = 1;
-        pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0xf;
-        pso_desc.PrimitiveTopologyType = .TRIANGLE;
-        pso_desc.VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len };
-        pso_desc.PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len };
+        const pso_desc = pso_desc: {
+            var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.initDefault();
+            pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
+            pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM;
+            pso_desc.NumRenderTargets = 1;
+            pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0xf;
+            pso_desc.PrimitiveTopologyType = .TRIANGLE;
+            pso_desc.VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len };
+            pso_desc.PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len };
+            break :pso_desc pso_desc;
+        };
 
         var root_signature: *d3d12.IRootSignature = undefined;
         vhr(dx12.device.CreateRootSignature(
@@ -129,8 +134,10 @@ pub fn main() !void {
 
         break :blk .{ root_signature, pipeline };
     };
-    defer _ = pipeline.Release();
-    defer _ = root_signature.Release();
+    defer {
+        _ = pipeline.Release();
+        _ = root_signature.Release();
+    }
 
     var frac: f32 = 0.0;
     var frac_delta: f32 = 0.005;
@@ -144,14 +151,11 @@ pub fn main() !void {
             while (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == w32.TRUE) {
                 _ = w32.TranslateMessage(&message);
                 _ = w32.DispatchMessageA(&message);
-                if (message.message == w32.WM_QUIT) {
-                    break :main_loop;
-                }
+                if (message.message == w32.WM_QUIT) break :main_loop;
             }
 
             dx12.maybeResize();
-            if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0)
-                continue :main_loop;
+            if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0) continue :main_loop;
         }
 
         const command_allocator = dx12.command_allocators[dx12.frame_index];
@@ -238,7 +242,7 @@ const Dx12State = struct {
     window_rect: w32.RECT,
 
     dxgi_factory: *dxgi.IFactory6,
-    device: *d3d12.IDevice9,
+    device: *d3d12.IDevice11,
 
     swap_chain: *dxgi.ISwapChain3,
     swap_chain_textures: [num_frames]*d3d12.IResource,
@@ -253,7 +257,7 @@ const Dx12State = struct {
 
     command_queue: *d3d12.ICommandQueue,
     command_allocators: [num_frames]*d3d12.ICommandAllocator,
-    command_list: *d3d12.IGraphicsCommandList6,
+    command_list: *d3d12.IGraphicsCommandList9,
 
     const num_frames = 2;
 
@@ -266,12 +270,12 @@ const Dx12State = struct {
 
         std.log.info("DXGI factory created", .{});
 
-        {
+        if (d3d12_debug or d3d12_debug_gpu) {
             var maybe_debug: ?*d3d12d.IDebug5 = null;
             _ = d3d12.GetDebugInterface(&d3d12d.IID_IDebug5, @ptrCast(&maybe_debug));
             if (maybe_debug) |debug| {
-                // Uncomment below line to enable debug layer
-                //debug.EnableDebugLayer();
+                debug.EnableDebugLayer();
+                if (d3d12_debug_gpu) debug.SetEnableGPUBasedValidation(w32.TRUE);
                 _ = debug.Release();
             }
         }
@@ -279,7 +283,7 @@ const Dx12State = struct {
         //
         // D3D12 Device
         //
-        var device: *d3d12.IDevice9 = undefined;
+        var device: *d3d12.IDevice11 = undefined;
         if (d3d12.CreateDevice(null, .@"11_0", &d3d12.IID_IDevice9, @ptrCast(&device)) != w32.S_OK) {
             _ = w32.MessageBoxA(
                 window,
@@ -404,7 +408,7 @@ const Dx12State = struct {
         //
         // Command List
         //
-        var command_list: *d3d12.IGraphicsCommandList6 = undefined;
+        var command_list: *d3d12.IGraphicsCommandList9 = undefined;
         vhr(device.CreateCommandList(
             0,
             .DIRECT,
@@ -493,19 +497,14 @@ const Dx12State = struct {
             vhr(dx12.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, .{}));
 
             for (&dx12.swap_chain_textures, 0..) |*texture, i| {
-                vhr(dx12.swap_chain.GetBuffer(
-                    @intCast(i),
-                    &d3d12.IID_IResource,
-                    @ptrCast(&texture.*),
-                ));
+                vhr(dx12.swap_chain.GetBuffer(@intCast(i), &d3d12.IID_IResource, @ptrCast(&texture.*)));
             }
 
             for (dx12.swap_chain_textures, 0..) |texture, i| {
                 dx12.device.CreateRenderTargetView(
                     texture,
                     null,
-                    .{ .ptr = dx12.rtv_heap_start.ptr +
-                        i * dx12.device.GetDescriptorHandleIncrementSize(.RTV) },
+                    .{ .ptr = dx12.rtv_heap_start.ptr + i * dx12.device.GetDescriptorHandleIncrementSize(.RTV) },
                 );
             }
         }
