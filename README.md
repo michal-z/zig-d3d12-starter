@@ -9,8 +9,14 @@ zig build run
 * Shader compiler included
 * Agility SDK support
 * D3D12 bindings
-* D3D12 debug layer support
-* No libc usage
+* D3D12 debug layer and GPU-based validation support
+* No libc dependency
 * Small output binary (~25 KB in `ReleaseFast` configuration)
+
+Build options:
+
+    zig build run -Doptimize=ReleaseFast
+    zig build run -Dd3d12-debug=true (enable D3D12 debug layer)
+    zig build run -Dd3d12-debug-gpu=true (enable D3D12 debug layer and GPU-based validation)
 
 ![image](screenshot.png)
