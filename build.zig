@@ -1,7 +1,5 @@
 const std = @import("std");
 
-pub const min_zig_version = std.SemanticVersion{ .major = 0, .minor = 12, .patch = 0, .pre = "dev.2540" };
-
 pub fn build(b: *std.Build) void {
     ensureZigVersion() catch return;
 
@@ -14,10 +12,9 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .link_libc = false,
+        .strip = if (optimize == .ReleaseFast) true else null,
     });
     exe.rdynamic = true;
-    if (optimize == .ReleaseFast)
-        exe.root_module.strip = true;
 
     const d3d12_debug = b.option(bool, "d3d12-debug", "Enable D3D12 debug layer") orelse false;
     const d3d12_debug_gpu = b.option(bool, "d3d12-debug-gpu", "Enable D3D12 GPU-based validation") orelse false;
@@ -43,49 +40,56 @@ pub fn build(b: *std.Build) void {
     });
     exe.step.dependOn(&install_d3d12_step.step);
 
-    const dxc_step = buildShaders(b);
+    const dxc_step = buildShaders(b, optimize);
     exe.step.dependOn(dxc_step);
 }
 
-fn buildShaders(b: *std.Build) *std.Build.Step {
+fn buildShaders(b: *std.Build, optimize: std.builtin.OptimizeMode) *std.Build.Step {
     const dxc_step = b.step("dxc", "Build HLSL shaders");
 
-    makeDxcCmd(b, dxc_step, "src/main.hlsl", "vertex", "s00.vs.cso", "vs", "");
-    makeDxcCmd(b, dxc_step, "src/main.hlsl", "pixel", "s00.ps.cso", "ps", "");
+    makeDxcCmd(b, optimize, dxc_step, "src/main.hlsl", "vertex", "s00.vs.cso", "vs", &.{""});
+    makeDxcCmd(b, optimize, dxc_step, "src/main.hlsl", "pixel", "s00.ps.cso", "ps", &.{""});
 
     return dxc_step;
 }
 
 fn makeDxcCmd(
     b: *std.Build,
+    optimize: std.builtin.OptimizeMode,
     dxc_step: *std.Build.Step,
-    comptime input_path: []const u8,
+    input_path: []const u8,
     comptime entry_point: []const u8,
     comptime output_filename: []const u8,
     comptime profile: []const u8,
-    comptime define: []const u8,
+    comptime defines: []const []const u8,
 ) void {
     const shader_ver = "6_0";
 
-    const dxc_command = [9][]const u8{
-        "bin/dxc.exe",
-        input_path,
-        "/E " ++ entry_point,
-        "/Fo " ++ "src/cso/" ++ output_filename,
-        "/T " ++ profile ++ "_" ++ shader_ver,
-        if (define.len == 0) "" else "/D " ++ define,
-        "/WX",
-        "/Ges",
-        "/O3",
-    };
+    const cmd_step = b.addSystemCommand(&.{"bin/dxc.exe"});
+    cmd_step.addArg(input_path);
+    cmd_step.addArg("/Fo " ++ "src/cso/" ++ output_filename);
+    cmd_step.addArg("/all_resources_bound");
+    cmd_step.addArgs(&.{ "/WX", "/Ges" });
+    cmd_step.addArg("/E " ++ entry_point);
+    cmd_step.addArg("/HV 2021");
+    cmd_step.addArg("/T " ++ profile ++ "_" ++ shader_ver);
 
-    const cmd_step = b.addSystemCommand(&dxc_command);
+    if (optimize == .Debug)
+        cmd_step.addArgs(&.{ "/Od", "/Zi", "/Qembed_debug" })
+    else
+        cmd_step.addArg("/O3");
+
+    inline for (defines) |define| {
+        if (define.len > 0) cmd_step.addArg("/D " ++ define);
+    }
     dxc_step.dependOn(&cmd_step.step);
 }
 
 fn ensureZigVersion() !void {
     var installed_ver = @import("builtin").zig_version;
     installed_ver.build = null;
+
+    const min_zig_version = std.SemanticVersion{ .major = 0, .minor = 12, .patch = 0, .pre = "dev.2540" };
 
     if (installed_ver.order(min_zig_version) == .lt) {
         std.log.err("\n" ++
@@ -104,8 +108,4 @@ fn ensureZigVersion() !void {
         , .{ min_zig_version, installed_ver });
         return error.ZigIsTooOld;
     }
-}
-
-inline fn thisDir() []const u8 {
-    return comptime std.fs.path.dirname(@src().file) orelse ".";
 }

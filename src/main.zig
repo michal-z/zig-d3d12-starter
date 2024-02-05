@@ -4,90 +4,16 @@ const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 
+pub const std_options = struct {
+    pub const log_level: std.log.Level = .info;
+};
+
 export const D3D12SDKVersion: u32 = 611;
 export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
 
 const window_name = "zig-d3d12-starter";
 const d3d12_debug = @import("build_options").d3d12_debug;
 const d3d12_debug_gpu = @import("build_options").d3d12_debug_gpu;
-
-fn vhr(hr: w32.HRESULT) void {
-    if (hr != 0) @panic("HRESULT error!");
-}
-
-fn processWindowMessage(
-    window: w32.HWND,
-    message: w32.UINT,
-    wparam: w32.WPARAM,
-    lparam: w32.LPARAM,
-) callconv(w32.WINAPI) w32.LRESULT {
-    switch (message) {
-        w32.WM_KEYDOWN => {
-            if (wparam == w32.VK_ESCAPE) {
-                w32.PostQuitMessage(0);
-                return 0;
-            }
-        },
-        w32.WM_GETMINMAXINFO => {
-            var info: *w32.MINMAXINFO = @ptrFromInt(@as(usize, @intCast(lparam)));
-            info.ptMinTrackSize.x = 400;
-            info.ptMinTrackSize.y = 400;
-            return 0;
-        },
-        w32.WM_DESTROY => {
-            w32.PostQuitMessage(0);
-            return 0;
-        },
-        else => {},
-    }
-    return w32.DefWindowProcA(window, message, wparam, lparam);
-}
-
-fn createWindow(width: u32, height: u32) w32.HWND {
-    const winclass = w32.WNDCLASSEXA{
-        .style = 0,
-        .lpfnWndProc = processWindowMessage,
-        .cbClsExtra = 0,
-        .cbWndExtra = 0,
-        .hInstance = @ptrCast(w32.GetModuleHandleA(null)),
-        .hIcon = null,
-        .hCursor = w32.LoadCursorA(null, @ptrFromInt(32512)),
-        .hbrBackground = null,
-        .lpszMenuName = null,
-        .lpszClassName = window_name,
-        .hIconSm = null,
-    };
-    _ = w32.RegisterClassExA(&winclass);
-
-    const style = w32.WS_OVERLAPPEDWINDOW;
-
-    var rect = w32.RECT{
-        .left = 0,
-        .top = 0,
-        .right = @intCast(width),
-        .bottom = @intCast(height),
-    };
-    _ = w32.AdjustWindowRectEx(&rect, style, w32.FALSE, 0);
-
-    const window = w32.CreateWindowExA(
-        0,
-        window_name,
-        window_name,
-        style + w32.WS_VISIBLE,
-        w32.CW_USEDEFAULT,
-        w32.CW_USEDEFAULT,
-        rect.right - rect.left,
-        rect.bottom - rect.top,
-        null,
-        null,
-        winclass.hInstance,
-        null,
-    ).?;
-
-    std.log.info("Application window created", .{});
-
-    return window;
-}
 
 pub fn main() !void {
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
@@ -512,3 +438,81 @@ const Dx12State = struct {
         dx12.window_rect = rect;
     }
 };
+
+fn processWindowMessage(
+    window: w32.HWND,
+    message: w32.UINT,
+    wparam: w32.WPARAM,
+    lparam: w32.LPARAM,
+) callconv(w32.WINAPI) w32.LRESULT {
+    switch (message) {
+        w32.WM_KEYDOWN => {
+            if (wparam == w32.VK_ESCAPE) {
+                w32.PostQuitMessage(0);
+                return 0;
+            }
+        },
+        w32.WM_GETMINMAXINFO => {
+            var info: *w32.MINMAXINFO = @ptrFromInt(@as(usize, @intCast(lparam)));
+            info.ptMinTrackSize.x = 400;
+            info.ptMinTrackSize.y = 400;
+            return 0;
+        },
+        w32.WM_DESTROY => {
+            w32.PostQuitMessage(0);
+            return 0;
+        },
+        else => {},
+    }
+    return w32.DefWindowProcA(window, message, wparam, lparam);
+}
+
+fn createWindow(width: u32, height: u32) w32.HWND {
+    const winclass = w32.WNDCLASSEXA{
+        .style = 0,
+        .lpfnWndProc = processWindowMessage,
+        .cbClsExtra = 0,
+        .cbWndExtra = 0,
+        .hInstance = @ptrCast(w32.GetModuleHandleA(null)),
+        .hIcon = null,
+        .hCursor = w32.LoadCursorA(null, @ptrFromInt(32512)),
+        .hbrBackground = null,
+        .lpszMenuName = null,
+        .lpszClassName = window_name,
+        .hIconSm = null,
+    };
+    _ = w32.RegisterClassExA(&winclass);
+
+    const style = w32.WS_OVERLAPPEDWINDOW;
+
+    var rect = w32.RECT{
+        .left = 0,
+        .top = 0,
+        .right = @intCast(width),
+        .bottom = @intCast(height),
+    };
+    _ = w32.AdjustWindowRectEx(&rect, style, w32.FALSE, 0);
+
+    const window = w32.CreateWindowExA(
+        0,
+        window_name,
+        window_name,
+        style + w32.WS_VISIBLE,
+        w32.CW_USEDEFAULT,
+        w32.CW_USEDEFAULT,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        null,
+        null,
+        winclass.hInstance,
+        null,
+    ).?;
+
+    std.log.info("Application window created", .{});
+
+    return window;
+}
+
+fn vhr(hr: w32.HRESULT) void {
+    if (hr != 0) @panic("HRESULT error!");
+}
