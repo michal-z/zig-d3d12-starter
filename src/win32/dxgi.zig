@@ -293,7 +293,7 @@ pub const FORMAT = enum(UINT) {
         };
     }
 
-    pub fn isDepthStencil(format: FORMAT) bool {
+    pub fn is_depth_stencil(format: FORMAT) bool {
         return switch (format) {
             .R32G8X24_TYPELESS,
             .D32_FLOAT_S8X24_UINT,
