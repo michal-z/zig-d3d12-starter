@@ -7904,7 +7904,7 @@ pub const IDevice11 = extern struct {
     pub const CreatePlacedResource2 = IDevice10.Methods(@This()).CreatePlacedResource2;
     pub const CreateReservedResource2 = IDevice10.Methods(@This()).CreateReservedResource2;
 
-    pub const CreateSampler2 = IDevice10.Methods(@This()).CreateSampler2;
+    pub const CreateSampler2 = IDevice11.Methods(@This()).CreateSampler2;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
