@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    ensureZigVersion() catch return;
+    ensure_zig_version() catch return;
 
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
@@ -40,20 +40,20 @@ pub fn build(b: *std.Build) void {
     });
     exe.step.dependOn(&install_d3d12_step.step);
 
-    const dxc_step = buildShaders(b, optimize);
+    const dxc_step = build_shaders(b, optimize);
     exe.step.dependOn(dxc_step);
 }
 
-fn buildShaders(b: *std.Build, optimize: std.builtin.OptimizeMode) *std.Build.Step {
+fn build_shaders(b: *std.Build, optimize: std.builtin.OptimizeMode) *std.Build.Step {
     const dxc_step = b.step("dxc", "Build HLSL shaders");
 
-    makeDxcCmd(b, optimize, dxc_step, "src/main.hlsl", "vertex", "s00.vs.cso", "vs", &.{""});
-    makeDxcCmd(b, optimize, dxc_step, "src/main.hlsl", "pixel", "s00.ps.cso", "ps", &.{""});
+    make_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "vertex", "s00.vs.cso", "vs", &.{""});
+    make_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "pixel", "s00.ps.cso", "ps", &.{""});
 
     return dxc_step;
 }
 
-fn makeDxcCmd(
+fn make_dxc_cmd(
     b: *std.Build,
     optimize: std.builtin.OptimizeMode,
     dxc_step: *std.Build.Step,
@@ -85,7 +85,7 @@ fn makeDxcCmd(
     dxc_step.dependOn(&cmd_step.step);
 }
 
-fn ensureZigVersion() !void {
+fn ensure_zig_version() !void {
     var installed_ver = @import("builtin").zig_version;
     installed_ver.build = null;
 

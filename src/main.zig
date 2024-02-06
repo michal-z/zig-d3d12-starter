@@ -21,7 +21,7 @@ pub fn main() !void {
 
     _ = w32.SetProcessDPIAware();
 
-    const window = createWindow(1600, 1200);
+    const window = create_window(1600, 1200);
 
     var dx12 = Dx12State.init(window);
     defer dx12.deinit();
@@ -31,7 +31,7 @@ pub fn main() !void {
         const ps_cso = @embedFile("cso/s00.ps.cso");
 
         const pso_desc = pso_desc: {
-            var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.initDefault();
+            var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.init_default();
             pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
             pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM;
             pso_desc.NumRenderTargets = 1;
@@ -80,7 +80,7 @@ pub fn main() !void {
                 if (message.message == w32.WM_QUIT) break :main_loop;
             }
 
-            dx12.maybeResize();
+            dx12.maybe_resize();
             if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0) continue :main_loop;
         }
 
@@ -160,7 +160,7 @@ pub fn main() !void {
         }
     }
 
-    dx12.finishGpuCommands();
+    dx12.finish_gpu_commands();
 }
 
 const Dx12State = struct {
@@ -391,7 +391,7 @@ const Dx12State = struct {
         dx12.frame_index = (dx12.frame_index + 1) % num_frames;
     }
 
-    fn finishGpuCommands(dx12: *Dx12State) void {
+    fn finish_gpu_commands(dx12: *Dx12State) void {
         dx12.frame_fence_counter += 1;
 
         vhr(dx12.command_queue.Signal(dx12.frame_fence, dx12.frame_fence_counter));
@@ -400,7 +400,7 @@ const Dx12State = struct {
         _ = w32.WaitForSingleObject(dx12.frame_fence_event, w32.INFINITE);
     }
 
-    fn maybeResize(dx12: *Dx12State) void {
+    fn maybe_resize(dx12: *Dx12State) void {
         var rect: w32.RECT = undefined;
         _ = w32.GetClientRect(dx12.window, &rect);
 
@@ -416,7 +416,7 @@ const Dx12State = struct {
         if (rect.right != dx12.window_rect.right or rect.bottom != dx12.window_rect.bottom) {
             std.log.info("Window resized to {d}x{d}", .{ rect.right, rect.bottom });
 
-            dx12.finishGpuCommands();
+            dx12.finish_gpu_commands();
 
             for (dx12.swap_chain_textures) |texture| _ = texture.Release();
 
@@ -439,7 +439,7 @@ const Dx12State = struct {
     }
 };
 
-fn processWindowMessage(
+fn process_window_message(
     window: w32.HWND,
     message: w32.UINT,
     wparam: w32.WPARAM,
@@ -467,10 +467,10 @@ fn processWindowMessage(
     return w32.DefWindowProcA(window, message, wparam, lparam);
 }
 
-fn createWindow(width: u32, height: u32) w32.HWND {
+fn create_window(width: u32, height: u32) w32.HWND {
     const winclass = w32.WNDCLASSEXA{
         .style = 0,
-        .lpfnWndProc = processWindowMessage,
+        .lpfnWndProc = process_window_message,
         .cbClsExtra = 0,
         .cbWndExtra = 0,
         .hInstance = @ptrCast(w32.GetModuleHandleA(null)),

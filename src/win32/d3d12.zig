@@ -77,7 +77,7 @@ pub const HEAP_PROPERTIES = extern struct {
     CreationNodeMask: UINT,
     VisibleNodeMask: UINT,
 
-    pub fn initType(heap_type: HEAP_TYPE) HEAP_PROPERTIES {
+    pub fn init_type(heap_type: HEAP_TYPE) HEAP_PROPERTIES {
         var v = std.mem.zeroes(@This());
         v = HEAP_PROPERTIES{
             .Type = heap_type,
@@ -175,7 +175,7 @@ pub const RESOURCE_DESC = extern struct {
     Layout: TEXTURE_LAYOUT,
     Flags: RESOURCE_FLAGS,
 
-    pub fn initBuffer(width: UINT64) RESOURCE_DESC {
+    pub fn init_buffer(width: UINT64) RESOURCE_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .Dimension = .BUFFER,
@@ -192,7 +192,7 @@ pub const RESOURCE_DESC = extern struct {
         return v;
     }
 
-    pub fn initTex2d(format: dxgi.FORMAT, width: UINT64, height: UINT, mip_levels: u32) RESOURCE_DESC {
+    pub fn init_tex2d(format: dxgi.FORMAT, width: UINT64, height: UINT, mip_levels: u32) RESOURCE_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .Dimension = .TEXTURE2D,
@@ -209,7 +209,7 @@ pub const RESOURCE_DESC = extern struct {
         return v;
     }
 
-    pub fn initTexCube(format: dxgi.FORMAT, width: UINT64, height: UINT, mip_levels: u32) RESOURCE_DESC {
+    pub fn init_texcube(format: dxgi.FORMAT, width: UINT64, height: UINT, mip_levels: u32) RESOURCE_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .Dimension = .TEXTURE2D,
@@ -485,7 +485,7 @@ pub const RESOURCE_BARRIER = extern struct {
         UAV: RESOURCE_UAV_BARRIER,
     },
 
-    pub fn initUav(resource: *IResource) RESOURCE_BARRIER {
+    pub fn init_uav(resource: *IResource) RESOURCE_BARRIER {
         var v = std.mem.zeroes(@This());
         v = .{ .Type = .UAV, .Flags = .{}, .u = .{ .UAV = .{ .pResource = resource } } };
         return v;
@@ -774,7 +774,7 @@ pub const SHADER_BYTECODE = extern struct {
     pShaderBytecode: ?*const anyopaque,
     BytecodeLength: UINT64,
 
-    pub inline fn initZero() SHADER_BYTECODE {
+    pub inline fn init_zero() SHADER_BYTECODE {
         return std.mem.zeroes(@This());
     }
 };
@@ -795,7 +795,7 @@ pub const STREAM_OUTPUT_DESC = extern struct {
     NumStrides: UINT,
     RasterizedStream: UINT,
 
-    pub inline fn initZero() STREAM_OUTPUT_DESC {
+    pub inline fn init_zero() STREAM_OUTPUT_DESC {
         return std.mem.zeroes(@This());
     }
 };
@@ -869,7 +869,7 @@ pub const RENDER_TARGET_BLEND_DESC = extern struct {
     LogicOp: LOGIC_OP,
     RenderTargetWriteMask: UINT8,
 
-    pub fn initDefault() RENDER_TARGET_BLEND_DESC {
+    pub fn init_default() RENDER_TARGET_BLEND_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .BlendEnable = FALSE,
@@ -892,12 +892,12 @@ pub const BLEND_DESC = extern struct {
     IndependentBlendEnable: BOOL,
     RenderTarget: [8]RENDER_TARGET_BLEND_DESC,
 
-    pub fn initDefault() BLEND_DESC {
+    pub fn init_default() BLEND_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .AlphaToCoverageEnable = FALSE,
             .IndependentBlendEnable = FALSE,
-            .RenderTarget = [_]RENDER_TARGET_BLEND_DESC{RENDER_TARGET_BLEND_DESC.initDefault()} ** 8,
+            .RenderTarget = [_]RENDER_TARGET_BLEND_DESC{RENDER_TARGET_BLEND_DESC.init_default()} ** 8,
         };
         return v;
     }
@@ -916,7 +916,7 @@ pub const RASTERIZER_DESC = extern struct {
     ForcedSampleCount: UINT,
     ConservativeRaster: CONSERVATIVE_RASTERIZATION_MODE,
 
-    pub fn initDefault() RASTERIZER_DESC {
+    pub fn init_default() RASTERIZER_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .FillMode = .SOLID,
@@ -984,7 +984,7 @@ pub const DEPTH_STENCILOP_DESC = extern struct {
     StencilPassOp: STENCIL_OP,
     StencilFunc: COMPARISON_FUNC,
 
-    pub fn initDefault() DEPTH_STENCILOP_DESC {
+    pub fn init_default() DEPTH_STENCILOP_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .StencilFailOp = .KEEP,
@@ -1006,7 +1006,7 @@ pub const DEPTH_STENCIL_DESC = extern struct {
     FrontFace: DEPTH_STENCILOP_DESC,
     BackFace: DEPTH_STENCILOP_DESC,
 
-    pub fn initDefault() DEPTH_STENCIL_DESC {
+    pub fn init_default() DEPTH_STENCIL_DESC {
         var desc = std.mem.zeroes(@This());
         desc = .{
             .DepthEnable = TRUE,
@@ -1015,8 +1015,8 @@ pub const DEPTH_STENCIL_DESC = extern struct {
             .StencilEnable = FALSE,
             .StencilReadMask = 0xff,
             .StencilWriteMask = 0xff,
-            .FrontFace = DEPTH_STENCILOP_DESC.initDefault(),
-            .BackFace = DEPTH_STENCILOP_DESC.initDefault(),
+            .FrontFace = DEPTH_STENCILOP_DESC.init_default(),
+            .BackFace = DEPTH_STENCILOP_DESC.init_default(),
         };
         return desc;
     }
@@ -1033,7 +1033,7 @@ pub const DEPTH_STENCIL_DESC1 = extern struct {
     BackFace: DEPTH_STENCILOP_DESC,
     DepthBoundsTestEnable: BOOL,
 
-    pub fn initDefault() DEPTH_STENCIL_DESC1 {
+    pub fn init_default() DEPTH_STENCIL_DESC1 {
         var desc = std.mem.zeroes(@This());
         desc = .{
             .DepthEnable = TRUE,
@@ -1042,8 +1042,8 @@ pub const DEPTH_STENCIL_DESC1 = extern struct {
             .StencilEnable = FALSE,
             .StencilReadMask = 0xff,
             .StencilWriteMask = 0xff,
-            .FrontFace = DEPTH_STENCILOP_DESC.initDefault(),
-            .BackFace = DEPTH_STENCILOP_DESC.initDefault(),
+            .FrontFace = DEPTH_STENCILOP_DESC.init_default(),
+            .BackFace = DEPTH_STENCILOP_DESC.init_default(),
             .DepthBoundsTestEnable = FALSE,
         };
         return desc;
@@ -1054,7 +1054,7 @@ pub const INPUT_LAYOUT_DESC = extern struct {
     pInputElementDescs: ?[*]const INPUT_ELEMENT_DESC,
     NumElements: UINT,
 
-    pub inline fn initZero() INPUT_LAYOUT_DESC {
+    pub inline fn init_zero() INPUT_LAYOUT_DESC {
         return std.mem.zeroes(@This());
     }
 };
@@ -1100,7 +1100,7 @@ pub const CACHED_PIPELINE_STATE = extern struct {
     pCachedBlob: ?*const anyopaque,
     CachedBlobSizeInBytes: UINT64,
 
-    pub inline fn initZero() CACHED_PIPELINE_STATE {
+    pub inline fn init_zero() CACHED_PIPELINE_STATE {
         return std.mem.zeroes(@This());
     }
 };
@@ -1136,21 +1136,21 @@ pub const GRAPHICS_PIPELINE_STATE_DESC = extern struct {
     CachedPSO: CACHED_PIPELINE_STATE,
     Flags: PIPELINE_STATE_FLAGS,
 
-    pub fn initDefault() GRAPHICS_PIPELINE_STATE_DESC {
+    pub fn init_default() GRAPHICS_PIPELINE_STATE_DESC {
         var v = std.mem.zeroes(@This());
         v = GRAPHICS_PIPELINE_STATE_DESC{
             .pRootSignature = null,
-            .VS = SHADER_BYTECODE.initZero(),
-            .PS = SHADER_BYTECODE.initZero(),
-            .DS = SHADER_BYTECODE.initZero(),
-            .HS = SHADER_BYTECODE.initZero(),
-            .GS = SHADER_BYTECODE.initZero(),
-            .StreamOutput = STREAM_OUTPUT_DESC.initZero(),
-            .BlendState = BLEND_DESC.initDefault(),
+            .VS = SHADER_BYTECODE.init_zero(),
+            .PS = SHADER_BYTECODE.init_zero(),
+            .DS = SHADER_BYTECODE.init_zero(),
+            .HS = SHADER_BYTECODE.init_zero(),
+            .GS = SHADER_BYTECODE.init_zero(),
+            .StreamOutput = STREAM_OUTPUT_DESC.init_zero(),
+            .BlendState = BLEND_DESC.init_default(),
             .SampleMask = 0xffff_ffff,
-            .RasterizerState = RASTERIZER_DESC.initDefault(),
-            .DepthStencilState = DEPTH_STENCIL_DESC.initDefault(),
-            .InputLayout = INPUT_LAYOUT_DESC.initZero(),
+            .RasterizerState = RASTERIZER_DESC.init_default(),
+            .DepthStencilState = DEPTH_STENCIL_DESC.init_default(),
+            .InputLayout = INPUT_LAYOUT_DESC.init_zero(),
             .IBStripCutValue = .DISABLED,
             .PrimitiveTopologyType = .UNDEFINED,
             .NumRenderTargets = 0,
@@ -1158,7 +1158,7 @@ pub const GRAPHICS_PIPELINE_STATE_DESC = extern struct {
             .DSVFormat = .UNKNOWN,
             .SampleDesc = .{ .Count = 1, .Quality = 0 },
             .NodeMask = 0,
-            .CachedPSO = CACHED_PIPELINE_STATE.initZero(),
+            .CachedPSO = CACHED_PIPELINE_STATE.init_zero(),
             .Flags = .{},
         };
         return v;
@@ -1172,13 +1172,13 @@ pub const COMPUTE_PIPELINE_STATE_DESC = extern struct {
     CachedPSO: CACHED_PIPELINE_STATE,
     Flags: PIPELINE_STATE_FLAGS,
 
-    pub fn initDefault() COMPUTE_PIPELINE_STATE_DESC {
+    pub fn init_default() COMPUTE_PIPELINE_STATE_DESC {
         var v = std.mem.zeroes(@This());
         v = COMPUTE_PIPELINE_STATE_DESC{
             .pRootSignature = null,
-            .CS = SHADER_BYTECODE.initZero(),
+            .CS = SHADER_BYTECODE.init_zero(),
             .NodeMask = 0,
-            .CachedPSO = CACHED_PIPELINE_STATE.initZero(),
+            .CachedPSO = CACHED_PIPELINE_STATE.init_zero(),
             .Flags = .{},
         };
         return v;
@@ -1471,7 +1471,7 @@ pub const SHADER_RESOURCE_VIEW_DESC = extern struct {
         TextureCubeArray: TEXCUBE_ARRAY_SRV,
     },
 
-    pub fn initTypedBuffer(
+    pub fn init_typed_buffer(
         format: dxgi.FORMAT,
         first_element: UINT64,
         num_elements: UINT,
@@ -1493,7 +1493,7 @@ pub const SHADER_RESOURCE_VIEW_DESC = extern struct {
         return desc;
     }
 
-    pub fn initStructuredBuffer(
+    pub fn init_structured_buffer(
         first_element: UINT64,
         num_elements: UINT,
         stride: UINT,
@@ -1651,7 +1651,7 @@ pub const UNORDERED_ACCESS_VIEW_DESC = extern struct {
         Texture3D: TEX3D_UAV,
     },
 
-    pub fn initTypedBuffer(
+    pub fn init_typed_buffer(
         format: dxgi.FORMAT,
         first_element: UINT64,
         num_elements: UINT,
@@ -1674,7 +1674,7 @@ pub const UNORDERED_ACCESS_VIEW_DESC = extern struct {
         return desc;
     }
 
-    pub fn initStructuredBuffer(
+    pub fn init_structured_buffer(
         first_element: UINT64,
         num_elements: UINT,
         stride: UINT,
@@ -1843,7 +1843,7 @@ pub const CLEAR_VALUE = extern struct {
         DepthStencil: DEPTH_STENCIL_VALUE,
     },
 
-    pub fn initColor(format: dxgi.FORMAT, in_color: *const [4]FLOAT) CLEAR_VALUE {
+    pub fn init_color(format: dxgi.FORMAT, in_color: *const [4]FLOAT) CLEAR_VALUE {
         var v = std.mem.zeroes(@This());
         v = .{
             .Format = format,
@@ -1852,7 +1852,7 @@ pub const CLEAR_VALUE = extern struct {
         return v;
     }
 
-    pub fn initDepthStencil(format: dxgi.FORMAT, depth: FLOAT, stencil: UINT8) CLEAR_VALUE {
+    pub fn init_depth_stencil(format: dxgi.FORMAT, depth: FLOAT, stencil: UINT8) CLEAR_VALUE {
         var v = std.mem.zeroes(@This());
         v = .{
             .Format = format,
@@ -5944,24 +5944,24 @@ pub const MESH_SHADER_PIPELINE_STATE_DESC = extern struct {
     CachedPSO: CACHED_PIPELINE_STATE,
     Flags: PIPELINE_STATE_FLAGS,
 
-    pub fn initDefault() MESH_SHADER_PIPELINE_STATE_DESC {
+    pub fn init_default() MESH_SHADER_PIPELINE_STATE_DESC {
         var v = std.mem.zeroes(@This());
         v = .{
             .pRootSignature = null,
-            .AS = SHADER_BYTECODE.initZero(),
-            .MS = SHADER_BYTECODE.initZero(),
-            .PS = SHADER_BYTECODE.initZero(),
-            .BlendState = BLEND_DESC.initDefault(),
+            .AS = SHADER_BYTECODE.init_zero(),
+            .MS = SHADER_BYTECODE.init_zero(),
+            .PS = SHADER_BYTECODE.init_zero(),
+            .BlendState = BLEND_DESC.init_default(),
             .SampleMask = 0xffff_ffff,
-            .RasterizerState = RASTERIZER_DESC.initDefault(),
-            .DepthStencilState = DEPTH_STENCIL_DESC1.initDefault(),
+            .RasterizerState = RASTERIZER_DESC.init_default(),
+            .DepthStencilState = DEPTH_STENCIL_DESC1.init_default(),
             .PrimitiveTopologyType = .UNDEFINED,
             .NumRenderTargets = 0,
             .RTVFormats = [_]dxgi.FORMAT{.UNKNOWN} ** 8,
             .DSVFormat = .UNKNOWN,
             .SampleDesc = .{ .Count = 1, .Quality = 0 },
             .NodeMask = 0,
-            .CachedPSO = CACHED_PIPELINE_STATE.initZero(),
+            .CachedPSO = CACHED_PIPELINE_STATE.init_zero(),
             .Flags = .{},
         };
         return v;
