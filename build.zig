@@ -66,14 +66,14 @@ fn make_dxc_cmd(
     const shader_ver = "6_0";
 
     const cmd_step = b.addSystemCommand(&.{"bin/dxc.exe"});
-    cmd_step.addArg(input_path);
-    cmd_step.addArg("/Fo " ++ "src/cso/" ++ output_filename);
-    cmd_step.addArg("/all_resources_bound");
-    cmd_step.addArgs(&.{ "/WX", "/Ges" });
-    cmd_step.addArg("/E " ++ entry_point);
-    cmd_step.addArg("/HV 2021");
-    cmd_step.addArg("/T " ++ profile ++ "_" ++ shader_ver);
-
+    cmd_step.addArgs(&.{
+        "/WX",
+        "/Ges",
+        "/all_resources_bound",
+        "/HV 2021",
+        "/E " ++ entry_point,
+        "/T " ++ profile ++ "_" ++ shader_ver,
+    });
     if (optimize == .Debug)
         cmd_step.addArgs(&.{ "/Od", "/Zi", "/Qembed_debug" })
     else
@@ -82,7 +82,11 @@ fn make_dxc_cmd(
     inline for (defines) |define| {
         if (define.len > 0) cmd_step.addArg("/D " ++ define);
     }
-    dxc_step.dependOn(&cmd_step.step);
+
+    cmd_step.addFileArg(.{ .path = input_path });
+    const cso_path = cmd_step.addPrefixedOutputFileArg("/Fo ", output_filename);
+
+    dxc_step.dependOn(&b.addInstallFile(cso_path, "../src/cso/" ++ output_filename).step);
 }
 
 fn ensure_zig_version() !void {
