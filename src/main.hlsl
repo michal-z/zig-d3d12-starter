@@ -1,3 +1,5 @@
+#ifdef _S00
+
 #define root_signature "RootFlags(0)"
 
 [RootSignature(root_signature)]
@@ -16,3 +18,9 @@ void pixel(
 ) {
     out_color = float4(0.75, 0.0, 0.0, 1.0);
 }
+
+#elif _S01
+
+
+
+#endif
