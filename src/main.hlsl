@@ -3,7 +3,7 @@
 #define root_signature "RootFlags(0)"
 
 [RootSignature(root_signature)]
-void vertex(
+void s00_vertex(
     uint vertex_id : SV_VertexID,
     out float4 out_position : SV_Position
 ) {
@@ -12,7 +12,7 @@ void vertex(
 }
 
 [RootSignature(root_signature)]
-void pixel(
+void s00_pixel(
     float4 position : SV_Position,
     out float4 out_color : SV_Target0
 ) {

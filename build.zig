@@ -47,8 +47,8 @@ pub fn build(b: *std.Build) void {
 fn build_shaders(b: *std.Build, optimize: std.builtin.OptimizeMode) *std.Build.Step {
     const dxc_step = b.step("dxc", "Build HLSL shaders");
 
-    make_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "vertex", "s00.vs.cso", "vs", &.{"_S00"});
-    make_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "pixel", "s00.ps.cso", "ps", &.{"_S00"});
+    make_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s00_vertex", "s00.vs.cso", "vs", &.{"_S00"});
+    make_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s00_pixel", "s00.ps.cso", "ps", &.{"_S00"});
 
     return dxc_step;
 }

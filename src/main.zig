@@ -81,7 +81,10 @@ pub fn main() !void {
             }
 
             dx12.maybe_resize();
-            if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0) continue :main_loop;
+            if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0) {
+                w32.Sleep(10);
+                continue :main_loop;
+            }
         }
 
         const command_allocator = dx12.command_allocators[dx12.frame_index];
@@ -409,7 +412,6 @@ const Dx12State = struct {
                 std.log.info("Window minimized", .{});
             }
             dx12.window_rect = rect;
-            w32.Sleep(10);
             return;
         }
 
