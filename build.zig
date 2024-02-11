@@ -93,7 +93,7 @@ fn ensure_zig_version() !void {
     var installed_ver = @import("builtin").zig_version;
     installed_ver.build = null;
 
-    const min_zig_version = std.SemanticVersion{ .major = 0, .minor = 12, .patch = 0, .pre = "dev.2540" };
+    const min_zig_version = std.SemanticVersion{ .major = 0, .minor = 12, .patch = 0, .pre = "dev.2701" };
 
     if (installed_ver.order(min_zig_version) == .lt) {
         std.log.err("\n" ++
