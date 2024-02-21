@@ -1217,6 +1217,7 @@ pub const FEATURE = enum(UINT) {
     OPTIONS9 = 37,
     OPTIONS10 = 39,
     OPTIONS11 = 40,
+    OPTIONS12 = 41,
 };
 
 pub const SHADER_MODEL = enum(UINT) {
@@ -1229,6 +1230,8 @@ pub const SHADER_MODEL = enum(UINT) {
     @"6_5" = 0x65,
     @"6_6" = 0x66,
     @"6_7" = 0x67,
+    @"6_8" = 0x68,
+    pub const HIGHEST = .@"6_8";
 };
 
 pub const RESOURCE_BINDING_TIER = enum(UINT) {
@@ -1344,6 +1347,12 @@ pub const VIEW_INSTANCING_TIER = enum(UINT) {
     TIER_3 = 3,
 };
 
+pub const TRI_STATE = enum(INT) {
+    UNKNOWN = -1,
+    FALSE = 0,
+    TRUE = 1,
+};
+
 pub const FEATURE_DATA_D3D12_OPTIONS3 = extern struct {
     CopyQueueTimestampQueriesSupported: BOOL,
     CastingFullyTypedFormatSupported: BOOL,
@@ -1356,6 +1365,12 @@ pub const FEATURE_DATA_D3D12_OPTIONS5 = extern struct {
     SRVOnlyTiledResourceTier3: BOOL,
     RenderPassesTier: RENDER_PASS_TIER,
     RaytracingTier: RAYTRACING_TIER,
+};
+
+pub const FEATURE_DATA_D3D12_OPTIONS12 = extern struct {
+    MSPrimitivesPipelineStatisticIncludesCulledPrimitives: TRI_STATE,
+    EnhancedBarriersSupported: BOOL,
+    RelaxedFormatCastingSupported: BOOL,
 };
 
 pub const CONSTANT_BUFFER_VIEW_DESC = extern struct {
@@ -1955,9 +1970,10 @@ pub const IPageable = extern struct {
     };
 };
 
-pub const IID_IRootSignature = GUID.parse("{c54a6b66-72df-4ee8-8be5-a946a1429214}");
 pub const IRootSignature = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{c54a6b66-72df-4ee8-8be5-a946a1429214}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -1975,9 +1991,10 @@ pub const IRootSignature = extern struct {
     };
 };
 
-pub const IID_IQueryHeap = GUID.parse("{0d9658ae-ed45-469e-a61d-970ec583cab4}");
 pub const IQueryHeap = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{0d9658ae-ed45-469e-a61d-970ec583cab4}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2014,9 +2031,10 @@ pub const ICommandSignature = extern struct {
     };
 };
 
-pub const IID_IHeap = GUID.parse("{6b3b2502-6e51-45b3-90ee-9884265e8df3}");
 pub const IHeap = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{6b3b2502-6e51-45b3-90ee-9884265e8df3}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2047,9 +2065,10 @@ pub const IHeap = extern struct {
     };
 };
 
-pub const IID_IResource = GUID.parse("{696442be-a72e-4059-bc79-5b5c98040fad}");
 pub const IResource = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{696442be-a72e-4059-bc79-5b5c98040fad}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2198,9 +2217,10 @@ pub const IResource1 = extern struct {
     };
 };
 
-pub const IID_ICommandAllocator = GUID.parse("{6102dee4-af59-4b09-b999-b44d73f09b24}");
 pub const ICommandAllocator = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{6102dee4-af59-4b09-b999-b44d73f09b24}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2229,9 +2249,10 @@ pub const ICommandAllocator = extern struct {
     };
 };
 
-pub const IID_IFence = GUID.parse("{0a753dcf-c4d8-4b91-adf6-be5a60d95a76}");
 pub const IFence = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{0a753dcf-c4d8-4b91-adf6-be5a60d95a76}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2305,9 +2326,10 @@ pub const IFence1 = extern struct {
     };
 };
 
-pub const IID_IPipelineState = GUID.parse("{765a30f3-f624-4c6f-a828-ace948622445}");
 pub const IPipelineState = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{765a30f3-f624-4c6f-a828-ace948622445}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2336,9 +2358,10 @@ pub const IPipelineState = extern struct {
     };
 };
 
-pub const IID_IDescriptorHeap = GUID.parse("{8efb471d-616c-4f49-90f7-127bb763fa51}");
 pub const IDescriptorHeap = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{8efb471d-616c-4f49-90f7-127bb763fa51}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2421,9 +2444,10 @@ pub const ICommandList = extern struct {
     };
 };
 
-pub const IID_IGraphicsCommandList = GUID.parse("{5b160d0f-ac1b-4185-8ba8-b3ae42a5a455}");
 pub const IGraphicsCommandList = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{5b160d0f-ac1b-4185-8ba8-b3ae42a5a455}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -3126,9 +3150,10 @@ pub const RESOLVE_MODE = enum(UINT) {
     DECODE_SAMPLER_FEEDBACK = 5,
 };
 
-pub const IID_IGraphicsCommandList1 = GUID.parse("{553103fb-1fe7-4557-bb38-946d7d0e7ca7}");
 pub const IGraphicsCommandList1 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{553103fb-1fe7-4557-bb38-946d7d0e7ca7}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -3347,9 +3372,10 @@ pub const WRITEBUFFERIMMEDIATE_MODE = enum(UINT) {
     MARKER_OUT = 0x2,
 };
 
-pub const IID_IGraphicsCommandList2 = GUID.parse("{38C3E585-FF17-412C-9150-4FC6F9D72A28}");
 pub const IGraphicsCommandList2 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{38C3E585-FF17-412C-9150-4FC6F9D72A28}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -3450,9 +3476,10 @@ pub const IGraphicsCommandList2 = extern struct {
     };
 };
 
-pub const IID_IGraphicsCommandList3 = GUID.parse("{6FDA83A7-B84C-4E38-9AC8-C7BD22016B3D}");
 pub const IGraphicsCommandList3 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{6FDA83A7-B84C-4E38-9AC8-C7BD22016B3D}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4038,9 +4065,10 @@ pub const RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO = extern struct {
     UpdateScratchDataSizeInBytes: UINT64,
 };
 
-pub const IID_IStateObject = GUID.parse("{47016943-fca8-4594-93ea-af258b55346d}");
 pub const IStateObject = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{47016943-fca8-4594-93ea-af258b55346d}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4058,9 +4086,10 @@ pub const IStateObject = extern struct {
     };
 };
 
-pub const IID_IStateObjectProperties = GUID.parse("{de5fa827-9bf9-4f26-89ff-d7f56fde3860}");
 pub const IStateObjectProperties = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{de5fa827-9bf9-4f26-89ff-d7f56fde3860}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4111,9 +4140,10 @@ pub const DISPATCH_RAYS_DESC = extern struct {
     Depth: UINT,
 };
 
-pub const IID_IGraphicsCommandList4 = GUID.parse("{8754318e-d3a9-4541-98cf-645b50dc4874}");
 pub const IGraphicsCommandList4 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{8754318e-d3a9-4541-98cf-645b50dc4874}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4353,9 +4383,10 @@ pub const SHADING_RATE_COMBINER = enum(UINT) {
     COMBINER_SUM = 4,
 };
 
-pub const IID_IGraphicsCommandList5 = GUID.parse("{55050859-4024-474c-87f5-6472eaee44ea}");
 pub const IGraphicsCommandList5 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{55050859-4024-474c-87f5-6472eaee44ea}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4474,9 +4505,10 @@ pub const IGraphicsCommandList5 = extern struct {
     };
 };
 
-pub const IID_IGraphicsCommandList6 = GUID.parse("{c3827890-e548-4cfa-96cf-5689a9370f80}");
 pub const IGraphicsCommandList6 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{c3827890-e548-4cfa-96cf-5689a9370f80}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4593,9 +4625,10 @@ pub const IGraphicsCommandList6 = extern struct {
     };
 };
 
-pub const IID_IGraphicsCommandList7 = GUID.parse("{dd171223-8b61-4769-90e3-160ccde4e2c1}");
 pub const IGraphicsCommandList7 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{dd171223-8b61-4769-90e3-160ccde4e2c1}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4712,9 +4745,10 @@ pub const IGraphicsCommandList7 = extern struct {
     };
 };
 
-pub const IID_IGraphicsCommandList8 = GUID.parse("{ee936ef9-599d-4d28-938e-23c4ad05ce51}");
 pub const IGraphicsCommandList8 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{ee936ef9-599d-4d28-938e-23c4ad05ce51}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4833,9 +4867,10 @@ pub const IGraphicsCommandList8 = extern struct {
     };
 };
 
-pub const IID_IGraphicsCommandList9 = GUID.parse("{34ed2808-ffe6-4c2b-b11a-cabd2b0c59e1}");
 pub const IGraphicsCommandList9 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{34ed2808-ffe6-4c2b-b11a-cabd2b0c59e1}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -4972,9 +5007,10 @@ pub const IGraphicsCommandList9 = extern struct {
     };
 };
 
-pub const IID_ICommandQueue = GUID.parse("{0ec870a6-5d7e-4c22-8cfc-5baae07616ed}");
 pub const ICommandQueue = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{0ec870a6-5d7e-4c22-8cfc-5baae07616ed}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -5119,9 +5155,10 @@ pub const ICommandQueue = extern struct {
     };
 };
 
-pub const IID_IDevice = GUID.parse("{189819f1-1db6-4b57-be54-1821339b85f7}");
 pub const IDevice = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{189819f1-1db6-4b57-be54-1821339b85f7}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -5764,9 +5801,10 @@ pub const RESIDENCY_PRIORITY = enum(UINT) {
     MAXIMUM = 0xc8000000,
 };
 
-pub const IID_IDevice1 = GUID.parse("{77acce80-638e-4e65-8895-c1f23386863e}");
 pub const IDevice1 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{77acce80-638e-4e65-8895-c1f23386863e}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6019,9 +6057,10 @@ pub const PIPELINE_MESH_STATE_STREAM = extern struct {
     }
 };
 
-pub const IID_IDevice2 = GUID.parse("{30baa41e-b15b-475c-a0bb-1af5c5b64328}");
 pub const IDevice2 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{30baa41e-b15b-475c-a0bb-1af5c5b64328}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6106,9 +6145,10 @@ pub const RESIDENCY_FLAGS = packed struct(UINT) {
     __unused: u31 = 0,
 };
 
-pub const IID_IDevice3 = GUID.parse("{81dadc15-2bad-4392-93c5-101345c4aa98}");
 pub const IDevice3 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{81dadc15-2bad-4392-93c5-101345c4aa98}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6242,9 +6282,10 @@ pub const RESOURCE_ALLOCATION_INFO1 = extern struct {
     SizeInBytes: UINT64,
 };
 
-pub const IID_IDevice4 = GUID.parse("{e865df17-a9ee-46f9-a463-3098315aa2e5}");
 pub const IDevice4 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{e865df17-a9ee-46f9-a463-3098315aa2e5}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6488,9 +6529,10 @@ pub const ILifetimeOwner = extern struct {
     };
 };
 
-pub const IID_IDevice5 = GUID.parse("{8b4f173b-2fea-4b80-8f58-4307191ab95d}");
 pub const IDevice5 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{8b4f173b-2fea-4b80-8f58-4307191ab95d}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6715,9 +6757,10 @@ pub const MEASUREMENTS_ACTION = enum(UINT) {
     DISCARD_PREVIOUS = 3,
 };
 
-pub const IID_IDevice6 = GUID.parse("{c70b221b-40e4-4a17-89af-025a0727a6dc}");
 pub const IDevice6 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{c70b221b-40e4-4a17-89af-025a0727a6dc}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6832,9 +6875,10 @@ pub const PROTECTED_RESOURCE_SESSION_DESC1 = extern struct {
     ProtectionType: GUID,
 };
 
-pub const IID_IDevice7 = GUID.parse("{5c014b53-68a1-4b9b-8bd1-dd6046b9358b}");
 pub const IDevice7 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{5c014b53-68a1-4b9b-8bd1-dd6046b9358b}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -6976,9 +7020,10 @@ pub const RESOURCE_DESC1 = extern struct {
     SamplerFeedbackMipRegion: MIP_REGION,
 };
 
-pub const IID_IDevice8 = GUID.parse("{9218E6BB-F944-4F7E-A75C-B1B2C7B701F3}");
 pub const IDevice8 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{9218E6BB-F944-4F7E-A75C-B1B2C7B701F3}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -7254,9 +7299,10 @@ pub const SHADER_CACHE_SESSION_DESC = extern struct {
     Version: UINT64,
 };
 
-pub const IID_IDevice9 = GUID.parse("{4c80e962-f032-4f60-bc9e-ebc2cfa1d83c}");
 pub const IDevice9 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{4c80e962-f032-4f60-bc9e-ebc2cfa1d83c}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -7569,9 +7615,10 @@ pub const BARRIER_GROUP = extern struct {
     },
 };
 
-pub const IID_IDevice10 = GUID.parse("{517f8718-aa66-49f9-b02b-a7ab89c06031}");
 pub const IDevice10 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{517f8718-aa66-49f9-b02b-a7ab89c06031}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -7808,9 +7855,10 @@ pub const SAMPLER_DESC2 = extern struct {
     Flags: SAMPLER_FLAGS,
 };
 
-pub const IID_IDevice11 = GUID.parse("{5405c344-d457-444e-b4dd-2366e45aee39}");
 pub const IDevice11 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{5405c344-d457-444e-b4dd-2366e45aee39}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -8044,9 +8092,10 @@ pub const RLDO_FLAGS = packed struct(UINT) {
     __unused: u28 = 0,
 };
 
-pub const IID_IDebugDevice = GUID.parse("{3febd6dd-4973-4787-8194-e45f9e28923e}");
 pub const IDebugDevice = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{3febd6dd-4973-4787-8194-e45f9e28923e}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;

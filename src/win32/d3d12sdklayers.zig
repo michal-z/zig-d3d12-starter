@@ -1,4 +1,5 @@
 const w32 = @import("win32.zig");
+const d3d12 = @import("d3d12.zig");
 const IUnknown = w32.IUnknown;
 const HRESULT = w32.HRESULT;
 const WINAPI = w32.WINAPI;
@@ -99,9 +100,10 @@ pub const IDebug4 = extern struct {
     };
 };
 
-pub const IID_IDebug5 = GUID.parse("{548d6b12-09fa-40e0-9069-5dcd589a52c9}");
 pub const IDebug5 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{548d6b12-09fa-40e0-9069-5dcd589a52c9}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -173,9 +175,10 @@ pub const INFO_QUEUE_FILTER = extern struct {
     DenyList: INFO_QUEUE_FILTER_DESC,
 };
 
-pub const IID_IInfoQueue = GUID.parse("{0742a90b-c387-483f-b946-30a7e4e61458}");
 pub const IInfoQueue = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{0742a90b-c387-483f-b946-30a7e4e61458}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -184,6 +187,7 @@ pub const IInfoQueue = extern struct {
     pub const AddStorageFilterEntries = IInfoQueue.Methods(@This()).AddStorageFilterEntries;
     pub const PushStorageFilter = IInfoQueue.Methods(@This()).PushStorageFilter;
     pub const PopStorageFilter = IInfoQueue.Methods(@This()).PopStorageFilter;
+    pub const SetBreakOnSeverity = IInfoQueue.Methods(@This()).SetBreakOnSeverity;
     pub const SetMuteDebugOutput = IInfoQueue.Methods(@This()).SetMuteDebugOutput;
 
     pub fn Methods(comptime T: type) type {
@@ -197,6 +201,13 @@ pub const IInfoQueue = extern struct {
             }
             pub inline fn PopStorageFilter(self: *T) void {
                 @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).PopStorageFilter(@ptrCast(self));
+            }
+            pub inline fn SetBreakOnSeverity(self: *T, severity: MESSAGE_SEVERITY, enable: BOOL) HRESULT {
+                return @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).SetBreakOnSeverity(
+                    @ptrCast(self),
+                    severity,
+                    enable,
+                );
             }
             pub inline fn SetMuteDebugOutput(self: *T, mute: BOOL) void {
                 @as(*const IInfoQueue.VTable, @ptrCast(self.__v)).SetMuteDebugOutput(@ptrCast(self), mute);
@@ -234,12 +245,250 @@ pub const IInfoQueue = extern struct {
         AddMessage: *anyopaque,
         AddApplicationMessage: *anyopaque,
         SetBreakOnCategory: *anyopaque,
-        SetBreakOnSeverity: *anyopaque,
+        SetBreakOnSeverity: *const fn (*IInfoQueue, MESSAGE_SEVERITY, BOOL) callconv(WINAPI) HRESULT,
         SetBreakOnID: *anyopaque,
         GetBreakOnCategory: *anyopaque,
         GetBreakOnSeverity: *anyopaque,
         GetBreakOnID: *anyopaque,
         SetMuteDebugOutput: *const fn (*IInfoQueue, BOOL) callconv(WINAPI) void,
         GetMuteDebugOutput: *anyopaque,
+    };
+};
+
+pub const IDebugCommandQueue = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const AssertResourceState = IDebugCommandQueue.Methods(@This()).AssertResourceState;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn AssertResourceState(
+                self: *T,
+                resource: *d3d12.IResource,
+                subresource: UINT,
+                state: d3d12.RESOURCE_STATES,
+            ) BOOL {
+                return @as(*const IDebugCommandQueue.VTable, @ptrCast(self.__v)).AssertResourceState(
+                    @ptrCast(self),
+                    resource,
+                    subresource,
+                    state,
+                );
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IUnknown.VTable,
+        AssertResourceState: *const fn (
+            *IDebugCommandQueue,
+            *d3d12.IResource,
+            UINT,
+            d3d12.RESOURCE_STATES,
+        ) callconv(WINAPI) BOOL,
+    };
+};
+
+pub const IDebugCommandQueue1 = extern struct {
+    __v: *const VTable,
+
+    pub const IID = GUID.parse("{16be35a2-bfd6-49f2-bcae-eaae4aff862d}");
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const AssertResourceState = IDebugCommandQueue.Methods(@This()).AssertResourceState;
+
+    pub const AssertResourceAccess = IDebugCommandQueue1.Methods(@This()).AssertResourceAccess;
+    pub const AssertTextureLayout = IDebugCommandQueue1.Methods(@This()).AssertTextureLayout;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn AssertResourceAccess(
+                self: *T,
+                resource: *d3d12.IResource,
+                subresource: UINT,
+                access: d3d12.BARRIER_ACCESS,
+            ) void {
+                @as(*const IDebugCommandQueue1.VTable, @ptrCast(self.__v)).AssertResourceAccess(
+                    @ptrCast(self),
+                    resource,
+                    subresource,
+                    access,
+                );
+            }
+            pub inline fn AssertTextureLayout(
+                self: *T,
+                resource: *d3d12.IResource,
+                subresource: UINT,
+                layout: d3d12.BARRIER_LAYOUT,
+            ) void {
+                @as(*const IDebugCommandQueue1.VTable, @ptrCast(self.__v)).AssertTextureLayout(
+                    @ptrCast(self),
+                    resource,
+                    subresource,
+                    layout,
+                );
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IDebugCommandQueue.VTable,
+        AssertResourceAccess: *const fn (
+            *IDebugCommandQueue1,
+            *d3d12.IResource,
+            UINT,
+            d3d12.BARRIER_ACCESS,
+        ) callconv(WINAPI) void,
+        AssertTextureLayout: *const fn (
+            *IDebugCommandQueue1,
+            *d3d12.IResource,
+            UINT,
+            d3d12.BARRIER_LAYOUT,
+        ) callconv(WINAPI) void,
+    };
+};
+
+pub const DEBUG_FEATURE = packed struct(UINT) {
+    ALLOW_BEHAVIOR_CHANGING_DEBUG_AIDS: bool = false,
+    CONSERVATIVE_RESOURCE_STATE_TRACKING: bool = false,
+    DISABLE_VIRTUALIZED_BUNDLES_VALIDATION: bool = false,
+    EMULATE_WINDOWS7: bool = false,
+    __unused: u28 = 0,
+};
+
+pub const IDebugCommandList = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const AssertResourceState = IDebugCommandList.Methods(@This()).AssertResourceState;
+    pub const SetFeatureMask = IDebugCommandList.Methods(@This()).SetFeatureMask;
+    pub const GetFeatureMask = IDebugCommandList.Methods(@This()).GetFeatureMask;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn AssertResourceState(
+                self: *T,
+                resource: *d3d12.IResource,
+                subresource: UINT,
+                state: d3d12.RESOURCE_STATES,
+            ) BOOL {
+                return @as(*const IDebugCommandList.VTable, @ptrCast(self.__v)).AssertResourceState(
+                    @ptrCast(self),
+                    resource,
+                    subresource,
+                    state,
+                );
+            }
+            pub inline fn SetFeatureMask(self: *T, mask: DEBUG_FEATURE) HRESULT {
+                return @as(*const IDebugCommandList.VTable, @ptrCast(self.__v)).SetFeatureMask(@ptrCast(self), mask);
+            }
+            pub inline fn GetFeatureMask(self: *T) DEBUG_FEATURE {
+                return @as(*const IDebugCommandList.VTable, @ptrCast(self.__v)).GetFeatureMask(@ptrCast(self));
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IUnknown.VTable,
+        AssertResourceState: *const fn (
+            *IDebugCommandList,
+            *d3d12.IResource,
+            UINT,
+            d3d12.RESOURCE_STATES,
+        ) callconv(WINAPI) BOOL,
+        SetFeatureMask: *const fn (*IDebugCommandList, DEBUG_FEATURE) callconv(WINAPI) HRESULT,
+        GetFeatureMask: *const fn (*IDebugCommandList) callconv(WINAPI) DEBUG_FEATURE,
+    };
+};
+
+pub const IDebugCommandList2 = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const AssertResourceState = IDebugCommandList.Methods(@This()).AssertResourceState;
+    pub const SetFeatureMask = IDebugCommandList.Methods(@This()).SetFeatureMask;
+    pub const GetFeatureMask = IDebugCommandList.Methods(@This()).GetFeatureMask;
+
+    pub const VTable = extern struct {
+        base: IDebugCommandList.VTable,
+        SetDebugParameter: *anyopaque,
+        GetDebugParameter: *anyopaque,
+    };
+};
+
+pub const IDebugCommandList3 = extern struct {
+    __v: *const VTable,
+
+    pub const IID = GUID.parse("{197d5e15-4d37-4d34-af78-724cd70fdb1f}");
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const AssertResourceState = IDebugCommandList.Methods(@This()).AssertResourceState;
+    pub const SetFeatureMask = IDebugCommandList.Methods(@This()).SetFeatureMask;
+    pub const GetFeatureMask = IDebugCommandList.Methods(@This()).GetFeatureMask;
+
+    pub const AssertResourceAccess = IDebugCommandList3.Methods(@This()).AssertResourceAccess;
+    pub const AssertTextureLayout = IDebugCommandList3.Methods(@This()).AssertTextureLayout;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn AssertResourceAccess(
+                self: *T,
+                resource: *d3d12.IResource,
+                subresource: UINT,
+                access: d3d12.BARRIER_ACCESS,
+            ) void {
+                @as(*const IDebugCommandList3.VTable, @ptrCast(self.__v)).AssertResourceAccess(
+                    @ptrCast(self),
+                    resource,
+                    subresource,
+                    access,
+                );
+            }
+            pub inline fn AssertTextureLayout(
+                self: *T,
+                resource: *d3d12.IResource,
+                subresource: UINT,
+                layout: d3d12.BARRIER_LAYOUT,
+            ) void {
+                @as(*const IDebugCommandList3.VTable, @ptrCast(self.__v)).AssertTextureLayout(
+                    @ptrCast(self),
+                    resource,
+                    subresource,
+                    layout,
+                );
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IDebugCommandList2.VTable,
+        AssertResourceAccess: *const fn (
+            *IDebugCommandList3,
+            *d3d12.IResource,
+            UINT,
+            d3d12.BARRIER_ACCESS,
+        ) callconv(WINAPI) void,
+        AssertTextureLayout: *const fn (
+            *IDebugCommandList3,
+            *d3d12.IResource,
+            UINT,
+            d3d12.BARRIER_LAYOUT,
+        ) callconv(WINAPI) void,
     };
 };

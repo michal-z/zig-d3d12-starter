@@ -15,6 +15,8 @@ const window_name = "zig-d3d12-starter";
 const d3d12_debug = @import("build_options").d3d12_debug;
 const d3d12_debug_gpu = @import("build_options").d3d12_debug_gpu;
 
+const GpuContext = @import("GpuContext.zig");
+
 pub fn main() !void {
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
     defer w32.CoUninitialize();
@@ -22,6 +24,11 @@ pub fn main() !void {
     _ = w32.SetProcessDPIAware();
 
     const window = create_window(1600, 1200);
+
+    {
+        //var gc = try GpuContext.init(window);
+        //defer gc.deinit();
+    }
 
     var dx12 = Dx12State.init(window);
     defer dx12.deinit();
@@ -47,14 +54,14 @@ pub fn main() !void {
             0,
             pso_desc.VS.pShaderBytecode.?,
             pso_desc.VS.BytecodeLength,
-            &d3d12.IID_IRootSignature,
+            &d3d12.IRootSignature.IID,
             @ptrCast(&root_signature),
         ));
 
         var pipeline: *d3d12.IPipelineState = undefined;
         vhr(dx12.device.CreateGraphicsPipelineState(
             &pso_desc,
-            &d3d12.IID_IPipelineState,
+            &d3d12.IPipelineState.IID,
             @ptrCast(&pipeline),
         ));
 
@@ -195,13 +202,13 @@ const Dx12State = struct {
         // DXGI Factory
         //
         var dxgi_factory: *dxgi.IFactory6 = undefined;
-        vhr(dxgi.CreateFactory2(0, &dxgi.IID_IFactory6, @ptrCast(&dxgi_factory)));
+        vhr(dxgi.CreateFactory2(0, &dxgi.IFactory6.IID, @ptrCast(&dxgi_factory)));
 
         std.log.info("DXGI factory created", .{});
 
         if (d3d12_debug or d3d12_debug_gpu) {
             var maybe_debug: ?*d3d12d.IDebug5 = null;
-            _ = d3d12.GetDebugInterface(&d3d12d.IID_IDebug5, @ptrCast(&maybe_debug));
+            _ = d3d12.GetDebugInterface(&d3d12d.IDebug5.IID, @ptrCast(&maybe_debug));
             if (maybe_debug) |debug| {
                 debug.EnableDebugLayer();
                 if (d3d12_debug_gpu) debug.SetEnableGPUBasedValidation(w32.TRUE);
@@ -213,7 +220,7 @@ const Dx12State = struct {
         // D3D12 Device
         //
         var device: *d3d12.IDevice11 = undefined;
-        if (d3d12.CreateDevice(null, .@"11_0", &d3d12.IID_IDevice9, @ptrCast(&device)) != w32.S_OK) {
+        if (d3d12.CreateDevice(null, .@"11_0", &d3d12.IDevice9.IID, @ptrCast(&device)) != w32.S_OK) {
             _ = w32.MessageBoxA(
                 window,
                 "Failed to create Direct3D 12 Device. This applications requires graphics card " ++
@@ -235,7 +242,7 @@ const Dx12State = struct {
             .Priority = @intFromEnum(d3d12.COMMAND_QUEUE_PRIORITY.NORMAL),
             .Flags = .{},
             .NodeMask = 0,
-        }, &d3d12.IID_ICommandQueue, @ptrCast(&command_queue)));
+        }, &d3d12.ICommandQueue.IID, @ptrCast(&command_queue)));
 
         std.log.info("D3D12 command queue created", .{});
 
@@ -272,7 +279,7 @@ const Dx12State = struct {
             ));
             defer _ = temp_swap_chain.Release();
 
-            vhr(temp_swap_chain.QueryInterface(&dxgi.IID_ISwapChain3, @ptrCast(&swap_chain)));
+            vhr(temp_swap_chain.QueryInterface(&dxgi.ISwapChain3.IID, @ptrCast(&swap_chain)));
         }
 
         // Disable ALT + ENTER
@@ -281,7 +288,7 @@ const Dx12State = struct {
         var swap_chain_textures: [num_frames]*d3d12.IResource = undefined;
 
         for (&swap_chain_textures, 0..) |*texture, i| {
-            vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IID_IResource, @ptrCast(&texture.*)));
+            vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
         }
 
         std.log.info("Swap chain created", .{});
@@ -295,7 +302,7 @@ const Dx12State = struct {
             .NumDescriptors = 16,
             .Flags = .{},
             .NodeMask = 0,
-        }, &d3d12.IID_IDescriptorHeap, @ptrCast(&rtv_heap)));
+        }, &d3d12.IDescriptorHeap.IID, @ptrCast(&rtv_heap)));
 
         const rtv_heap_start = rtv_heap.GetCPUDescriptorHandleForHeapStart();
 
@@ -313,7 +320,7 @@ const Dx12State = struct {
         // Frame Fence
         //
         var frame_fence: *d3d12.IFence = undefined;
-        vhr(device.CreateFence(0, .{}, &d3d12.IID_IFence, @ptrCast(&frame_fence)));
+        vhr(device.CreateFence(0, .{}, &d3d12.IFence.IID, @ptrCast(&frame_fence)));
 
         const frame_fence_event = w32.CreateEventExA(null, "frame_fence_event", 0, w32.EVENT_ALL_ACCESS).?;
 
@@ -327,7 +334,7 @@ const Dx12State = struct {
         for (&command_allocators) |*cmdalloc| {
             vhr(device.CreateCommandAllocator(
                 .DIRECT,
-                &d3d12.IID_ICommandAllocator,
+                &d3d12.ICommandAllocator.IID,
                 @ptrCast(&cmdalloc.*),
             ));
         }
@@ -343,7 +350,7 @@ const Dx12State = struct {
             .DIRECT,
             command_allocators[0],
             null,
-            &d3d12.IID_IGraphicsCommandList6,
+            &d3d12.IGraphicsCommandList9.IID,
             @ptrCast(&command_list),
         ));
         vhr(command_list.Close());
@@ -425,7 +432,7 @@ const Dx12State = struct {
             vhr(dx12.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, .{}));
 
             for (&dx12.swap_chain_textures, 0..) |*texture, i| {
-                vhr(dx12.swap_chain.GetBuffer(@intCast(i), &d3d12.IID_IResource, @ptrCast(&texture.*)));
+                vhr(dx12.swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
             }
 
             for (dx12.swap_chain_textures, 0..) |texture, i| {

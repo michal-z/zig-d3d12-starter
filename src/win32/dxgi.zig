@@ -1344,9 +1344,10 @@ pub const FEATURE = enum(UINT) {
     PRESENT_ALLOW_TEARING = 0,
 };
 
-pub const IID_IFactory5 = GUID.parse("{7632e1f5-ee65-4dca-87fd-84cd75f8838d}");
 pub const IFactory5 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{7632e1f5-ee65-4dca-87fd-84cd75f8838d}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -1404,9 +1405,10 @@ pub const GPU_PREFERENCE = enum(UINT) {
     HIGH_PERFORMANCE,
 };
 
-pub const IID_IFactory6 = GUID.parse("{c1b6694f-ff09-44a9-b03c-77900a0a1d17}");
 pub const IFactory6 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{c1b6694f-ff09-44a9-b03c-77900a0a1d17}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -1468,9 +1470,10 @@ pub const IFactory6 = extern struct {
     };
 };
 
-pub const IID_IAdapter1 = GUID.parse("{29038f61-3839-4626-91fd-086879011a05}");
 pub const IAdapter1 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{29038f61-3839-4626-91fd-086879011a05}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -1501,9 +1504,10 @@ pub const IAdapter1 = extern struct {
     };
 };
 
-pub const IID_IAdapter2 = GUID.parse("{0AA1AE0A-FA0E-4B84-8644-E05FF8E5ACB5}");
 pub const IAdapter2 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{0AA1AE0A-FA0E-4B84-8644-E05FF8E5ACB5}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -1548,9 +1552,10 @@ pub const QUERY_VIDEO_MEMORY_INFO = extern struct {
     CurrentReservation: UINT64,
 };
 
-pub const IID_IAdapter3 = GUID.parse("{645967A4-1392-4310-A798-8053CE3E93FD}");
 pub const IAdapter3 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{645967A4-1392-4310-A798-8053CE3E93FD}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -1940,9 +1945,10 @@ pub const ISwapChain2 = extern struct {
     };
 };
 
-pub const IID_ISwapChain3 = GUID.parse("{94d99bdb-f1f8-4ab0-b236-7da0170edab1}");
 pub const ISwapChain3 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{94d99bdb-f1f8-4ab0-b236-7da0170edab1}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -2009,7 +2015,7 @@ pub const ISwapChain3 = extern struct {
                 width: UINT,
                 height: UINT,
                 format: FORMAT,
-                swap_chain_flags: UINT,
+                swap_chain_flags: SWAP_CHAIN_FLAG,
                 creation_node_mask: [*]const UINT,
                 present_queue: [*]const *IUnknown,
             ) HRESULT {
@@ -2038,7 +2044,7 @@ pub const ISwapChain3 = extern struct {
             UINT,
             UINT,
             FORMAT,
-            UINT,
+            SWAP_CHAIN_FLAG,
             [*]const UINT,
             [*]const *IUnknown,
         ) callconv(WINAPI) HRESULT,

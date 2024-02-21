@@ -18,10 +18,12 @@ pub fn build(b: *std.Build) void {
 
     const d3d12_debug = b.option(bool, "d3d12-debug", "Enable D3D12 debug layer") orelse false;
     const d3d12_debug_gpu = b.option(bool, "d3d12-debug-gpu", "Enable D3D12 GPU-based validation") orelse false;
+    const d3d12_vsync = b.option(bool, "d3d12-vsync", "Enable VSync") orelse true;
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "d3d12_debug", d3d12_debug);
     build_options.addOption(bool, "d3d12_debug_gpu", d3d12_debug_gpu);
+    build_options.addOption(bool, "d3d12_vsync", d3d12_vsync);
 
     exe.root_module.addOptions("build_options", build_options);
 

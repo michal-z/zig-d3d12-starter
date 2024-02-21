@@ -443,9 +443,10 @@ pub inline fn HIWORD(dword: DWORD) WORD {
     return @as(WORD, @bitCast(@as(u16, @intCast((dword >> 16) & 0xffff))));
 }
 
-pub const IID_IUnknown = GUID.parse("{00000000-0000-0000-C000-000000000046}");
 pub const IUnknown = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{00000000-0000-0000-C000-000000000046}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;

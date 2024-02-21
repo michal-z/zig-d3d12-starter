@@ -84,9 +84,10 @@ pub const INCLUDE_TYPE = enum(UINT) {
     INCLUDE_SYSTEM = 1,
 };
 
-pub const IID_IBlob = GUID.parse("{8BA5FB08-5195-40e2-AC58-0D989C3A0102}");
 pub const IBlob = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{8BA5FB08-5195-40e2-AC58-0D989C3A0102}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
