@@ -130,7 +130,7 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
     return .no_change;
 }
 
-pub fn init(window: w32.HWND) !GpuContext {
+pub fn init(window: w32.HWND) GpuContext {
     //
     // Factory, adapater, device
     //
@@ -166,7 +166,14 @@ pub fn init(window: w32.HWND) !GpuContext {
 
     var device: *IDevice = undefined;
     if (d3d12.CreateDevice(@ptrCast(adapter), .@"11_1", &IDevice.IID, @ptrCast(&device)) != w32.S_OK) {
-        return error.CreateDeviceFailed;
+        _ = w32.MessageBoxA(
+            window,
+            "Failed to create Direct3D 12 Device. This applications requires graphics card " ++
+                "with Feature Level 11.1 support. Please update your graphics driver and try again.",
+            "DirectX 12 initialization error",
+            w32.MB_OK | w32.MB_ICONERROR,
+        );
+        w32.ExitProcess(0);
     }
 
     const debug_device = if (d3d12_debug) blk: {
@@ -196,23 +203,37 @@ pub fn init(window: w32.HWND) !GpuContext {
         vhr(device.CheckFeatureSupport(.OPTIONS12, &options12, @sizeOf(d3d12.FEATURE_DATA_D3D12_OPTIONS12)));
         vhr(device.CheckFeatureSupport(.SHADER_MODEL, &shader_model, @sizeOf(d3d12.FEATURE_DATA_SHADER_MODEL)));
 
-        if (@intFromEnum(options.ResourceBindingTier) < @intFromEnum(d3d12.RESOURCE_BINDING_TIER.TIER_3)) {
-            log.info("Resource Binding Tier 3 is NOT SUPPORTED - please update your graphics driver.", .{});
-            return error.NoSupportForRequiredFeatures;
-        }
-        log.info("Resource Binding Tier 3 is SUPPORTED.", .{});
+        const is_supported = blk: {
+            if (@intFromEnum(options.ResourceBindingTier) < @intFromEnum(d3d12.RESOURCE_BINDING_TIER.TIER_3)) {
+                log.info("Resource Binding Tier 3 is NOT SUPPORTED - please update your graphics driver.", .{});
+                break :blk false;
+            }
+            log.info("Resource Binding Tier 3 is SUPPORTED.", .{});
 
-        if (options12.EnhancedBarriersSupported == w32.FALSE) {
-            log.info("Enhanced Barriers API is NOT SUPPORTED - please update your graphics driver.", .{});
-            return error.NoSupportForRequiredFeatures;
-        }
-        log.info("Enhanced Barriers API is SUPPORTED.", .{});
+            if (options12.EnhancedBarriersSupported == w32.FALSE) {
+                log.info("Enhanced Barriers API is NOT SUPPORTED - please update your graphics driver.", .{});
+                break :blk false;
+            }
+            log.info("Enhanced Barriers API is SUPPORTED.", .{});
 
-        if (@intFromEnum(shader_model.HighestShaderModel) < @intFromEnum(d3d12.SHADER_MODEL.@"6_6")) {
-            log.info("Shader Model 6.6 is NOT SUPPORTED - please update your graphics driver.", .{});
-            return error.NoSupportForRequiredFeatures;
+            if (@intFromEnum(shader_model.HighestShaderModel) < @intFromEnum(d3d12.SHADER_MODEL.@"6_6")) {
+                log.info("Shader Model 6.6 is NOT SUPPORTED - please update your graphics driver.", .{});
+                break :blk false;
+            }
+            log.info("Shader Model 6.6 is SUPPORTED.", .{});
+
+            break :blk true;
+        };
+        if (!is_supported) {
+            _ = w32.MessageBoxA(
+                window,
+                "Your graphics card does not support some required features. " ++
+                    "Please update your graphics driver and try again.",
+                "DirectX 12 initialization error",
+                w32.MB_OK | w32.MB_ICONERROR,
+            );
+            w32.ExitProcess(0);
         }
-        log.info("Shader Model 6.6 is SUPPORTED.", .{});
     }
 
     //
@@ -354,7 +375,7 @@ pub fn init(window: w32.HWND) !GpuContext {
 
     log.info("Frame fence created.", .{});
 
-    return GpuContext{
+    return .{
         .window = window,
         .window_width = window_width,
         .window_height = window_height,

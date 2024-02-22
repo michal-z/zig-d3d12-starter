@@ -22,7 +22,7 @@ pub fn main() !void {
 
     _ = w32.SetProcessDPIAware();
 
-    var gc = try GpuContext.init(create_window(1600, 1200));
+    var gc = GpuContext.init(create_window(1600, 1200));
     defer gc.deinit();
 
     const root_signature: *d3d12.IRootSignature, const pipeline: *d3d12.IPipelineState = blk: {
