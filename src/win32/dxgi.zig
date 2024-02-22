@@ -1036,10 +1036,14 @@ pub const IFactory = extern struct {
                 self: *T,
                 device: *IUnknown,
                 desc: *SWAP_CHAIN_DESC,
-                swapchain: *?*ISwapChain,
+                swap_chain: ?*?*ISwapChain,
             ) HRESULT {
-                return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateSwapChain(@ptrCast(self), device, desc, swapchain);
+                return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreateSwapChain(
+                    @ptrCast(self),
+                    device,
+                    desc,
+                    swap_chain,
+                );
             }
             pub inline fn CreateSoftwareAdapter(self: *T, adapter: *?*IAdapter) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreateSoftwareAdapter(
@@ -1055,7 +1059,7 @@ pub const IFactory = extern struct {
         EnumAdapters: *const fn (*IFactory, UINT, *?*IAdapter) callconv(WINAPI) HRESULT,
         MakeWindowAssociation: *const fn (*IFactory, HWND, MWA_FLAGS) callconv(WINAPI) HRESULT,
         GetWindowAssociation: *const fn (*IFactory, *HWND) callconv(WINAPI) HRESULT,
-        CreateSwapChain: *const fn (*IFactory, *IUnknown, *SWAP_CHAIN_DESC, *?*ISwapChain) callconv(WINAPI) HRESULT,
+        CreateSwapChain: *const fn (*IFactory, *IUnknown, *SWAP_CHAIN_DESC, ?*?*ISwapChain) callconv(WINAPI) HRESULT,
         CreateSoftwareAdapter: *const fn (*IFactory, *?*IAdapter) callconv(WINAPI) HRESULT,
     };
 };
@@ -1257,12 +1261,45 @@ pub const IFactory2 = extern struct {
     pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
     pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
 
+    pub const CreateSwapChainForHwnd = IFactory2.Methods(@This()).CreateSwapChainForHwnd;
     // TODO: Add IFactory2 methods
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateSwapChainForHwnd(
+                self: *T,
+                device: *IUnknown,
+                hwnd: HWND,
+                desc: *const SWAP_CHAIN_DESC1,
+                fullscreen_desc: ?*const SWAP_CHAIN_FULLSCREEN_DESC,
+                restrict_to_output: ?*IOutput,
+                swap_chain: ?*?*ISwapChain1,
+            ) HRESULT {
+                return @as(*const IFactory2.VTable, @ptrCast(self.__v)).CreateSwapChainForHwnd(
+                    @ptrCast(self),
+                    device,
+                    hwnd,
+                    desc,
+                    fullscreen_desc,
+                    restrict_to_output,
+                    swap_chain,
+                );
+            }
+        };
+    }
 
     pub const VTable = extern struct {
         base: IFactory1.VTable,
         IsWindowedStereoEnabled: *anyopaque,
-        CreateSwapChainForHwnd: *anyopaque,
+        CreateSwapChainForHwnd: *const fn (
+            *IFactory2,
+            *IUnknown,
+            HWND,
+            *const SWAP_CHAIN_DESC1,
+            ?*const SWAP_CHAIN_FULLSCREEN_DESC,
+            ?*IOutput,
+            ?*?*ISwapChain1,
+        ) callconv(WINAPI) HRESULT,
         CreateSwapChainForCoreWindow: *anyopaque,
         GetSharedResourceAdapterLuid: *anyopaque,
         RegisterStereoStatusWindow: *anyopaque,
@@ -1296,6 +1333,7 @@ pub const IFactory3 = extern struct {
     pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
     pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
 
+    pub const CreateSwapChainForHwnd = IFactory2.Methods(@This()).CreateSwapChainForHwnd;
     // TODO: Add IFactory2 methods
 
     // TODO: Add IFactory3 methods
@@ -1327,6 +1365,7 @@ pub const IFactory4 = extern struct {
     pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
     pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
 
+    pub const CreateSwapChainForHwnd = IFactory2.Methods(@This()).CreateSwapChainForHwnd;
     // TODO: Add IFactory2 methods
 
     // TODO: Add IFactory3 methods
@@ -1367,6 +1406,7 @@ pub const IFactory5 = extern struct {
     pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
     pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
 
+    pub const CreateSwapChainForHwnd = IFactory2.Methods(@This()).CreateSwapChainForHwnd;
     // TODO: Add IFactory2 methods
 
     // TODO: Add IFactory3 methods
@@ -1428,6 +1468,7 @@ pub const IFactory6 = extern struct {
     pub const EnumAdapters1 = IFactory1.Methods(@This()).EnumAdapters1;
     pub const IsCurrent = IFactory1.Methods(@This()).IsCurrent;
 
+    pub const CreateSwapChainForHwnd = IFactory2.Methods(@This()).CreateSwapChainForHwnd;
     // TODO: Add IFactory2 methods
 
     // TODO: Add IFactory3 methods

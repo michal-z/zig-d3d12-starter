@@ -12,10 +12,9 @@ export const D3D12SDKVersion: u32 = 611;
 export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
 
 const window_name = "zig-d3d12-starter";
-const d3d12_debug = @import("build_options").d3d12_debug;
-const d3d12_debug_gpu = @import("build_options").d3d12_debug_gpu;
 
 const GpuContext = @import("GpuContext.zig");
+const vhr = GpuContext.vhr;
 
 pub fn main() !void {
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
@@ -25,13 +24,8 @@ pub fn main() !void {
 
     const window = create_window(1600, 1200);
 
-    {
-        //var gc = try GpuContext.init(window);
-        //defer gc.deinit();
-    }
-
-    var dx12 = Dx12State.init(window);
-    defer dx12.deinit();
+    var gc = try GpuContext.init(window);
+    defer gc.deinit();
 
     const root_signature: *d3d12.IRootSignature, const pipeline: *d3d12.IPipelineState = blk: {
         const vs_cso = @embedFile("cso/s00.vs.cso");
@@ -50,7 +44,7 @@ pub fn main() !void {
         };
 
         var root_signature: *d3d12.IRootSignature = undefined;
-        vhr(dx12.device.CreateRootSignature(
+        vhr(gc.device.CreateRootSignature(
             0,
             pso_desc.VS.pShaderBytecode.?,
             pso_desc.VS.BytecodeLength,
@@ -59,7 +53,7 @@ pub fn main() !void {
         ));
 
         var pipeline: *d3d12.IPipelineState = undefined;
-        vhr(dx12.device.CreateGraphicsPipelineState(
+        vhr(gc.device.CreateGraphicsPipelineState(
             &pso_desc,
             &d3d12.IPipelineState.IID,
             @ptrCast(&pipeline),
@@ -87,45 +81,44 @@ pub fn main() !void {
                 if (message.message == w32.WM_QUIT) break :main_loop;
             }
 
-            dx12.maybe_resize();
-            if (dx12.window_rect.right == 0 or dx12.window_rect.bottom == 0) {
+            const status = gc.handle_window_resize();
+            if (status == .has_been_minimized) {
                 w32.Sleep(10);
                 continue :main_loop;
             }
         }
 
-        const command_allocator = dx12.command_allocators[dx12.frame_index];
+        const command_allocator = gc.command_allocators[gc.frame_index];
 
         vhr(command_allocator.Reset());
-        vhr(dx12.command_list.Reset(command_allocator, null));
+        vhr(gc.command_list.Reset(command_allocator, null));
 
-        dx12.command_list.RSSetViewports(1, &[_]d3d12.VIEWPORT{.{
+        gc.command_list.RSSetViewports(1, &[_]d3d12.VIEWPORT{.{
             .TopLeftX = 0.0,
             .TopLeftY = 0.0,
-            .Width = @floatFromInt(dx12.window_rect.right),
-            .Height = @floatFromInt(dx12.window_rect.bottom),
+            .Width = @floatFromInt(gc.window_width),
+            .Height = @floatFromInt(gc.window_height),
             .MinDepth = 0.0,
             .MaxDepth = 1.0,
         }});
-        dx12.command_list.RSSetScissorRects(1, &[_]d3d12.RECT{.{
+        gc.command_list.RSSetScissorRects(1, &[_]d3d12.RECT{.{
             .left = 0,
             .top = 0,
-            .right = @intCast(dx12.window_rect.right),
-            .bottom = @intCast(dx12.window_rect.bottom),
+            .right = @intCast(gc.window_width),
+            .bottom = @intCast(gc.window_height),
         }});
 
-        const back_buffer_index = dx12.swap_chain.GetCurrentBackBufferIndex();
         const back_buffer_descriptor = d3d12.CPU_DESCRIPTOR_HANDLE{
-            .ptr = dx12.rtv_heap_start.ptr +
-                back_buffer_index * dx12.device.GetDescriptorHandleIncrementSize(.RTV),
+            .ptr = gc.rtv_heap_start.ptr +
+                gc.frame_index * gc.rtv_heap_descriptor_size,
         };
 
-        dx12.command_list.ResourceBarrier(1, &[_]d3d12.RESOURCE_BARRIER{.{
+        gc.command_list.ResourceBarrier(1, &[_]d3d12.RESOURCE_BARRIER{.{
             .Type = .TRANSITION,
             .Flags = .{},
             .u = .{
                 .Transition = .{
-                    .pResource = dx12.swap_chain_textures[back_buffer_index],
+                    .pResource = gc.swap_chain_textures[gc.frame_index],
                     .Subresource = d3d12.RESOURCE_BARRIER_ALL_SUBRESOURCES,
                     .StateBefore = d3d12.RESOURCE_STATES.PRESENT,
                     .StateAfter = .{ .RENDER_TARGET = true },
@@ -133,36 +126,35 @@ pub fn main() !void {
             },
         }});
 
-        dx12.command_list.OMSetRenderTargets(
+        gc.command_list.OMSetRenderTargets(
             1,
             &[_]d3d12.CPU_DESCRIPTOR_HANDLE{back_buffer_descriptor},
             w32.TRUE,
             null,
         );
-        dx12.command_list.ClearRenderTargetView(back_buffer_descriptor, &.{ 0.2, frac, 0.8, 1.0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(back_buffer_descriptor, &.{ 0.2, frac, 0.8, 1.0 }, 0, null);
 
-        dx12.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
-        dx12.command_list.SetPipelineState(pipeline);
-        dx12.command_list.SetGraphicsRootSignature(root_signature);
-        dx12.command_list.DrawInstanced(3, 1, 0, 0);
+        gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
+        gc.command_list.SetPipelineState(pipeline);
+        gc.command_list.SetGraphicsRootSignature(root_signature);
+        gc.command_list.DrawInstanced(3, 1, 0, 0);
 
-        dx12.command_list.ResourceBarrier(1, &[_]d3d12.RESOURCE_BARRIER{.{
+        gc.command_list.ResourceBarrier(1, &[_]d3d12.RESOURCE_BARRIER{.{
             .Type = .TRANSITION,
             .Flags = .{},
             .u = .{
                 .Transition = .{
-                    .pResource = dx12.swap_chain_textures[back_buffer_index],
+                    .pResource = gc.swap_chain_textures[gc.frame_index],
                     .Subresource = d3d12.RESOURCE_BARRIER_ALL_SUBRESOURCES,
                     .StateBefore = .{ .RENDER_TARGET = true },
                     .StateAfter = d3d12.RESOURCE_STATES.PRESENT,
                 },
             },
         }});
-        vhr(dx12.command_list.Close());
+        vhr(gc.command_list.Close());
 
-        dx12.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(dx12.command_list)});
-
-        dx12.present();
+        gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+        gc.present();
 
         frac += frac_delta;
         if (frac > 1.0 or frac < 0.0) {
@@ -170,283 +162,8 @@ pub fn main() !void {
         }
     }
 
-    dx12.finish_gpu_commands();
+    gc.finish_gpu_commands();
 }
-
-const Dx12State = struct {
-    window: w32.HWND,
-    window_rect: w32.RECT,
-
-    dxgi_factory: *dxgi.IFactory6,
-    device: *d3d12.IDevice11,
-
-    swap_chain: *dxgi.ISwapChain3,
-    swap_chain_textures: [num_frames]*d3d12.IResource,
-
-    rtv_heap: *d3d12.IDescriptorHeap,
-    rtv_heap_start: d3d12.CPU_DESCRIPTOR_HANDLE,
-
-    frame_fence: *d3d12.IFence,
-    frame_fence_event: w32.HANDLE,
-    frame_fence_counter: u64 = 0,
-    frame_index: u32 = 0,
-
-    command_queue: *d3d12.ICommandQueue,
-    command_allocators: [num_frames]*d3d12.ICommandAllocator,
-    command_list: *d3d12.IGraphicsCommandList9,
-
-    const num_frames = 2;
-
-    fn init(window: w32.HWND) Dx12State {
-        //
-        // DXGI Factory
-        //
-        var dxgi_factory: *dxgi.IFactory6 = undefined;
-        vhr(dxgi.CreateFactory2(0, &dxgi.IFactory6.IID, @ptrCast(&dxgi_factory)));
-
-        std.log.info("DXGI factory created", .{});
-
-        if (d3d12_debug or d3d12_debug_gpu) {
-            var maybe_debug: ?*d3d12d.IDebug5 = null;
-            _ = d3d12.GetDebugInterface(&d3d12d.IDebug5.IID, @ptrCast(&maybe_debug));
-            if (maybe_debug) |debug| {
-                debug.EnableDebugLayer();
-                if (d3d12_debug_gpu) debug.SetEnableGPUBasedValidation(w32.TRUE);
-                _ = debug.Release();
-            }
-        }
-
-        //
-        // D3D12 Device
-        //
-        var device: *d3d12.IDevice11 = undefined;
-        if (d3d12.CreateDevice(null, .@"11_0", &d3d12.IDevice9.IID, @ptrCast(&device)) != w32.S_OK) {
-            _ = w32.MessageBoxA(
-                window,
-                "Failed to create Direct3D 12 Device. This applications requires graphics card " ++
-                    "with DirectX 12 Feature Level 11.0 support.",
-                "Your graphics card driver may be old",
-                w32.MB_OK | w32.MB_ICONERROR,
-            );
-            w32.ExitProcess(0);
-        }
-
-        std.log.info("D3D12 device created", .{});
-
-        //
-        // Command Queue
-        //
-        var command_queue: *d3d12.ICommandQueue = undefined;
-        vhr(device.CreateCommandQueue(&.{
-            .Type = .DIRECT,
-            .Priority = @intFromEnum(d3d12.COMMAND_QUEUE_PRIORITY.NORMAL),
-            .Flags = .{},
-            .NodeMask = 0,
-        }, &d3d12.ICommandQueue.IID, @ptrCast(&command_queue)));
-
-        std.log.info("D3D12 command queue created", .{});
-
-        //
-        // Swap Chain
-        //
-        var rect: w32.RECT = undefined;
-        _ = w32.GetClientRect(window, &rect);
-
-        var swap_chain: *dxgi.ISwapChain3 = undefined;
-        {
-            var desc = dxgi.SWAP_CHAIN_DESC{
-                .BufferDesc = .{
-                    .Width = @intCast(rect.right),
-                    .Height = @intCast(rect.bottom),
-                    .RefreshRate = .{ .Numerator = 0, .Denominator = 0 },
-                    .Format = .R8G8B8A8_UNORM,
-                    .ScanlineOrdering = .UNSPECIFIED,
-                    .Scaling = .UNSPECIFIED,
-                },
-                .SampleDesc = .{ .Count = 1, .Quality = 0 },
-                .BufferUsage = .{ .RENDER_TARGET_OUTPUT = true },
-                .BufferCount = num_frames,
-                .OutputWindow = window,
-                .Windowed = w32.TRUE,
-                .SwapEffect = .FLIP_DISCARD,
-                .Flags = .{},
-            };
-            var temp_swap_chain: *dxgi.ISwapChain = undefined;
-            vhr(dxgi_factory.CreateSwapChain(
-                @ptrCast(command_queue),
-                &desc,
-                @ptrCast(&temp_swap_chain),
-            ));
-            defer _ = temp_swap_chain.Release();
-
-            vhr(temp_swap_chain.QueryInterface(&dxgi.ISwapChain3.IID, @ptrCast(&swap_chain)));
-        }
-
-        // Disable ALT + ENTER
-        vhr(dxgi_factory.MakeWindowAssociation(window, .{ .NO_WINDOW_CHANGES = true }));
-
-        var swap_chain_textures: [num_frames]*d3d12.IResource = undefined;
-
-        for (&swap_chain_textures, 0..) |*texture, i| {
-            vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
-        }
-
-        std.log.info("Swap chain created", .{});
-
-        //
-        // Render Target View Heap
-        //
-        var rtv_heap: *d3d12.IDescriptorHeap = undefined;
-        vhr(device.CreateDescriptorHeap(&.{
-            .Type = .RTV,
-            .NumDescriptors = 16,
-            .Flags = .{},
-            .NodeMask = 0,
-        }, &d3d12.IDescriptorHeap.IID, @ptrCast(&rtv_heap)));
-
-        const rtv_heap_start = rtv_heap.GetCPUDescriptorHandleForHeapStart();
-
-        for (swap_chain_textures, 0..) |texture, i| {
-            device.CreateRenderTargetView(
-                texture,
-                null,
-                .{ .ptr = rtv_heap_start.ptr + i * device.GetDescriptorHandleIncrementSize(.RTV) },
-            );
-        }
-
-        std.log.info("Render target view (RTV) heap created ", .{});
-
-        //
-        // Frame Fence
-        //
-        var frame_fence: *d3d12.IFence = undefined;
-        vhr(device.CreateFence(0, .{}, &d3d12.IFence.IID, @ptrCast(&frame_fence)));
-
-        const frame_fence_event = w32.CreateEventExA(null, "frame_fence_event", 0, w32.EVENT_ALL_ACCESS).?;
-
-        std.log.info("Frame fence created ", .{});
-
-        //
-        // Command Allocators
-        //
-        var command_allocators: [num_frames]*d3d12.ICommandAllocator = undefined;
-
-        for (&command_allocators) |*cmdalloc| {
-            vhr(device.CreateCommandAllocator(
-                .DIRECT,
-                &d3d12.ICommandAllocator.IID,
-                @ptrCast(&cmdalloc.*),
-            ));
-        }
-
-        std.log.info("Command allocators created ", .{});
-
-        //
-        // Command List
-        //
-        var command_list: *d3d12.IGraphicsCommandList9 = undefined;
-        vhr(device.CreateCommandList(
-            0,
-            .DIRECT,
-            command_allocators[0],
-            null,
-            &d3d12.IGraphicsCommandList9.IID,
-            @ptrCast(&command_list),
-        ));
-        vhr(command_list.Close());
-
-        return .{
-            .window = window,
-            .window_rect = rect,
-            .dxgi_factory = dxgi_factory,
-            .device = device,
-            .command_queue = command_queue,
-            .swap_chain = swap_chain,
-            .swap_chain_textures = swap_chain_textures,
-            .rtv_heap = rtv_heap,
-            .rtv_heap_start = rtv_heap_start,
-            .frame_fence = frame_fence,
-            .frame_fence_event = frame_fence_event,
-            .command_allocators = command_allocators,
-            .command_list = command_list,
-        };
-    }
-
-    fn deinit(dx12: *Dx12State) void {
-        _ = dx12.command_list.Release();
-        for (dx12.command_allocators) |cmdalloc| _ = cmdalloc.Release();
-        _ = dx12.frame_fence.Release();
-        _ = w32.CloseHandle(dx12.frame_fence_event);
-        _ = dx12.rtv_heap.Release();
-        for (dx12.swap_chain_textures) |texture| _ = texture.Release();
-        _ = dx12.swap_chain.Release();
-        _ = dx12.command_queue.Release();
-        _ = dx12.device.Release();
-        _ = dx12.dxgi_factory.Release();
-        dx12.* = undefined;
-    }
-
-    fn present(dx12: *Dx12State) void {
-        dx12.frame_fence_counter += 1;
-
-        vhr(dx12.swap_chain.Present(1, .{}));
-        vhr(dx12.command_queue.Signal(dx12.frame_fence, dx12.frame_fence_counter));
-
-        const gpu_frame_counter = dx12.frame_fence.GetCompletedValue();
-        if ((dx12.frame_fence_counter - gpu_frame_counter) >= num_frames) {
-            vhr(dx12.frame_fence.SetEventOnCompletion(gpu_frame_counter + 1, dx12.frame_fence_event));
-            _ = w32.WaitForSingleObject(dx12.frame_fence_event, w32.INFINITE);
-        }
-
-        dx12.frame_index = (dx12.frame_index + 1) % num_frames;
-    }
-
-    fn finish_gpu_commands(dx12: *Dx12State) void {
-        dx12.frame_fence_counter += 1;
-
-        vhr(dx12.command_queue.Signal(dx12.frame_fence, dx12.frame_fence_counter));
-        vhr(dx12.frame_fence.SetEventOnCompletion(dx12.frame_fence_counter, dx12.frame_fence_event));
-
-        _ = w32.WaitForSingleObject(dx12.frame_fence_event, w32.INFINITE);
-    }
-
-    fn maybe_resize(dx12: *Dx12State) void {
-        var rect: w32.RECT = undefined;
-        _ = w32.GetClientRect(dx12.window, &rect);
-
-        if (rect.right == 0 and rect.bottom == 0) {
-            if (dx12.window_rect.right > 0 and dx12.window_rect.bottom > 0) {
-                std.log.info("Window minimized", .{});
-            }
-            dx12.window_rect = rect;
-            return;
-        }
-
-        if (rect.right != dx12.window_rect.right or rect.bottom != dx12.window_rect.bottom) {
-            std.log.info("Window resized to {d}x{d}", .{ rect.right, rect.bottom });
-
-            dx12.finish_gpu_commands();
-
-            for (dx12.swap_chain_textures) |texture| _ = texture.Release();
-
-            vhr(dx12.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, .{}));
-
-            for (&dx12.swap_chain_textures, 0..) |*texture, i| {
-                vhr(dx12.swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
-            }
-
-            for (dx12.swap_chain_textures, 0..) |texture, i| {
-                dx12.device.CreateRenderTargetView(
-                    texture,
-                    null,
-                    .{ .ptr = dx12.rtv_heap_start.ptr + i * dx12.device.GetDescriptorHandleIncrementSize(.RTV) },
-                );
-            }
-        }
-
-        dx12.window_rect = rect;
-    }
-};
 
 fn process_window_message(
     window: w32.HWND,
@@ -520,8 +237,4 @@ fn create_window(width: u32, height: u32) w32.HWND {
     std.log.info("Application window created", .{});
 
     return window;
-}
-
-fn vhr(hr: w32.HRESULT) void {
-    if (hr != 0) @panic("HRESULT error!");
 }

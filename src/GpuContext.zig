@@ -15,6 +15,7 @@ const GpuContext = @This();
 pub const IDevice = d3d12.IDevice11;
 pub const IGraphicsCommandList = d3d12.IGraphicsCommandList9;
 
+pub const max_rtv_descriptors = 1024;
 pub const max_buffered_frames = 2;
 
 window: w32.HWND,
@@ -29,14 +30,105 @@ command_queue: *d3d12.ICommandQueue,
 command_allocators: [max_buffered_frames]*d3d12.ICommandAllocator,
 command_list: *IGraphicsCommandList,
 
+swap_chain: *dxgi.ISwapChain3,
+swap_chain_textures: [max_buffered_frames]*d3d12.IResource,
 swap_chain_flags: dxgi.SWAP_CHAIN_FLAG,
 swap_chain_present_interval: w32.UINT = if (d3d12_vsync) 1 else 0,
+
+rtv_heap: *d3d12.IDescriptorHeap,
+rtv_heap_start: d3d12.CPU_DESCRIPTOR_HANDLE,
+rtv_heap_descriptor_size: u32,
+
+frame_fence: *d3d12.IFence,
+frame_fence_event: w32.HANDLE,
+frame_fence_counter: u64 = 0,
+frame_index: u32,
 
 debug: if (d3d12_debug) *d3d12d.IDebug5 else void,
 debug_device: if (d3d12_debug) *d3d12.IDebugDevice else void,
 debug_info_queue: if (d3d12_debug) *d3d12d.IInfoQueue else void,
 debug_command_queue: if (d3d12_debug) *d3d12d.IDebugCommandQueue1 else void,
 debug_command_list: if (d3d12_debug) *d3d12d.IDebugCommandList3 else void,
+
+pub fn present(gc: *GpuContext) void {
+    gc.frame_fence_counter += 1;
+
+    const present_flags: dxgi.PRESENT_FLAG =
+        if (gc.swap_chain_present_interval == 0 and gc.swap_chain_flags.ALLOW_TEARING)
+        .{ .ALLOW_TEARING = true }
+    else
+        .{};
+
+    vhr(gc.swap_chain.Present(gc.swap_chain_present_interval, present_flags));
+    vhr(gc.command_queue.Signal(gc.frame_fence, gc.frame_fence_counter));
+
+    const gpu_frame_counter = gc.frame_fence.GetCompletedValue();
+    if ((gc.frame_fence_counter - gpu_frame_counter) >= max_buffered_frames) {
+        vhr(gc.frame_fence.SetEventOnCompletion(gpu_frame_counter + 1, gc.frame_fence_event));
+        _ = w32.WaitForSingleObject(gc.frame_fence_event, w32.INFINITE);
+    }
+
+    gc.frame_index = gc.swap_chain.GetCurrentBackBufferIndex();
+}
+
+pub fn finish_gpu_commands(gc: *GpuContext) void {
+    gc.frame_fence_counter += 1;
+
+    vhr(gc.command_queue.Signal(gc.frame_fence, gc.frame_fence_counter));
+    vhr(gc.frame_fence.SetEventOnCompletion(gc.frame_fence_counter, gc.frame_fence_event));
+
+    _ = w32.WaitForSingleObject(gc.frame_fence_event, w32.INFINITE);
+}
+
+pub fn handle_window_resize(gc: *GpuContext) enum {
+    is_minimized,
+    has_been_minimized,
+    resized,
+    no_change,
+} {
+    const current_width: u32, const current_height: u32 = blk: {
+        var rect: w32.RECT = undefined;
+        _ = w32.GetClientRect(gc.window, &rect);
+        break :blk .{ @intCast(rect.right - rect.left), @intCast(rect.bottom - rect.top) };
+    };
+
+    if (current_width == 0 and current_height == 0) {
+        if (gc.window_width > 0 and gc.window_height > 0) {
+            gc.window_width = 0;
+            gc.window_height = 0;
+            log.info("Window has been minimized.", .{});
+            return .has_been_minimized;
+        }
+        return .is_minimized;
+    }
+
+    if (current_width != gc.window_width or current_height != gc.window_height) {
+        log.info("Window resized to {d}x{d}", .{ current_width, current_height });
+
+        gc.finish_gpu_commands();
+
+        for (gc.swap_chain_textures) |texture| _ = texture.Release();
+
+        vhr(gc.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, gc.swap_chain_flags));
+
+        for (&gc.swap_chain_textures, 0..) |*texture, i| {
+            vhr(gc.swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
+        }
+        for (gc.swap_chain_textures, 0..) |texture, i| {
+            gc.device.CreateRenderTargetView(
+                texture,
+                null,
+                .{ .ptr = gc.rtv_heap_start.ptr + i * gc.rtv_heap_descriptor_size },
+            );
+        }
+
+        gc.window_width = current_width;
+        gc.window_height = current_height;
+        gc.frame_index = gc.swap_chain.GetCurrentBackBufferIndex();
+        return .resized;
+    }
+    return .no_change;
+}
 
 pub fn init(window: w32.HWND) !GpuContext {
     //
@@ -179,6 +271,89 @@ pub fn init(window: w32.HWND) !GpuContext {
         break :blk .{ @intCast(rect.right - rect.left), @intCast(rect.bottom - rect.top) };
     };
 
+    const swap_chain = blk: {
+        var swap_chain1: *dxgi.ISwapChain1 = undefined;
+        vhr(dxgi_factory.CreateSwapChainForHwnd(
+            @ptrCast(command_queue),
+            window,
+            &.{
+                .Width = window_width,
+                .Height = window_height,
+                .Format = .R8G8B8A8_UNORM,
+                .Stereo = w32.FALSE,
+                .SampleDesc = .{ .Count = 1, .Quality = 0 },
+                .BufferUsage = .{ .RENDER_TARGET_OUTPUT = true },
+                .BufferCount = max_buffered_frames,
+                .Scaling = .NONE,
+                .SwapEffect = .FLIP_DISCARD,
+                .AlphaMode = .UNSPECIFIED,
+                .Flags = swap_chain_flags,
+            },
+            null,
+            null,
+            @ptrCast(&swap_chain1),
+        ));
+        defer _ = swap_chain1.Release();
+        var swap_chain: *dxgi.ISwapChain3 = undefined;
+        vhr(swap_chain1.QueryInterface(&dxgi.ISwapChain3.IID, @ptrCast(&swap_chain)));
+        break :blk swap_chain;
+    };
+
+    // Disable ALT + ENTER
+    vhr(dxgi_factory.MakeWindowAssociation(window, .{ .NO_WINDOW_CHANGES = true }));
+
+    var swap_chain_textures: [max_buffered_frames]*d3d12.IResource = undefined;
+    for (&swap_chain_textures, 0..) |*texture, i| {
+        vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
+    }
+    {
+        var desc: dxgi.SWAP_CHAIN_DESC1 = undefined;
+        vhr(swap_chain.GetDesc1(&desc));
+        log.info("Swap chain created ({d}x{d}x{d}, {s}).", .{
+            desc.Width,
+            desc.Height,
+            desc.BufferCount,
+            @tagName(desc.Format),
+        });
+    }
+
+    //
+    // RTV descriptor heap
+    //
+    var rtv_heap: *d3d12.IDescriptorHeap = undefined;
+    vhr(device.CreateDescriptorHeap(&.{
+        .Type = .RTV,
+        .NumDescriptors = max_rtv_descriptors,
+        .Flags = .{},
+        .NodeMask = 0,
+    }, &d3d12.IDescriptorHeap.IID, @ptrCast(&rtv_heap)));
+
+    const rtv_heap_start = rtv_heap.GetCPUDescriptorHandleForHeapStart();
+    const rtv_heap_descriptor_size = device.GetDescriptorHandleIncrementSize(.RTV);
+
+    for (swap_chain_textures, 0..) |texture, i| {
+        device.CreateRenderTargetView(
+            texture,
+            null,
+            .{ .ptr = rtv_heap_start.ptr + i * device.GetDescriptorHandleIncrementSize(.RTV) },
+        );
+    }
+
+    log.info("RTV descriptor heap created (NumDescriptors: {d}, DescriptorSize: {d}).", .{
+        max_rtv_descriptors,
+        rtv_heap_descriptor_size,
+    });
+
+    //
+    // Frame Fence
+    //
+    var frame_fence: *d3d12.IFence = undefined;
+    vhr(device.CreateFence(0, .{}, &d3d12.IFence.IID, @ptrCast(&frame_fence)));
+
+    const frame_fence_event = w32.CreateEventExA(null, "frame_fence_event", 0, w32.EVENT_ALL_ACCESS).?;
+
+    log.info("Frame fence created.", .{});
+
     return GpuContext{
         .window = window,
         .window_width = window_width,
@@ -189,7 +364,15 @@ pub fn init(window: w32.HWND) !GpuContext {
         .command_queue = command_queue,
         .command_allocators = command_allocators,
         .command_list = command_list,
+        .swap_chain = swap_chain,
+        .swap_chain_textures = swap_chain_textures,
         .swap_chain_flags = swap_chain_flags,
+        .rtv_heap = rtv_heap,
+        .rtv_heap_start = rtv_heap_start,
+        .rtv_heap_descriptor_size = rtv_heap_descriptor_size,
+        .frame_fence = frame_fence,
+        .frame_fence_event = frame_fence_event,
+        .frame_index = swap_chain.GetCurrentBackBufferIndex(),
         .debug = debug,
         .debug_device = debug_device,
         .debug_info_queue = debug_info_queue,
@@ -199,9 +382,31 @@ pub fn init(window: w32.HWND) !GpuContext {
 }
 
 pub fn deinit(gc: *GpuContext) void {
-    _ = gc;
+    _ = gc.command_list.Release();
+    for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
+    _ = gc.frame_fence.Release();
+    _ = w32.CloseHandle(gc.frame_fence_event);
+    _ = gc.rtv_heap.Release();
+    for (gc.swap_chain_textures) |texture| _ = texture.Release();
+    _ = gc.swap_chain.Release();
+    _ = gc.command_queue.Release();
+    _ = gc.device.Release();
+    _ = gc.dxgi_factory.Release();
+
+    if (d3d12_debug) {
+        vhr(gc.debug_device.ReportLiveDeviceObjects(.{ .DETAIL = true, .IGNORE_INTERNAL = false }));
+
+        _ = gc.debug_command_list.Release();
+        _ = gc.debug_command_queue.Release();
+        _ = gc.debug_info_queue.Release();
+        _ = gc.debug.Release();
+
+        const refcount = gc.debug_device.Release();
+        std.debug.assert(refcount == 0);
+    }
+    gc.* = undefined;
 }
 
-fn vhr(hr: w32.HRESULT) void {
+pub fn vhr(hr: w32.HRESULT) void {
     if (hr != 0) @panic("HRESULT error!");
 }
