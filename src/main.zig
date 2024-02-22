@@ -22,9 +22,7 @@ pub fn main() !void {
 
     _ = w32.SetProcessDPIAware();
 
-    const window = create_window(1600, 1200);
-
-    var gc = try GpuContext.init(window);
+    var gc = try GpuContext.init(create_window(1600, 1200));
     defer gc.deinit();
 
     const root_signature: *d3d12.IRootSignature, const pipeline: *d3d12.IPipelineState = blk: {
@@ -233,8 +231,6 @@ fn create_window(width: u32, height: u32) w32.HWND {
         winclass.hInstance,
         null,
     ).?;
-
-    std.log.info("Application window created", .{});
 
     return window;
 }
