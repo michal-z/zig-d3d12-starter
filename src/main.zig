@@ -17,77 +17,111 @@ const GpuContext = @import("GpuContext.zig");
 const vhr = GpuContext.vhr;
 
 pub fn main() !void {
+    _ = w32.SetProcessDPIAware();
+
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
     defer w32.CoUninitialize();
 
-    _ = w32.SetProcessDPIAware();
+    var app = AppState.init();
+    defer app.deinit();
 
-    var gc = GpuContext.init(create_window(1600, 1200));
-    defer gc.deinit();
-
-    const root_signature: *d3d12.IRootSignature, const pipeline: *d3d12.IPipelineState = blk: {
-        const vs_cso = @embedFile("cso/s00.vs.cso");
-        const ps_cso = @embedFile("cso/s00.ps.cso");
-
-        const pso_desc = pso_desc: {
-            var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.init_default();
-            pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
-            pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM;
-            pso_desc.NumRenderTargets = 1;
-            pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0xf;
-            pso_desc.PrimitiveTopologyType = .TRIANGLE;
-            pso_desc.VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len };
-            pso_desc.PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len };
-            break :pso_desc pso_desc;
-        };
-
-        var root_signature: *d3d12.IRootSignature = undefined;
-        vhr(gc.device.CreateRootSignature(
-            0,
-            pso_desc.VS.pShaderBytecode.?,
-            pso_desc.VS.BytecodeLength,
-            &d3d12.IRootSignature.IID,
-            @ptrCast(&root_signature),
-        ));
-
-        var pipeline: *d3d12.IPipelineState = undefined;
-        vhr(gc.device.CreateGraphicsPipelineState(
-            &pso_desc,
-            &d3d12.IPipelineState.IID,
-            @ptrCast(&pipeline),
-        ));
-
-        break :blk .{ root_signature, pipeline };
-    };
-    defer {
-        _ = pipeline.Release();
-        _ = root_signature.Release();
-    }
-
-    var frac: f32 = 0.0;
-    var frac_sign: f32 = 1.0;
-
-    //
-    // Main Loop
-    //
-    main_loop: while (true) {
-        {
-            var message = std.mem.zeroes(w32.MSG);
-            while (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == w32.TRUE) {
-                _ = w32.TranslateMessage(&message);
-                _ = w32.DispatchMessageA(&message);
-                if (message.message == w32.WM_QUIT) break :main_loop;
-            }
-
-            const status = gc.handle_window_resize();
-            if (status == .is_minimized) {
-                w32.Sleep(10);
-                continue :main_loop;
-            }
+    while (true) {
+        var message = std.mem.zeroes(w32.MSG);
+        if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == w32.TRUE) {
+            _ = w32.TranslateMessage(&message);
+            _ = w32.DispatchMessageA(&message);
+            if (message.message == w32.WM_QUIT) break;
         }
 
-        const time, const delta_time = update_frame_stats(gc.window, window_name);
+        if (app.update())
+            app.draw();
+    }
+}
+
+const AppState = struct {
+    gpu_context: GpuContext,
+
+    pso: *d3d12.IPipelineState,
+    pso_root_signature: *d3d12.IRootSignature,
+
+    frac: f32 = 0.0,
+    frac_sign: f32 = 1.0,
+
+    fn init() AppState {
+        var gc = GpuContext.init(create_window(1600, 1200));
+
+        const pso_root_signature: *d3d12.IRootSignature, const pso: *d3d12.IPipelineState = blk: {
+            const vs_cso = @embedFile("cso/s00.vs.cso");
+            const ps_cso = @embedFile("cso/s00.ps.cso");
+
+            const pso_desc = pso_desc: {
+                var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.init_default();
+                pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
+                pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM;
+                pso_desc.NumRenderTargets = 1;
+                pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0xf;
+                pso_desc.PrimitiveTopologyType = .TRIANGLE;
+                pso_desc.VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len };
+                pso_desc.PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len };
+                break :pso_desc pso_desc;
+            };
+
+            var root_signature: *d3d12.IRootSignature = undefined;
+            vhr(gc.device.CreateRootSignature(
+                0,
+                pso_desc.VS.pShaderBytecode.?,
+                pso_desc.VS.BytecodeLength,
+                &d3d12.IRootSignature.IID,
+                @ptrCast(&root_signature),
+            ));
+
+            var pipeline: *d3d12.IPipelineState = undefined;
+            vhr(gc.device.CreateGraphicsPipelineState(
+                &pso_desc,
+                &d3d12.IPipelineState.IID,
+                @ptrCast(&pipeline),
+            ));
+
+            break :blk .{ root_signature, pipeline };
+        };
+
+        return .{
+            .gpu_context = gc,
+            .pso = pso,
+            .pso_root_signature = pso_root_signature,
+        };
+    }
+
+    fn deinit(app: *AppState) void {
+        app.gpu_context.finish_gpu_commands();
+
+        _ = app.pso.Release();
+        _ = app.pso_root_signature.Release();
+
+        app.gpu_context.deinit();
+
+        app.* = undefined;
+    }
+
+    fn update(app: *AppState) bool {
+        const status = app.gpu_context.handle_window_resize();
+        if (status == .is_minimized) {
+            w32.Sleep(10);
+            return false;
+        }
+
+        const time, const delta_time = update_frame_stats(app.gpu_context.window, window_name);
         _ = time;
+
+        app.frac += app.frac_sign * delta_time;
+        if (app.frac < 0.0 or app.frac > 1.0)
+            app.frac_sign = -app.frac_sign;
+
+        return true;
+    }
+
+    fn draw(app: *AppState) void {
+        var gc = &app.gpu_context;
 
         const command_allocator = gc.command_allocators[gc.frame_index];
 
@@ -110,8 +144,7 @@ pub fn main() !void {
         }});
 
         const back_buffer_descriptor = d3d12.CPU_DESCRIPTOR_HANDLE{
-            .ptr = gc.rtv_heap_start.ptr +
-                gc.frame_index * gc.rtv_heap_descriptor_size,
+            .ptr = gc.rtv_heap_start.ptr + gc.frame_index * gc.rtv_heap_descriptor_size,
         };
 
         gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
@@ -138,11 +171,11 @@ pub fn main() !void {
             w32.TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(back_buffer_descriptor, &.{ 0.2, frac, 0.8, 1.0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(back_buffer_descriptor, &.{ 0.2, app.frac, 0.8, 1.0 }, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
-        gc.command_list.SetPipelineState(pipeline);
-        gc.command_list.SetGraphicsRootSignature(root_signature);
+        gc.command_list.SetPipelineState(app.pso);
+        gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);
         gc.command_list.DrawInstanced(3, 1, 0, 0);
 
         gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
@@ -166,13 +199,8 @@ pub fn main() !void {
 
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
         gc.present();
-
-        frac += frac_sign * delta_time;
-        if (frac < 0.0 or frac > 1.0) frac_sign = -frac_sign;
     }
-
-    gc.finish_gpu_commands();
-}
+};
 
 fn process_window_message(
     window: w32.HWND,
