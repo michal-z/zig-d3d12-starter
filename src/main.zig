@@ -114,8 +114,10 @@ const AppState = struct {
         _ = time;
 
         app.frac += app.frac_sign * delta_time;
-        if (app.frac < 0.0 or app.frac > 1.0)
+        if (app.frac < 0.0 or app.frac > 1.0) {
+            app.frac = std.math.clamp(app.frac, 0.0, 1.0);
             app.frac_sign = -app.frac_sign;
+        }
 
         return true;
     }
