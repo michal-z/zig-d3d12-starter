@@ -65,7 +65,7 @@ pub fn main() !void {
     }
 
     var frac: f32 = 0.0;
-    var frac_delta: f32 = 0.005;
+    var frac_sign: f32 = 1.0;
 
     //
     // Main Loop
@@ -80,11 +80,14 @@ pub fn main() !void {
             }
 
             const status = gc.handle_window_resize();
-            if (status == .has_been_minimized) {
+            if (status == .is_minimized) {
                 w32.Sleep(10);
                 continue :main_loop;
             }
         }
+
+        const time, const delta_time = update_frame_stats(gc.window, window_name);
+        _ = time;
 
         const command_allocator = gc.command_allocators[gc.frame_index];
 
@@ -154,10 +157,8 @@ pub fn main() !void {
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
         gc.present();
 
-        frac += frac_delta;
-        if (frac > 1.0 or frac < 0.0) {
-            frac_delta = -frac_delta;
-        }
+        frac += frac_sign * delta_time;
+        if (frac < 0.0 or frac > 1.0) frac_sign = -frac_sign;
     }
 
     gc.finish_gpu_commands();
@@ -233,4 +234,47 @@ fn create_window(width: u32, height: u32) w32.HWND {
     ).?;
 
     return window;
+}
+
+fn update_frame_stats(window: w32.HWND, name: [:0]const u8) struct { f64, f32 } {
+    const state = struct {
+        var timer: std.time.Timer = undefined;
+        var previous_time_ns: u64 = 0;
+        var header_refresh_time_ns: u64 = 0;
+        var frame_count: u64 = ~@as(u64, 0);
+    };
+
+    if (state.frame_count == ~@as(u64, 0)) {
+        state.timer = std.time.Timer.start() catch unreachable;
+        state.previous_time_ns = 0;
+        state.header_refresh_time_ns = 0;
+        state.frame_count = 0;
+    }
+
+    const now_ns = state.timer.read();
+    const time = @as(f64, @floatFromInt(now_ns)) / std.time.ns_per_s;
+    const delta_time = @as(f32, @floatFromInt(now_ns - state.previous_time_ns)) / std.time.ns_per_s;
+    state.previous_time_ns = now_ns;
+
+    if ((now_ns - state.header_refresh_time_ns) >= std.time.ns_per_s) {
+        const t = @as(f64, @floatFromInt(now_ns - state.header_refresh_time_ns)) / std.time.ns_per_s;
+        const fps = @as(f64, @floatFromInt(state.frame_count)) / t;
+        const ms = (1.0 / fps) * 1000.0;
+
+        var buffer = [_]u8{0} ** 128;
+        const buffer_slice = buffer[0 .. buffer.len - 1];
+        const header = std.fmt.bufPrint(
+            buffer_slice,
+            "[{d:.1} fps  {d:.3} ms] {s}",
+            .{ fps, ms, name },
+        ) catch buffer_slice;
+
+        _ = w32.SetWindowTextA(window, @ptrCast(header.ptr));
+
+        state.header_refresh_time_ns = now_ns;
+        state.frame_count = 0;
+    }
+    state.frame_count += 1;
+
+    return .{ time, delta_time };
 }
