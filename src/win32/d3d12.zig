@@ -7569,11 +7569,11 @@ pub const TEXTURE_BARRIER_FLAGS = packed struct(UINT) {
 
 pub const BARRIER_SUBRESOURCE_RANGE = extern struct {
     IndexOrFirstMipLevel: UINT,
-    NumMipLevels: UINT,
-    FirstArraySlice: UINT,
-    NumArraySlices: UINT,
-    FirstPlane: UINT,
-    NumPlanes: UINT,
+    NumMipLevels: UINT = 0,
+    FirstArraySlice: UINT = 0,
+    NumArraySlices: UINT = 0,
+    FirstPlane: UINT = 0,
+    NumPlanes: UINT = 0,
 };
 
 pub const GLOBAL_BARRIER = extern struct {

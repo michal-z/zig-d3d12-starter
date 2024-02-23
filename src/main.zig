@@ -114,16 +114,21 @@ pub fn main() !void {
                 gc.frame_index * gc.rtv_heap_descriptor_size,
         };
 
-        gc.command_list.ResourceBarrier(1, &[_]d3d12.RESOURCE_BARRIER{.{
-            .Type = .TRANSITION,
-            .Flags = .{},
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .TEXTURE,
+            .NumBarriers = 1,
             .u = .{
-                .Transition = .{
+                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{.{
+                    .SyncBefore = .{},
+                    .SyncAfter = .{ .RENDER_TARGET = true },
+                    .AccessBefore = .{ .NO_ACCESS = true },
+                    .AccessAfter = .{ .RENDER_TARGET = true },
+                    .LayoutBefore = .PRESENT,
+                    .LayoutAfter = .RENDER_TARGET,
                     .pResource = gc.swap_chain_textures[gc.frame_index],
-                    .Subresource = d3d12.RESOURCE_BARRIER_ALL_SUBRESOURCES,
-                    .StateBefore = d3d12.RESOURCE_STATES.PRESENT,
-                    .StateAfter = .{ .RENDER_TARGET = true },
-                },
+                    .Subresources = .{ .IndexOrFirstMipLevel = 0xffff_ffff },
+                    .Flags = .{},
+                }},
             },
         }});
 
@@ -140,16 +145,21 @@ pub fn main() !void {
         gc.command_list.SetGraphicsRootSignature(root_signature);
         gc.command_list.DrawInstanced(3, 1, 0, 0);
 
-        gc.command_list.ResourceBarrier(1, &[_]d3d12.RESOURCE_BARRIER{.{
-            .Type = .TRANSITION,
-            .Flags = .{},
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .TEXTURE,
+            .NumBarriers = 1,
             .u = .{
-                .Transition = .{
+                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{.{
+                    .SyncBefore = .{ .RENDER_TARGET = true },
+                    .SyncAfter = .{},
+                    .AccessBefore = .{ .RENDER_TARGET = true },
+                    .AccessAfter = .{ .NO_ACCESS = true },
+                    .LayoutBefore = .RENDER_TARGET,
+                    .LayoutAfter = .PRESENT,
                     .pResource = gc.swap_chain_textures[gc.frame_index],
-                    .Subresource = d3d12.RESOURCE_BARRIER_ALL_SUBRESOURCES,
-                    .StateBefore = .{ .RENDER_TARGET = true },
-                    .StateAfter = d3d12.RESOURCE_STATES.PRESENT,
-                },
+                    .Subresources = .{ .IndexOrFirstMipLevel = 0xffff_ffff },
+                    .Flags = .{},
+                }},
             },
         }});
         vhr(gc.command_list.Close());
