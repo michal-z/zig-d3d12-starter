@@ -439,12 +439,12 @@ pub fn deinit(gc: *GpuContext) void {
     _ = gc.dxgi_factory.Release();
 
     if (d3d12_debug) {
-        vhr(gc.debug_device.ReportLiveDeviceObjects(.{ .DETAIL = true, .IGNORE_INTERNAL = false }));
-
         _ = gc.debug_command_list.Release();
         _ = gc.debug_command_queue.Release();
         _ = gc.debug_info_queue.Release();
         _ = gc.debug.Release();
+
+        vhr(gc.debug_device.ReportLiveDeviceObjects(.{ .DETAIL = true, .IGNORE_INTERNAL = true }));
 
         const refcount = gc.debug_device.Release();
         std.debug.assert(refcount == 0);
