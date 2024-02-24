@@ -76,11 +76,7 @@ const AppState = struct {
             ));
 
             var pipeline: *d3d12.IPipelineState = undefined;
-            vhr(gc.device.CreateGraphicsPipelineState(
-                &pso_desc,
-                &d3d12.IPipelineState.IID,
-                @ptrCast(&pipeline),
-            ));
+            vhr(gc.device.CreateGraphicsPipelineState(&pso_desc, &d3d12.IPipelineState.IID, @ptrCast(&pipeline)));
 
             break :blk .{ root_signature, pipeline };
         };
@@ -231,13 +227,7 @@ fn create_window(width: u32, height: u32) w32.HWND {
     _ = w32.RegisterClassExA(&winclass);
 
     const style = w32.WS_OVERLAPPEDWINDOW;
-
-    var rect = w32.RECT{
-        .left = 0,
-        .top = 0,
-        .right = @intCast(width),
-        .bottom = @intCast(height),
-    };
+    var rect = w32.RECT{ .left = 0, .top = 0, .right = @intCast(width), .bottom = @intCast(height) };
     _ = w32.AdjustWindowRectEx(&rect, style, w32.FALSE, 0);
 
     const window = w32.CreateWindowExA(
