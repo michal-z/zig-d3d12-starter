@@ -124,7 +124,7 @@ const AppState = struct {
         gc.new_frame();
 
         const back_buffer_descriptor = d3d12.CPU_DESCRIPTOR_HANDLE{
-            .ptr = gc.rtv_heap_start.ptr + gc.frame_index * gc.rtv_heap_descriptor_size,
+            .ptr = gc.rtv_dheap_start.ptr + gc.frame_index * gc.rtv_dheap_descriptor_size,
         };
 
         gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{

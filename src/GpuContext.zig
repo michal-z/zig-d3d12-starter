@@ -16,6 +16,7 @@ pub const IDevice = d3d12.IDevice11;
 pub const IGraphicsCommandList = d3d12.IGraphicsCommandList9;
 
 pub const max_rtv_descriptors = 1024;
+pub const max_shader_descriptors = 32 * 1024;
 pub const max_buffered_frames = 2;
 
 window: w32.HWND,
@@ -35,9 +36,14 @@ swap_chain_targets: [max_buffered_frames]*d3d12.IResource,
 swap_chain_flags: dxgi.SWAP_CHAIN_FLAG,
 swap_chain_present_interval: w32.UINT = if (d3d12_vsync) 1 else 0,
 
-rtv_heap: *d3d12.IDescriptorHeap,
-rtv_heap_start: d3d12.CPU_DESCRIPTOR_HANDLE,
-rtv_heap_descriptor_size: u32,
+rtv_dheap: *d3d12.IDescriptorHeap,
+rtv_dheap_start: d3d12.CPU_DESCRIPTOR_HANDLE,
+rtv_dheap_descriptor_size: u32,
+
+shader_dheap: *d3d12.IDescriptorHeap,
+shader_dheap_start_cpu: d3d12.CPU_DESCRIPTOR_HANDLE,
+shader_dheap_start_gpu: d3d12.GPU_DESCRIPTOR_HANDLE,
+shader_dheap_descriptor_size: u32,
 
 frame_fence: *d3d12.IFence,
 frame_fence_event: w32.HANDLE,
@@ -55,6 +61,8 @@ pub fn new_frame(gc: *GpuContext) void {
 
     vhr(command_allocator.Reset());
     vhr(gc.command_list.Reset(command_allocator, null));
+
+    gc.command_list.SetDescriptorHeaps(1, &[_]*d3d12.IDescriptorHeap{gc.shader_dheap});
 
     gc.command_list.RSSetViewports(1, &[_]d3d12.VIEWPORT{.{
         .TopLeftX = 0.0,
@@ -140,7 +148,7 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
             gc.device.CreateRenderTargetView(
                 texture,
                 null,
-                .{ .ptr = gc.rtv_heap_start.ptr + i * gc.rtv_heap_descriptor_size },
+                .{ .ptr = gc.rtv_dheap_start.ptr + i * gc.rtv_dheap_descriptor_size },
             );
         }
 
@@ -275,7 +283,7 @@ pub fn init(window: w32.HWND) GpuContext {
         break :blk debug_command_queue;
     } else undefined;
 
-    log.info("D3D12 command queue created", .{});
+    log.info("D3D12 command queue created.", .{});
 
     var command_allocators: [max_buffered_frames]*d3d12.ICommandAllocator = undefined;
     for (&command_allocators) |*cmdalloc| {
@@ -308,7 +316,7 @@ pub fn init(window: w32.HWND) GpuContext {
         break :blk .{};
     };
 
-    log.info("VSync {s}.", .{if (d3d12_vsync) "enabled" else "disabled"});
+    log.info("VSync is {s}.", .{if (d3d12_vsync) "enabled" else "disabled"});
 
     const window_width: u32, const window_height: u32 = blk: {
         var rect: w32.RECT = undefined;
@@ -365,28 +373,48 @@ pub fn init(window: w32.HWND) GpuContext {
     //
     // RTV descriptor heap
     //
-    var rtv_heap: *d3d12.IDescriptorHeap = undefined;
+    var rtv_dheap: *d3d12.IDescriptorHeap = undefined;
     vhr(device.CreateDescriptorHeap(&.{
         .Type = .RTV,
         .NumDescriptors = max_rtv_descriptors,
         .Flags = .{},
         .NodeMask = 0,
-    }, &d3d12.IDescriptorHeap.IID, @ptrCast(&rtv_heap)));
+    }, &d3d12.IDescriptorHeap.IID, @ptrCast(&rtv_dheap)));
 
-    const rtv_heap_start = rtv_heap.GetCPUDescriptorHandleForHeapStart();
-    const rtv_heap_descriptor_size = device.GetDescriptorHandleIncrementSize(.RTV);
+    const rtv_dheap_start = rtv_dheap.GetCPUDescriptorHandleForHeapStart();
+    const rtv_dheap_descriptor_size = device.GetDescriptorHandleIncrementSize(.RTV);
 
     for (swap_chain_targets, 0..) |texture, i| {
         device.CreateRenderTargetView(
             texture,
             null,
-            .{ .ptr = rtv_heap_start.ptr + i * device.GetDescriptorHandleIncrementSize(.RTV) },
+            .{ .ptr = rtv_dheap_start.ptr + i * device.GetDescriptorHandleIncrementSize(.RTV) },
         );
     }
 
     log.info("RTV descriptor heap created (NumDescriptors: {d}, DescriptorSize: {d}).", .{
         max_rtv_descriptors,
-        rtv_heap_descriptor_size,
+        rtv_dheap_descriptor_size,
+    });
+
+    //
+    // Shader descriptor heap
+    //
+    var shader_dheap: *d3d12.IDescriptorHeap = undefined;
+    vhr(device.CreateDescriptorHeap(&.{
+        .Type = .CBV_SRV_UAV,
+        .NumDescriptors = max_shader_descriptors,
+        .Flags = .{ .SHADER_VISIBLE = true },
+        .NodeMask = 0,
+    }, &d3d12.IDescriptorHeap.IID, @ptrCast(&shader_dheap)));
+
+    const shader_dheap_start_cpu = shader_dheap.GetCPUDescriptorHandleForHeapStart();
+    const shader_dheap_start_gpu = shader_dheap.GetGPUDescriptorHandleForHeapStart();
+    const shader_dheap_descriptor_size = device.GetDescriptorHandleIncrementSize(.CBV_SRV_UAV);
+
+    log.info("Shader descriptor heap created (NumDescriptors: {d}, DescriptorSize: {d}).", .{
+        max_shader_descriptors,
+        shader_dheap_descriptor_size,
     });
 
     //
@@ -412,9 +440,13 @@ pub fn init(window: w32.HWND) GpuContext {
         .swap_chain = swap_chain,
         .swap_chain_targets = swap_chain_targets,
         .swap_chain_flags = swap_chain_flags,
-        .rtv_heap = rtv_heap,
-        .rtv_heap_start = rtv_heap_start,
-        .rtv_heap_descriptor_size = rtv_heap_descriptor_size,
+        .rtv_dheap = rtv_dheap,
+        .rtv_dheap_start = rtv_dheap_start,
+        .rtv_dheap_descriptor_size = rtv_dheap_descriptor_size,
+        .shader_dheap = shader_dheap,
+        .shader_dheap_start_cpu = shader_dheap_start_cpu,
+        .shader_dheap_start_gpu = shader_dheap_start_gpu,
+        .shader_dheap_descriptor_size = shader_dheap_descriptor_size,
         .frame_fence = frame_fence,
         .frame_fence_event = frame_fence_event,
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
@@ -431,7 +463,8 @@ pub fn deinit(gc: *GpuContext) void {
     for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
     _ = gc.frame_fence.Release();
     _ = w32.CloseHandle(gc.frame_fence_event);
-    _ = gc.rtv_heap.Release();
+    _ = gc.shader_dheap.Release();
+    _ = gc.rtv_dheap.Release();
     for (gc.swap_chain_targets) |texture| _ = texture.Release();
     _ = gc.swap_chain.Release();
     _ = gc.command_queue.Release();
