@@ -125,25 +125,7 @@ const AppState = struct {
     fn draw(app: *AppState) void {
         var gc = &app.gpu_context;
 
-        const command_allocator = gc.command_allocators[gc.frame_index];
-
-        vhr(command_allocator.Reset());
-        vhr(gc.command_list.Reset(command_allocator, null));
-
-        gc.command_list.RSSetViewports(1, &[_]d3d12.VIEWPORT{.{
-            .TopLeftX = 0.0,
-            .TopLeftY = 0.0,
-            .Width = @floatFromInt(gc.window_width),
-            .Height = @floatFromInt(gc.window_height),
-            .MinDepth = 0.0,
-            .MaxDepth = 1.0,
-        }});
-        gc.command_list.RSSetScissorRects(1, &[_]d3d12.RECT{.{
-            .left = 0,
-            .top = 0,
-            .right = @intCast(gc.window_width),
-            .bottom = @intCast(gc.window_height),
-        }});
+        gc.new_frame();
 
         const back_buffer_descriptor = d3d12.CPU_DESCRIPTOR_HANDLE{
             .ptr = gc.rtv_heap_start.ptr + gc.frame_index * gc.rtv_heap_descriptor_size,
@@ -160,7 +142,7 @@ const AppState = struct {
                     .AccessAfter = .{ .RENDER_TARGET = true },
                     .LayoutBefore = .PRESENT,
                     .LayoutAfter = .RENDER_TARGET,
-                    .pResource = gc.swap_chain_textures[gc.frame_index],
+                    .pResource = gc.swap_chain_targets[gc.frame_index],
                     .Subresources = .{ .IndexOrFirstMipLevel = 0xffff_ffff },
                     .Flags = .{},
                 }},
@@ -191,7 +173,7 @@ const AppState = struct {
                     .AccessAfter = .{ .NO_ACCESS = true },
                     .LayoutBefore = .RENDER_TARGET,
                     .LayoutAfter = .PRESENT,
-                    .pResource = gc.swap_chain_textures[gc.frame_index],
+                    .pResource = gc.swap_chain_targets[gc.frame_index],
                     .Subresources = .{ .IndexOrFirstMipLevel = 0xffff_ffff },
                     .Flags = .{},
                 }},
@@ -200,7 +182,7 @@ const AppState = struct {
         vhr(gc.command_list.Close());
 
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
-        gc.present();
+        gc.present_frame();
     }
 };
 

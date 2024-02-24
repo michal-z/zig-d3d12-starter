@@ -31,7 +31,7 @@ command_allocators: [max_buffered_frames]*d3d12.ICommandAllocator,
 command_list: *IGraphicsCommandList,
 
 swap_chain: *dxgi.ISwapChain3,
-swap_chain_textures: [max_buffered_frames]*d3d12.IResource,
+swap_chain_targets: [max_buffered_frames]*d3d12.IResource,
 swap_chain_flags: dxgi.SWAP_CHAIN_FLAG,
 swap_chain_present_interval: w32.UINT = if (d3d12_vsync) 1 else 0,
 
@@ -50,7 +50,29 @@ debug_info_queue: if (d3d12_debug) *d3d12d.IInfoQueue else void,
 debug_command_queue: if (d3d12_debug) *d3d12d.IDebugCommandQueue1 else void,
 debug_command_list: if (d3d12_debug) *d3d12d.IDebugCommandList3 else void,
 
-pub fn present(gc: *GpuContext) void {
+pub fn new_frame(gc: *GpuContext) void {
+    const command_allocator = gc.command_allocators[gc.frame_index];
+
+    vhr(command_allocator.Reset());
+    vhr(gc.command_list.Reset(command_allocator, null));
+
+    gc.command_list.RSSetViewports(1, &[_]d3d12.VIEWPORT{.{
+        .TopLeftX = 0.0,
+        .TopLeftY = 0.0,
+        .Width = @floatFromInt(gc.window_width),
+        .Height = @floatFromInt(gc.window_height),
+        .MinDepth = 0.0,
+        .MaxDepth = 1.0,
+    }});
+    gc.command_list.RSSetScissorRects(1, &[_]d3d12.RECT{.{
+        .left = 0,
+        .top = 0,
+        .right = @intCast(gc.window_width),
+        .bottom = @intCast(gc.window_height),
+    }});
+}
+
+pub fn present_frame(gc: *GpuContext) void {
     gc.frame_fence_counter += 1;
 
     const present_flags: dxgi.PRESENT_FLAG =
@@ -107,14 +129,14 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
 
         gc.finish_gpu_commands();
 
-        for (gc.swap_chain_textures) |texture| _ = texture.Release();
+        for (gc.swap_chain_targets) |texture| _ = texture.Release();
 
         vhr(gc.swap_chain.ResizeBuffers(0, 0, 0, .UNKNOWN, gc.swap_chain_flags));
 
-        for (&gc.swap_chain_textures, 0..) |*texture, i| {
+        for (&gc.swap_chain_targets, 0..) |*texture, i| {
             vhr(gc.swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
         }
-        for (gc.swap_chain_textures, 0..) |texture, i| {
+        for (gc.swap_chain_targets, 0..) |texture, i| {
             gc.device.CreateRenderTargetView(
                 texture,
                 null,
@@ -286,6 +308,8 @@ pub fn init(window: w32.HWND) GpuContext {
         break :blk .{};
     };
 
+    log.info("VSync {s}.", .{if (d3d12_vsync) "enabled" else "disabled"});
+
     const window_width: u32, const window_height: u32 = blk: {
         var rect: w32.RECT = undefined;
         _ = w32.GetClientRect(window, &rect);
@@ -323,8 +347,8 @@ pub fn init(window: w32.HWND) GpuContext {
     // Disable ALT + ENTER
     vhr(dxgi_factory.MakeWindowAssociation(window, .{ .NO_WINDOW_CHANGES = true }));
 
-    var swap_chain_textures: [max_buffered_frames]*d3d12.IResource = undefined;
-    for (&swap_chain_textures, 0..) |*texture, i| {
+    var swap_chain_targets: [max_buffered_frames]*d3d12.IResource = undefined;
+    for (&swap_chain_targets, 0..) |*texture, i| {
         vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
     }
     {
@@ -352,7 +376,7 @@ pub fn init(window: w32.HWND) GpuContext {
     const rtv_heap_start = rtv_heap.GetCPUDescriptorHandleForHeapStart();
     const rtv_heap_descriptor_size = device.GetDescriptorHandleIncrementSize(.RTV);
 
-    for (swap_chain_textures, 0..) |texture, i| {
+    for (swap_chain_targets, 0..) |texture, i| {
         device.CreateRenderTargetView(
             texture,
             null,
@@ -386,7 +410,7 @@ pub fn init(window: w32.HWND) GpuContext {
         .command_allocators = command_allocators,
         .command_list = command_list,
         .swap_chain = swap_chain,
-        .swap_chain_textures = swap_chain_textures,
+        .swap_chain_targets = swap_chain_targets,
         .swap_chain_flags = swap_chain_flags,
         .rtv_heap = rtv_heap,
         .rtv_heap_start = rtv_heap_start,
@@ -408,7 +432,7 @@ pub fn deinit(gc: *GpuContext) void {
     _ = gc.frame_fence.Release();
     _ = w32.CloseHandle(gc.frame_fence_event);
     _ = gc.rtv_heap.Release();
-    for (gc.swap_chain_textures) |texture| _ = texture.Release();
+    for (gc.swap_chain_targets) |texture| _ = texture.Release();
     _ = gc.swap_chain.Release();
     _ = gc.command_queue.Release();
     _ = gc.device.Release();
