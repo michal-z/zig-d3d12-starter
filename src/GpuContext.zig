@@ -192,7 +192,7 @@ pub fn init(window: w32.HWND) GpuContext {
             log.info("D3D12 GPU-based validation enabled.", .{});
         }
         break :blk debug;
-    } else undefined;
+    } else {};
 
     var device: *IDevice = undefined;
     if (d3d12.CreateDevice(@ptrCast(adapter), .@"11_1", &IDevice.IID, @ptrCast(&device)) != w32.S_OK) {
@@ -210,14 +210,14 @@ pub fn init(window: w32.HWND) GpuContext {
         var debug_device: *d3d12.IDebugDevice = undefined;
         vhr(device.QueryInterface(&d3d12.IDebugDevice.IID, @ptrCast(&debug_device)));
         break :blk debug_device;
-    } else undefined;
+    } else {};
 
     const debug_info_queue = if (d3d12_debug) blk: {
         var debug_info_queue: *d3d12d.IInfoQueue = undefined;
         vhr(device.QueryInterface(&d3d12d.IInfoQueue.IID, @ptrCast(&debug_info_queue)));
         vhr(debug_info_queue.SetBreakOnSeverity(.ERROR, w32.TRUE));
         break :blk debug_info_queue;
-    } else undefined;
+    } else {};
 
     log.info("D3D12 device created.", .{});
 
@@ -281,7 +281,7 @@ pub fn init(window: w32.HWND) GpuContext {
         var debug_command_queue: *d3d12d.IDebugCommandQueue1 = undefined;
         vhr(command_queue.QueryInterface(&d3d12d.IDebugCommandQueue1.IID, @ptrCast(&debug_command_queue)));
         break :blk debug_command_queue;
-    } else undefined;
+    } else {};
 
     log.info("D3D12 command queue created.", .{});
 
@@ -298,7 +298,7 @@ pub fn init(window: w32.HWND) GpuContext {
         var debug_command_list: *d3d12d.IDebugCommandList3 = undefined;
         vhr(command_list.QueryInterface(&d3d12d.IDebugCommandList3.IID, @ptrCast(&debug_command_list)));
         break :blk debug_command_list;
-    } else undefined;
+    } else {};
 
     log.info("D3D12 command list created.", .{});
 
