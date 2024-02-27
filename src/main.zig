@@ -103,7 +103,7 @@ const AppState = struct {
 
     fn update(app: *AppState) bool {
         const status = app.gpu_context.handle_window_resize();
-        if (status == .is_minimized) {
+        if (status == .minimized) {
             w32.Sleep(10);
             return false;
         }

@@ -55,7 +55,7 @@ frame_fence_event: w32.HANDLE,
 frame_fence_counter: u64 = 0,
 frame_index: u32,
 
-msaa_srgb_target: *d3d12.IResource,
+msaa_target: *d3d12.IResource,
 
 debug: if (d3d12_debug) *d3d12d.IDebug5 else void,
 debug_device: if (d3d12_debug) *d3d12.IDebugDevice else void,
@@ -108,7 +108,7 @@ pub fn end_command_list(gc: *GpuContext) void {
                     .AccessAfter = .{ .RESOLVE_SOURCE = true },
                     .LayoutBefore = .RENDER_TARGET,
                     .LayoutAfter = .RESOLVE_SOURCE,
-                    .pResource = gc.msaa_srgb_target,
+                    .pResource = gc.msaa_target,
                 },
                 .{
                     .SyncBefore = .{},
@@ -125,7 +125,7 @@ pub fn end_command_list(gc: *GpuContext) void {
     gc.command_list.ResolveSubresource(
         gc.swap_chain_targets[gc.frame_index],
         0,
-        gc.msaa_srgb_target,
+        gc.msaa_target,
         0,
         swap_chain_target_format,
     );
@@ -141,7 +141,7 @@ pub fn end_command_list(gc: *GpuContext) void {
                     .AccessAfter = .{ .NO_ACCESS = true },
                     .LayoutBefore = .RESOLVE_SOURCE,
                     .LayoutAfter = .RENDER_TARGET,
-                    .pResource = gc.msaa_srgb_target,
+                    .pResource = gc.msaa_target,
                 },
                 .{
                     .SyncBefore = .{ .RESOLVE = true },
@@ -189,10 +189,9 @@ pub fn finish_gpu_commands(gc: *GpuContext) void {
 }
 
 pub fn handle_window_resize(gc: *GpuContext) enum {
-    is_minimized,
-    has_been_minimized,
+    minimized,
     resized,
-    no_change,
+    unchanged,
 } {
     const current_width: u32, const current_height: u32 = blk: {
         var rect: w32.RECT = undefined;
@@ -205,9 +204,8 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
             gc.window_width = 0;
             gc.window_height = 0;
             log.info("Window has been minimized.", .{});
-            return .has_been_minimized;
         }
-        return .is_minimized;
+        return .minimized;
     }
 
     if (current_width != gc.window_width or current_height != gc.window_height) {
@@ -234,13 +232,13 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
         gc.window_height = current_height;
         gc.frame_index = gc.swap_chain.GetCurrentBackBufferIndex();
 
-        _ = gc.msaa_srgb_target.Release();
-        gc.msaa_srgb_target = create_msaa_srgb_target(gc.device, gc.window_width, gc.window_height);
-        gc.device.CreateRenderTargetView(gc.msaa_srgb_target, null, gc.msaa_target_descriptor());
+        _ = gc.msaa_target.Release();
+        gc.msaa_target = create_msaa_srgb_target(gc.device, gc.window_width, gc.window_height);
+        gc.device.CreateRenderTargetView(gc.msaa_target, null, gc.msaa_target_descriptor());
 
         return .resized;
     }
-    return .no_change;
+    return .unchanged;
 }
 
 pub fn init(window: w32.HWND) GpuContext {
@@ -511,17 +509,17 @@ pub fn init(window: w32.HWND) GpuContext {
     log.info("Frame fence created.", .{});
 
     //
-    // MSAA, SRGB render target
+    // MSAA render target
     //
-    const msaa_srgb_target = create_msaa_srgb_target(device, window_width, window_height);
+    const msaa_target = create_msaa_srgb_target(device, window_width, window_height);
     device.CreateRenderTargetView(
-        msaa_srgb_target,
+        msaa_target,
         null,
         .{ .ptr = rtv_dheap_start.ptr + max_buffered_frames * rtv_dheap_descriptor_size },
     );
     {
-        const desc = msaa_srgb_target.GetDesc();
-        log.info("MSAA, SRGB render target created ({d}x{d}, NumSamples: {d}).", .{
+        const desc = msaa_target.GetDesc();
+        log.info("MSAA render target created ({d}x{d}, NumSamples: {d}).", .{
             desc.Width,
             desc.Height,
             desc.SampleDesc.Count,
@@ -551,7 +549,7 @@ pub fn init(window: w32.HWND) GpuContext {
         .frame_fence = frame_fence,
         .frame_fence_event = frame_fence_event,
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
-        .msaa_srgb_target = msaa_srgb_target,
+        .msaa_target = msaa_target,
         .debug = debug,
         .debug_device = debug_device,
         .debug_info_queue = debug_info_queue,
@@ -561,7 +559,7 @@ pub fn init(window: w32.HWND) GpuContext {
 }
 
 pub fn deinit(gc: *GpuContext) void {
-    _ = gc.msaa_srgb_target.Release();
+    _ = gc.msaa_target.Release();
     _ = gc.command_list.Release();
     for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
     _ = gc.frame_fence.Release();
