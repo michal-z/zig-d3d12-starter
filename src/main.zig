@@ -44,9 +44,6 @@ const AppState = struct {
     pso: *d3d12.IPipelineState,
     pso_root_signature: *d3d12.IRootSignature,
 
-    frac: f32 = 0.0,
-    frac_sign: f32 = 1.0,
-
     fn init() AppState {
         var gc = GpuContext.init(create_window(1600, 1200));
 
@@ -57,12 +54,13 @@ const AppState = struct {
             const pso_desc = pso_desc: {
                 var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.init_default();
                 pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
-                pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM;
+                pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM_SRGB;
                 pso_desc.NumRenderTargets = 1;
                 pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0xf;
                 pso_desc.PrimitiveTopologyType = .TRIANGLE;
                 pso_desc.VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len };
                 pso_desc.PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len };
+                pso_desc.SampleDesc = .{ .Count = GpuContext.num_msaa_samples };
                 break :pso_desc pso_desc;
             };
 
@@ -106,14 +104,7 @@ const AppState = struct {
             return false;
         }
 
-        const time, const delta_time = update_frame_stats(app.gpu_context.window, window_name);
-        _ = time;
-
-        app.frac += app.frac_sign * delta_time;
-        if (app.frac < 0.0 or app.frac > 1.0) {
-            app.frac = std.math.clamp(app.frac, 0.0, 1.0);
-            app.frac_sign = -app.frac_sign;
-        }
+        _ = update_frame_stats(app.gpu_context.window, window_name);
 
         return true;
     }
@@ -121,61 +112,21 @@ const AppState = struct {
     fn draw(app: *AppState) void {
         var gc = &app.gpu_context;
 
-        gc.new_frame();
+        const render_target_descriptor = gc.msaa_target_descriptor();
 
-        const back_buffer_descriptor = d3d12.CPU_DESCRIPTOR_HANDLE{
-            .ptr = gc.rtv_dheap_start.ptr + gc.frame_index * gc.rtv_dheap_descriptor_size,
-        };
-
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .TEXTURE,
-            .NumBarriers = 1,
-            .u = .{
-                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{.{
-                    .SyncBefore = .{},
-                    .SyncAfter = .{ .RENDER_TARGET = true },
-                    .AccessBefore = .{ .NO_ACCESS = true },
-                    .AccessAfter = .{ .RENDER_TARGET = true },
-                    .LayoutBefore = .PRESENT,
-                    .LayoutAfter = .RENDER_TARGET,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                    .Subresources = .{ .IndexOrFirstMipLevel = 0xffff_ffff },
-                    .Flags = .{},
-                }},
-            },
-        }});
-
+        gc.begin_command_list();
         gc.command_list.OMSetRenderTargets(
             1,
-            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{back_buffer_descriptor},
+            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{render_target_descriptor},
             w32.TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(back_buffer_descriptor, &.{ 0.2, app.frac, 0.8, 1.0 }, 0, null);
-
+        gc.command_list.ClearRenderTargetView(render_target_descriptor, &.{ 0, 0, 0, 0 }, 0, null);
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);
         gc.command_list.DrawInstanced(3, 1, 0, 0);
-
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .TEXTURE,
-            .NumBarriers = 1,
-            .u = .{
-                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{.{
-                    .SyncBefore = .{ .RENDER_TARGET = true },
-                    .SyncAfter = .{},
-                    .AccessBefore = .{ .RENDER_TARGET = true },
-                    .AccessAfter = .{ .NO_ACCESS = true },
-                    .LayoutBefore = .RENDER_TARGET,
-                    .LayoutAfter = .PRESENT,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                    .Subresources = .{ .IndexOrFirstMipLevel = 0xffff_ffff },
-                    .Flags = .{},
-                }},
-            },
-        }});
-        vhr(gc.command_list.Close());
+        gc.end_command_list();
 
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
         gc.present_frame();

@@ -72,22 +72,10 @@ pub const MEMORY_POOL = enum(UINT) {
 
 pub const HEAP_PROPERTIES = extern struct {
     Type: HEAP_TYPE,
-    CPUPageProperty: CPU_PAGE_PROPERTY,
-    MemoryPoolPreference: MEMORY_POOL,
-    CreationNodeMask: UINT,
-    VisibleNodeMask: UINT,
-
-    pub fn init_type(heap_type: HEAP_TYPE) HEAP_PROPERTIES {
-        var v = std.mem.zeroes(@This());
-        v = HEAP_PROPERTIES{
-            .Type = heap_type,
-            .CPUPageProperty = .UNKNOWN,
-            .MemoryPoolPreference = .UNKNOWN,
-            .CreationNodeMask = 0,
-            .VisibleNodeMask = 0,
-        };
-        return v;
-    }
+    CPUPageProperty: CPU_PAGE_PROPERTY = .UNKNOWN,
+    MemoryPoolPreference: MEMORY_POOL = .UNKNOWN,
+    CreationNodeMask: UINT = 0,
+    VisibleNodeMask: UINT = 0,
 };
 
 pub const HEAP_FLAGS = packed struct(UINT) {
@@ -164,67 +152,30 @@ pub const RESOURCE_FLAGS = packed struct(UINT) {
 };
 
 pub const RESOURCE_DESC = extern struct {
-    Dimension: RESOURCE_DIMENSION,
-    Alignment: UINT64,
-    Width: UINT64,
-    Height: UINT,
-    DepthOrArraySize: UINT16,
-    MipLevels: UINT16,
-    Format: dxgi.FORMAT,
-    SampleDesc: dxgi.SAMPLE_DESC,
-    Layout: TEXTURE_LAYOUT,
-    Flags: RESOURCE_FLAGS,
+    Dimension: RESOURCE_DIMENSION = .UNKNOWN,
+    Alignment: UINT64 = 0,
+    Width: UINT64 = 0,
+    Height: UINT = 0,
+    DepthOrArraySize: UINT16 = 0,
+    MipLevels: UINT16 = 0,
+    Format: dxgi.FORMAT = .UNKNOWN,
+    SampleDesc: dxgi.SAMPLE_DESC = .{},
+    Layout: TEXTURE_LAYOUT = .UNKNOWN,
+    Flags: RESOURCE_FLAGS = .{},
+};
 
-    pub fn init_buffer(width: UINT64) RESOURCE_DESC {
-        var v = std.mem.zeroes(@This());
-        v = .{
-            .Dimension = .BUFFER,
-            .Alignment = 0,
-            .Width = width,
-            .Height = 1,
-            .DepthOrArraySize = 1,
-            .MipLevels = 1,
-            .Format = .UNKNOWN,
-            .SampleDesc = .{ .Count = 1, .Quality = 0 },
-            .Layout = .ROW_MAJOR,
-            .Flags = .{},
-        };
-        return v;
-    }
-
-    pub fn init_tex2d(format: dxgi.FORMAT, width: UINT64, height: UINT, mip_levels: u32) RESOURCE_DESC {
-        var v = std.mem.zeroes(@This());
-        v = .{
-            .Dimension = .TEXTURE2D,
-            .Alignment = 0,
-            .Width = width,
-            .Height = height,
-            .DepthOrArraySize = 1,
-            .MipLevels = @as(u16, @intCast(mip_levels)),
-            .Format = format,
-            .SampleDesc = .{ .Count = 1, .Quality = 0 },
-            .Layout = .UNKNOWN,
-            .Flags = .{},
-        };
-        return v;
-    }
-
-    pub fn init_texcube(format: dxgi.FORMAT, width: UINT64, height: UINT, mip_levels: u32) RESOURCE_DESC {
-        var v = std.mem.zeroes(@This());
-        v = .{
-            .Dimension = .TEXTURE2D,
-            .Alignment = 0,
-            .Width = width,
-            .Height = height,
-            .DepthOrArraySize = 6,
-            .MipLevels = @as(u16, @intCast(mip_levels)),
-            .Format = format,
-            .SampleDesc = .{ .Count = 1, .Quality = 0 },
-            .Layout = .UNKNOWN,
-            .Flags = .{},
-        };
-        return v;
-    }
+pub const RESOURCE_DESC1 = extern struct {
+    Dimension: RESOURCE_DIMENSION = .UNKNOWN,
+    Alignment: UINT64 = 0,
+    Width: UINT64 = 0,
+    Height: UINT = 0,
+    DepthOrArraySize: UINT16 = 0,
+    MipLevels: UINT16 = 0,
+    Format: dxgi.FORMAT = .UNKNOWN,
+    SampleDesc: dxgi.SAMPLE_DESC = .{},
+    Layout: TEXTURE_LAYOUT = .UNKNOWN,
+    Flags: RESOURCE_FLAGS = .{},
+    SamplerFeedbackMipRegion: MIP_REGION = .{ .Width = 0, .Height = 0, .Depth = 0 },
 };
 
 pub const FENCE_FLAGS = packed struct(UINT) {
@@ -2180,6 +2131,8 @@ pub const IResource = extern struct {
 
 pub const IResource1 = extern struct {
     __v: *const VTable,
+
+    pub const IID = GUID.parse("{9D5E227A-4430-4161-88B3-3ECA6BB16E19}");
 
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
@@ -7006,20 +6959,6 @@ pub const MIP_REGION = extern struct {
     Depth: UINT,
 };
 
-pub const RESOURCE_DESC1 = extern struct {
-    Dimension: RESOURCE_DIMENSION,
-    Alignment: UINT64,
-    Width: UINT64,
-    Height: UINT,
-    DepthOrArraySize: UINT16,
-    MipLevels: UINT16,
-    Format: dxgi.FORMAT,
-    SampleDesc: dxgi.SAMPLE_DESC,
-    Layout: TEXTURE_LAYOUT,
-    Flags: RESOURCE_FLAGS,
-    SamplerFeedbackMipRegion: MIP_REGION,
-};
-
 pub const IDevice8 = extern struct {
     __v: *const VTable,
 
@@ -7568,7 +7507,7 @@ pub const TEXTURE_BARRIER_FLAGS = packed struct(UINT) {
 };
 
 pub const BARRIER_SUBRESOURCE_RANGE = extern struct {
-    IndexOrFirstMipLevel: UINT,
+    IndexOrFirstMipLevel: UINT = 0,
     NumMipLevels: UINT = 0,
     FirstArraySlice: UINT = 0,
     NumArraySlices: UINT = 0,
@@ -7591,8 +7530,8 @@ pub const TEXTURE_BARRIER = extern struct {
     LayoutBefore: BARRIER_LAYOUT,
     LayoutAfter: BARRIER_LAYOUT,
     pResource: *IResource,
-    Subresources: BARRIER_SUBRESOURCE_RANGE,
-    Flags: TEXTURE_BARRIER_FLAGS,
+    Subresources: BARRIER_SUBRESOURCE_RANGE = .{},
+    Flags: TEXTURE_BARRIER_FLAGS = .{},
 };
 
 pub const BUFFER_BARRIER = extern struct {

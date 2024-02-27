@@ -322,8 +322,8 @@ pub const STANDARD_MULTISAMPLE_QUALITY_PATTERN = 0xffffffff;
 pub const CENTER_MULTISAMPLE_QUALITY_PATTERN = 0xfffffffe;
 
 pub const SAMPLE_DESC = extern struct {
-    Count: UINT,
-    Quality: UINT,
+    Count: UINT = 0,
+    Quality: UINT = 0,
 };
 
 pub const COLOR_SPACE_TYPE = enum(UINT) {
