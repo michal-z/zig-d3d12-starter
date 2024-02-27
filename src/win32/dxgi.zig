@@ -322,7 +322,7 @@ pub const STANDARD_MULTISAMPLE_QUALITY_PATTERN = 0xffffffff;
 pub const CENTER_MULTISAMPLE_QUALITY_PATTERN = 0xfffffffe;
 
 pub const SAMPLE_DESC = extern struct {
-    Count: UINT = 0,
+    Count: UINT = 1,
     Quality: UINT = 0,
 };
 

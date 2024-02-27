@@ -51,30 +51,34 @@ const AppState = struct {
             const vs_cso = @embedFile("cso/s00.vs.cso");
             const ps_cso = @embedFile("cso/s00.ps.cso");
 
-            const pso_desc = pso_desc: {
-                var pso_desc = d3d12.GRAPHICS_PIPELINE_STATE_DESC.init_default();
-                pso_desc.DepthStencilState.DepthEnable = w32.FALSE;
-                pso_desc.RTVFormats[0] = .R8G8B8A8_UNORM_SRGB;
-                pso_desc.NumRenderTargets = 1;
-                pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0xf;
-                pso_desc.PrimitiveTopologyType = .TRIANGLE;
-                pso_desc.VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len };
-                pso_desc.PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len };
-                pso_desc.SampleDesc = .{ .Count = GpuContext.num_msaa_samples };
-                break :pso_desc pso_desc;
-            };
-
             var root_signature: *d3d12.IRootSignature = undefined;
             vhr(gc.device.CreateRootSignature(
                 0,
-                pso_desc.VS.pShaderBytecode.?,
-                pso_desc.VS.BytecodeLength,
+                vs_cso,
+                vs_cso.len,
                 &d3d12.IRootSignature.IID,
                 @ptrCast(&root_signature),
             ));
 
             var pipeline: *d3d12.IPipelineState = undefined;
-            vhr(gc.device.CreateGraphicsPipelineState(&pso_desc, &d3d12.IPipelineState.IID, @ptrCast(&pipeline)));
+            vhr(gc.device.CreateGraphicsPipelineState(
+                &.{
+                    .DepthStencilState = .{ .DepthEnable = w32.FALSE },
+                    .RTVFormats = .{GpuContext.msaa_target_format} ++ .{.UNKNOWN} ** 7,
+                    .NumRenderTargets = 1,
+                    .BlendState = .{
+                        .RenderTarget = .{.{
+                            .RenderTargetWriteMask = 0x0f,
+                        }} ++ .{.{}} ** 7,
+                    },
+                    .PrimitiveTopologyType = .TRIANGLE,
+                    .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
+                    .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
+                    .SampleDesc = .{ .Count = GpuContext.msaa_target_num_samples },
+                },
+                &d3d12.IPipelineState.IID,
+                @ptrCast(&pipeline),
+            ));
 
             break :blk .{ root_signature, pipeline };
         };
@@ -112,16 +116,14 @@ const AppState = struct {
     fn draw(app: *AppState) void {
         var gc = &app.gpu_context;
 
-        const render_target_descriptor = gc.msaa_target_descriptor();
-
         gc.begin_command_list();
         gc.command_list.OMSetRenderTargets(
             1,
-            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{render_target_descriptor},
+            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.msaa_target_descriptor()},
             w32.TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(render_target_descriptor, &.{ 0, 0, 0, 0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(gc.msaa_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);

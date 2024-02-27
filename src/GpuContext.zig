@@ -17,8 +17,12 @@ pub const IGraphicsCommandList = d3d12.IGraphicsCommandList9;
 
 pub const max_rtv_descriptors = 1024;
 pub const max_shader_descriptors = 32 * 1024;
+
 pub const max_buffered_frames = 2;
-pub const num_msaa_samples = 8;
+pub const swap_chain_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
+
+pub const msaa_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
+pub const msaa_target_num_samples = 8;
 
 window: w32.HWND,
 window_width: u32,
@@ -123,7 +127,7 @@ pub fn end_command_list(gc: *GpuContext) void {
         0,
         gc.msaa_srgb_target,
         0,
-        .R8G8B8A8_UNORM,
+        swap_chain_target_format,
     );
     gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
         .Type = .TEXTURE,
@@ -411,7 +415,7 @@ pub fn init(window: w32.HWND) GpuContext {
             &.{
                 .Width = window_width,
                 .Height = window_height,
-                .Format = .R8G8B8A8_UNORM,
+                .Format = swap_chain_target_format,
                 .Stereo = w32.FALSE,
                 .SampleDesc = .{ .Count = 1 },
                 .BufferUsage = .{ .RENDER_TARGET_OUTPUT = true },
@@ -599,12 +603,12 @@ fn create_msaa_srgb_target(device: *IDevice, width: u32, height: u32) *d3d12.IRe
             .Height = @intCast(height),
             .DepthOrArraySize = 1,
             .MipLevels = 1,
-            .Format = .R8G8B8A8_UNORM_SRGB,
-            .SampleDesc = .{ .Count = num_msaa_samples },
+            .Format = msaa_target_format,
+            .SampleDesc = .{ .Count = msaa_target_num_samples },
             .Flags = .{ .ALLOW_RENDER_TARGET = true },
         },
         .RENDER_TARGET,
-        &.{ .Format = .R8G8B8A8_UNORM_SRGB, .u = .{ .Color = [_]f32{ 0, 0, 0, 0 } } },
+        &.{ .Format = msaa_target_format, .u = .{ .Color = [_]f32{ 0, 0, 0, 0 } } },
         null,
         0,
         null,
