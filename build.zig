@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    ensure_zig_version() catch return;
+    ensure_zig_version(.{ .major = 0, .minor = 12, .patch = 0, .pre = "dev.2701" }) catch return;
 
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
@@ -15,6 +15,7 @@ pub fn build(b: *std.Build) void {
         .strip = if (optimize == .ReleaseFast) true else null,
     });
     exe.rdynamic = true;
+    exe.addIncludePath(.{ .path = "src" });
 
     const d3d12_debug = b.option(bool, "d3d12-debug", "Enable D3D12 debug layer") orelse false;
     const d3d12_debug_gpu = b.option(bool, "d3d12-debug-gpu", "Enable D3D12 GPU-based validation") orelse false;
@@ -91,11 +92,9 @@ fn add_dxc_cmd(
     dxc_step.dependOn(&b.addInstallFile(cso_path, "../src/cso/" ++ output_filename).step);
 }
 
-fn ensure_zig_version() !void {
+fn ensure_zig_version(min_zig_version: std.SemanticVersion) !void {
     var installed_ver = @import("builtin").zig_version;
     installed_ver.build = null;
-
-    const min_zig_version = std.SemanticVersion{ .major = 0, .minor = 12, .patch = 0, .pre = "dev.2701" };
 
     if (installed_ver.order(min_zig_version) == .lt) {
         std.log.err("\n" ++

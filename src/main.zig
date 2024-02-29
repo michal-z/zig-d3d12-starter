@@ -4,6 +4,10 @@ const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 
+pub const cpu_gpu_common = @cImport({
+    @cInclude("cpu_gpu_common.h");
+});
+
 pub const std_options = .{
     .log_level = .info,
 };
@@ -18,6 +22,8 @@ const vhr = GpuContext.vhr;
 
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
+
+    _ = cpu_gpu_common;
 
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
     defer w32.CoUninitialize();

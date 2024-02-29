@@ -188,11 +188,7 @@ pub fn finish_gpu_commands(gc: *GpuContext) void {
     _ = w32.WaitForSingleObject(gc.frame_fence_event, w32.INFINITE);
 }
 
-pub fn handle_window_resize(gc: *GpuContext) enum {
-    minimized,
-    resized,
-    unchanged,
-} {
+pub fn handle_window_resize(gc: *GpuContext) enum { minimized, resized, unchanged } {
     const current_width: u32, const current_height: u32 = blk: {
         var rect: w32.RECT = undefined;
         _ = w32.GetClientRect(gc.window, &rect);
@@ -599,7 +595,6 @@ fn create_msaa_srgb_target(device: *IDevice, width: u32, height: u32) *d3d12.IRe
             .Dimension = .TEXTURE2D,
             .Width = @intCast(width),
             .Height = @intCast(height),
-            .DepthOrArraySize = 1,
             .MipLevels = 1,
             .Format = msaa_target_format,
             .SampleDesc = .{ .Count = msaa_target_num_samples },
