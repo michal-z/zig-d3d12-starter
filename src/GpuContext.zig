@@ -72,11 +72,10 @@ debug_command_queue: if (d3d12_debug) *d3d12d.IDebugCommandQueue1 else void,
 debug_command_list: if (d3d12_debug) *d3d12d.IDebugCommandList3 else void,
 
 pub fn display_target_descriptor(gc: GpuContext) d3d12.CPU_DESCRIPTOR_HANDLE {
-    const d = if (msaa_target_num_samples > 1)
+    return if (msaa_target_num_samples > 1)
         .{ .ptr = gc.rtv_dheap_start.ptr + max_buffered_frames * gc.rtv_dheap_descriptor_size }
     else
         .{ .ptr = gc.rtv_dheap_start.ptr + gc.frame_index * gc.rtv_dheap_descriptor_size };
-    return d;
 }
 
 pub fn begin_command_list(gc: *GpuContext) void {
