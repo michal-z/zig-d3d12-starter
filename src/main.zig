@@ -64,7 +64,7 @@ const AppState = struct {
             vhr(gc.device.CreateGraphicsPipelineState(
                 &.{
                     .DepthStencilState = .{ .DepthEnable = w32.FALSE },
-                    .RTVFormats = .{GpuContext.msaa_target_format} ++ .{.UNKNOWN} ** 7,
+                    .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
                     .NumRenderTargets = 1,
                     .BlendState = .{
                         .RenderTarget = .{.{
@@ -74,7 +74,7 @@ const AppState = struct {
                     .PrimitiveTopologyType = .TRIANGLE,
                     .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
                     .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
-                    .SampleDesc = .{ .Count = GpuContext.msaa_target_num_samples },
+                    .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
                 },
                 &d3d12.IPipelineState.IID,
                 @ptrCast(&pipeline),
@@ -119,11 +119,11 @@ const AppState = struct {
         gc.begin_command_list();
         gc.command_list.OMSetRenderTargets(
             1,
-            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.msaa_target_descriptor()},
+            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.display_target_descriptor()},
             w32.TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(gc.msaa_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);

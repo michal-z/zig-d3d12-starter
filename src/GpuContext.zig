@@ -15,14 +15,22 @@ const GpuContext = @This();
 pub const IDevice = d3d12.IDevice11;
 pub const IGraphicsCommandList = d3d12.IGraphicsCommandList9;
 
-pub const max_rtv_descriptors = 1024;
-pub const max_shader_descriptors = 32 * 1024;
-
 pub const max_buffered_frames = 2;
-pub const swap_chain_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
 
-pub const msaa_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
-pub const msaa_target_num_samples = 8;
+pub const display_target_num_samples = if (msaa_target_num_samples > 1) msaa_target_num_samples else 1;
+pub const display_target_format = if (msaa_target_num_samples > 1)
+    msaa_target_format
+else
+    swap_chain_target_view_format;
+
+const max_rtv_descriptors = 1024;
+const max_shader_descriptors = 32 * 1024;
+
+const swap_chain_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
+const swap_chain_target_view_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
+
+const msaa_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
+const msaa_target_num_samples = @import("build_options").d3d12_msaa;
 
 window: w32.HWND,
 window_width: u32,
@@ -55,7 +63,7 @@ frame_fence_event: w32.HANDLE,
 frame_fence_counter: u64 = 0,
 frame_index: u32,
 
-msaa_target: *d3d12.IResource,
+msaa_target: if (msaa_target_num_samples > 1) *d3d12.IResource else void,
 
 debug: if (d3d12_debug) *d3d12d.IDebug5 else void,
 debug_device: if (d3d12_debug) *d3d12.IDebugDevice else void,
@@ -63,12 +71,12 @@ debug_info_queue: if (d3d12_debug) *d3d12d.IInfoQueue else void,
 debug_command_queue: if (d3d12_debug) *d3d12d.IDebugCommandQueue1 else void,
 debug_command_list: if (d3d12_debug) *d3d12d.IDebugCommandList3 else void,
 
-pub fn swap_chain_target_descriptor(gc: GpuContext) d3d12.CPU_DESCRIPTOR_HANDLE {
-    return .{ .ptr = gc.rtv_dheap_start.ptr + gc.frame_index * gc.rtv_dheap_descriptor_size };
-}
-
-pub fn msaa_target_descriptor(gc: GpuContext) d3d12.CPU_DESCRIPTOR_HANDLE {
-    return .{ .ptr = gc.rtv_dheap_start.ptr + max_buffered_frames * gc.rtv_dheap_descriptor_size };
+pub fn display_target_descriptor(gc: GpuContext) d3d12.CPU_DESCRIPTOR_HANDLE {
+    const d = if (msaa_target_num_samples > 1)
+        .{ .ptr = gc.rtv_dheap_start.ptr + max_buffered_frames * gc.rtv_dheap_descriptor_size }
+    else
+        .{ .ptr = gc.rtv_dheap_start.ptr + gc.frame_index * gc.rtv_dheap_descriptor_size };
+    return d;
 }
 
 pub fn begin_command_list(gc: *GpuContext) void {
@@ -93,68 +101,108 @@ pub fn begin_command_list(gc: *GpuContext) void {
         .right = @intCast(gc.window_width),
         .bottom = @intCast(gc.window_height),
     }});
+
+    if (msaa_target_num_samples <= 1) {
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .TEXTURE,
+            .NumBarriers = 1,
+            .u = .{
+                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{
+                    .{
+                        .SyncBefore = .{},
+                        .SyncAfter = .{ .RENDER_TARGET = true },
+                        .AccessBefore = .{ .NO_ACCESS = true },
+                        .AccessAfter = .{ .RENDER_TARGET = true },
+                        .LayoutBefore = .PRESENT,
+                        .LayoutAfter = .RENDER_TARGET,
+                        .pResource = gc.swap_chain_targets[gc.frame_index],
+                    },
+                },
+            },
+        }});
+    }
 }
 
 pub fn end_command_list(gc: *GpuContext) void {
-    gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-        .Type = .TEXTURE,
-        .NumBarriers = 2,
-        .u = .{
-            .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{
-                .{
-                    .SyncBefore = .{ .RENDER_TARGET = true },
-                    .SyncAfter = .{ .RESOLVE = true },
-                    .AccessBefore = .{ .RENDER_TARGET = true },
-                    .AccessAfter = .{ .RESOLVE_SOURCE = true },
-                    .LayoutBefore = .RENDER_TARGET,
-                    .LayoutAfter = .RESOLVE_SOURCE,
-                    .pResource = gc.msaa_target,
-                },
-                .{
-                    .SyncBefore = .{},
-                    .SyncAfter = .{ .RESOLVE = true },
-                    .AccessBefore = .{ .NO_ACCESS = true },
-                    .AccessAfter = .{ .RESOLVE_DEST = true },
-                    .LayoutBefore = .PRESENT,
-                    .LayoutAfter = .RESOLVE_DEST,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                },
-            },
-        },
-    }});
-    gc.command_list.ResolveSubresource(
-        gc.swap_chain_targets[gc.frame_index],
-        0,
-        gc.msaa_target,
-        0,
-        swap_chain_target_format,
-    );
-    gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-        .Type = .TEXTURE,
-        .NumBarriers = 2,
-        .u = .{
-            .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{
-                .{
-                    .SyncBefore = .{ .RESOLVE = true },
-                    .SyncAfter = .{},
-                    .AccessBefore = .{ .RESOLVE_SOURCE = true },
-                    .AccessAfter = .{ .NO_ACCESS = true },
-                    .LayoutBefore = .RESOLVE_SOURCE,
-                    .LayoutAfter = .RENDER_TARGET,
-                    .pResource = gc.msaa_target,
-                },
-                .{
-                    .SyncBefore = .{ .RESOLVE = true },
-                    .SyncAfter = .{},
-                    .AccessBefore = .{ .RESOLVE_DEST = true },
-                    .AccessAfter = .{ .NO_ACCESS = true },
-                    .LayoutBefore = .RESOLVE_DEST,
-                    .LayoutAfter = .PRESENT,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
+    if (msaa_target_num_samples > 1) {
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .TEXTURE,
+            .NumBarriers = 2,
+            .u = .{
+                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{
+                    .{
+                        .SyncBefore = .{ .RENDER_TARGET = true },
+                        .SyncAfter = .{ .RESOLVE = true },
+                        .AccessBefore = .{ .RENDER_TARGET = true },
+                        .AccessAfter = .{ .RESOLVE_SOURCE = true },
+                        .LayoutBefore = .RENDER_TARGET,
+                        .LayoutAfter = .RESOLVE_SOURCE,
+                        .pResource = gc.msaa_target,
+                    },
+                    .{
+                        .SyncBefore = .{},
+                        .SyncAfter = .{ .RESOLVE = true },
+                        .AccessBefore = .{ .NO_ACCESS = true },
+                        .AccessAfter = .{ .RESOLVE_DEST = true },
+                        .LayoutBefore = .PRESENT,
+                        .LayoutAfter = .RESOLVE_DEST,
+                        .pResource = gc.swap_chain_targets[gc.frame_index],
+                    },
                 },
             },
-        },
-    }});
+        }});
+        gc.command_list.ResolveSubresource(
+            gc.swap_chain_targets[gc.frame_index],
+            0,
+            gc.msaa_target,
+            0,
+            swap_chain_target_format,
+        );
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .TEXTURE,
+            .NumBarriers = 2,
+            .u = .{
+                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{
+                    .{
+                        .SyncBefore = .{ .RESOLVE = true },
+                        .SyncAfter = .{},
+                        .AccessBefore = .{ .RESOLVE_SOURCE = true },
+                        .AccessAfter = .{ .NO_ACCESS = true },
+                        .LayoutBefore = .RESOLVE_SOURCE,
+                        .LayoutAfter = .RENDER_TARGET,
+                        .pResource = gc.msaa_target,
+                    },
+                    .{
+                        .SyncBefore = .{ .RESOLVE = true },
+                        .SyncAfter = .{},
+                        .AccessBefore = .{ .RESOLVE_DEST = true },
+                        .AccessAfter = .{ .NO_ACCESS = true },
+                        .LayoutBefore = .RESOLVE_DEST,
+                        .LayoutAfter = .PRESENT,
+                        .pResource = gc.swap_chain_targets[gc.frame_index],
+                    },
+                },
+            },
+        }});
+    } else {
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .TEXTURE,
+            .NumBarriers = 1,
+            .u = .{
+                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{
+                    .{
+                        .SyncBefore = .{ .RENDER_TARGET = true },
+                        .SyncAfter = .{},
+                        .AccessBefore = .{ .RENDER_TARGET = true },
+                        .AccessAfter = .{ .NO_ACCESS = true },
+                        .LayoutBefore = .RENDER_TARGET,
+                        .LayoutAfter = .PRESENT,
+                        .pResource = gc.swap_chain_targets[gc.frame_index],
+                    },
+                },
+            },
+        }});
+    }
     vhr(gc.command_list.Close());
 }
 
@@ -223,7 +271,11 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
         for (gc.swap_chain_targets, 0..) |texture, i| {
             gc.device.CreateRenderTargetView(
                 texture,
-                null,
+                &.{
+                    .Format = display_target_format,
+                    .ViewDimension = .TEXTURE2D,
+                    .u = .{ .Texture2D = .{ .MipSlice = 0, .PlaneSlice = 0 } },
+                },
                 .{ .ptr = gc.rtv_dheap_start.ptr + i * gc.rtv_dheap_descriptor_size },
             );
         }
@@ -232,9 +284,15 @@ pub fn handle_window_resize(gc: *GpuContext) enum {
         gc.window_height = current_height;
         gc.frame_index = gc.swap_chain.GetCurrentBackBufferIndex();
 
-        _ = gc.msaa_target.Release();
-        gc.msaa_target = create_msaa_srgb_target(gc.device, gc.window_width, gc.window_height);
-        gc.device.CreateRenderTargetView(gc.msaa_target, null, gc.msaa_target_descriptor());
+        if (msaa_target_num_samples > 1) {
+            _ = gc.msaa_target.Release();
+            gc.msaa_target = create_msaa_srgb_target(gc.device, gc.window_width, gc.window_height);
+            gc.device.CreateRenderTargetView(
+                gc.msaa_target,
+                null,
+                .{ .ptr = gc.rtv_dheap_start.ptr + max_buffered_frames * gc.rtv_dheap_descriptor_size },
+            );
+        }
 
         return .resized;
     }
@@ -468,8 +526,12 @@ pub fn init(window: w32.HWND) GpuContext {
     for (swap_chain_targets, 0..) |texture, i| {
         device.CreateRenderTargetView(
             texture,
-            null,
-            .{ .ptr = rtv_dheap_start.ptr + i * device.GetDescriptorHandleIncrementSize(.RTV) },
+            &.{
+                .Format = display_target_format,
+                .ViewDimension = .TEXTURE2D,
+                .u = .{ .Texture2D = .{ .MipSlice = 0, .PlaneSlice = 0 } },
+            },
+            .{ .ptr = rtv_dheap_start.ptr + i * rtv_dheap_descriptor_size },
         );
     }
 
@@ -511,20 +573,21 @@ pub fn init(window: w32.HWND) GpuContext {
     //
     // MSAA render target
     //
-    const msaa_target = create_msaa_srgb_target(device, window_width, window_height);
-    device.CreateRenderTargetView(
-        msaa_target,
-        null,
-        .{ .ptr = rtv_dheap_start.ptr + max_buffered_frames * rtv_dheap_descriptor_size },
-    );
-    {
+    const msaa_target = if (msaa_target_num_samples > 1) blk: {
+        const msaa_target = create_msaa_srgb_target(device, window_width, window_height);
+        device.CreateRenderTargetView(
+            msaa_target,
+            null,
+            .{ .ptr = rtv_dheap_start.ptr + max_buffered_frames * rtv_dheap_descriptor_size },
+        );
         const desc = msaa_target.GetDesc();
         log.info("MSAA render target created ({d}x{d}, NumSamples: {d}).", .{
             desc.Width,
             desc.Height,
             desc.SampleDesc.Count,
         });
-    }
+        break :blk msaa_target;
+    } else {};
 
     return .{
         .window = window,
@@ -559,7 +622,7 @@ pub fn init(window: w32.HWND) GpuContext {
 }
 
 pub fn deinit(gc: *GpuContext) void {
-    _ = gc.msaa_target.Release();
+    if (msaa_target_num_samples > 1) _ = gc.msaa_target.Release();
     _ = gc.command_list.Release();
     for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
     _ = gc.frame_fence.Release();
