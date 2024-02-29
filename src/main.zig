@@ -33,7 +33,7 @@ pub fn main() !void {
 
     while (true) {
         var message = std.mem.zeroes(w32.MSG);
-        if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == w32.TRUE) {
+        if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == .TRUE) {
             _ = w32.TranslateMessage(&message);
             _ = w32.DispatchMessageA(&message);
             if (message.message == w32.WM_QUIT) break;
@@ -69,8 +69,8 @@ const AppState = struct {
             var pipeline: *d3d12.IPipelineState = undefined;
             vhr(gc.device.CreateGraphicsPipelineState(
                 &.{
-                    .DepthStencilState = .{ .DepthEnable = w32.FALSE },
-                    .RTVFormats = .{GpuContext.msaa_target_format} ++ .{.UNKNOWN} ** 7,
+                    .DepthStencilState = .{ .DepthEnable = .FALSE },
+                    .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
                     .NumRenderTargets = 1,
                     .BlendState = .{
                         .RenderTarget = .{.{
@@ -80,7 +80,7 @@ const AppState = struct {
                     .PrimitiveTopologyType = .TRIANGLE,
                     .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
                     .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
-                    .SampleDesc = .{ .Count = GpuContext.msaa_target_num_samples },
+                    .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
                 },
                 &d3d12.IPipelineState.IID,
                 @ptrCast(&pipeline),
@@ -125,11 +125,11 @@ const AppState = struct {
         gc.begin_command_list();
         gc.command_list.OMSetRenderTargets(
             1,
-            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.msaa_target_descriptor()},
-            w32.TRUE,
+            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.display_target_descriptor()},
+            .TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(gc.msaa_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);
@@ -187,7 +187,7 @@ fn create_window(width: u32, height: u32) w32.HWND {
 
     const style = w32.WS_OVERLAPPEDWINDOW;
     var rect = w32.RECT{ .left = 0, .top = 0, .right = @intCast(width), .bottom = @intCast(height) };
-    _ = w32.AdjustWindowRectEx(&rect, style, w32.FALSE, 0);
+    _ = w32.AdjustWindowRectEx(&rect, style, .FALSE, 0);
 
     const window = w32.CreateWindowExA(
         0,
