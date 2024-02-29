@@ -378,7 +378,7 @@ pub fn init(window: w32.HWND) GpuContext {
             }
             log.info("Resource Binding Tier 3 is SUPPORTED.", .{});
 
-            if (options12.EnhancedBarriersSupported == w32.FALSE) {
+            if (options12.EnhancedBarriersSupported == .FALSE) {
                 log.info("Enhanced Barriers API is NOT SUPPORTED - please update your graphics driver.", .{});
                 break :is_supported false;
             }
@@ -444,9 +444,9 @@ pub fn init(window: w32.HWND) GpuContext {
     // Swap chain
     //
     const swap_chain_flags: dxgi.SWAP_CHAIN_FLAG = blk: {
-        var allow_tearing: w32.BOOL = w32.FALSE;
+        var allow_tearing: w32.BOOL = .FALSE;
         const hr = dxgi_factory.CheckFeatureSupport(.PRESENT_ALLOW_TEARING, &allow_tearing, @sizeOf(w32.BOOL));
-        if (hr == w32.S_OK and allow_tearing == w32.TRUE) {
+        if (hr == w32.S_OK and allow_tearing == .TRUE) {
             log.info("Swap chain tearing is allowed.", .{});
             break :blk .{ .ALLOW_TEARING = true };
         }
@@ -471,7 +471,7 @@ pub fn init(window: w32.HWND) GpuContext {
                 .Width = window_width,
                 .Height = window_height,
                 .Format = swap_chain_target_format,
-                .Stereo = w32.FALSE,
+                .Stereo = .FALSE,
                 .SampleDesc = .{ .Count = 1 },
                 .BufferUsage = .{ .RENDER_TARGET_OUTPUT = true },
                 .BufferCount = max_buffered_frames,

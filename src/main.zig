@@ -27,7 +27,7 @@ pub fn main() !void {
 
     while (true) {
         var message = std.mem.zeroes(w32.MSG);
-        if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == w32.TRUE) {
+        if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == .TRUE) {
             _ = w32.TranslateMessage(&message);
             _ = w32.DispatchMessageA(&message);
             if (message.message == w32.WM_QUIT) break;
@@ -63,7 +63,7 @@ const AppState = struct {
             var pipeline: *d3d12.IPipelineState = undefined;
             vhr(gc.device.CreateGraphicsPipelineState(
                 &.{
-                    .DepthStencilState = .{ .DepthEnable = w32.FALSE },
+                    .DepthStencilState = .{ .DepthEnable = .FALSE },
                     .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
                     .NumRenderTargets = 1,
                     .BlendState = .{
@@ -120,7 +120,7 @@ const AppState = struct {
         gc.command_list.OMSetRenderTargets(
             1,
             &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.display_target_descriptor()},
-            w32.TRUE,
+            .TRUE,
             null,
         );
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
@@ -181,7 +181,7 @@ fn create_window(width: u32, height: u32) w32.HWND {
 
     const style = w32.WS_OVERLAPPEDWINDOW;
     var rect = w32.RECT{ .left = 0, .top = 0, .right = @intCast(width), .bottom = @intCast(height) };
-    _ = w32.AdjustWindowRectEx(&rect, style, w32.FALSE, 0);
+    _ = w32.AdjustWindowRectEx(&rect, style, .FALSE, 0);
 
     const window = w32.CreateWindowExA(
         0,

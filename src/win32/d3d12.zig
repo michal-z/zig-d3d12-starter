@@ -795,8 +795,8 @@ pub const LOGIC_OP = enum(UINT) {
 };
 
 pub const RENDER_TARGET_BLEND_DESC = extern struct {
-    BlendEnable: BOOL = FALSE,
-    LogicOpEnable: BOOL = FALSE,
+    BlendEnable: BOOL = .FALSE,
+    LogicOpEnable: BOOL = .FALSE,
     SrcBlend: BLEND = .ONE,
     DestBlend: BLEND = .ZERO,
     BlendOp: BLEND_OP = .ADD,
@@ -808,21 +808,21 @@ pub const RENDER_TARGET_BLEND_DESC = extern struct {
 };
 
 pub const BLEND_DESC = extern struct {
-    AlphaToCoverageEnable: BOOL = FALSE,
-    IndependentBlendEnable: BOOL = FALSE,
+    AlphaToCoverageEnable: BOOL = .FALSE,
+    IndependentBlendEnable: BOOL = .FALSE,
     RenderTarget: [8]RENDER_TARGET_BLEND_DESC = [_]RENDER_TARGET_BLEND_DESC{.{}} ** 8,
 };
 
 pub const RASTERIZER_DESC = extern struct {
     FillMode: FILL_MODE = .SOLID,
     CullMode: CULL_MODE = .BACK,
-    FrontCounterClockwise: BOOL = FALSE,
+    FrontCounterClockwise: BOOL = .FALSE,
     DepthBias: INT = 0,
     DepthBiasClamp: FLOAT = 0.0,
     SlopeScaledDepthBias: FLOAT = 0.0,
-    DepthClipEnable: BOOL = TRUE,
-    MultisampleEnable: BOOL = FALSE,
-    AntialiasedLineEnable: BOOL = FALSE,
+    DepthClipEnable: BOOL = .TRUE,
+    MultisampleEnable: BOOL = .FALSE,
+    AntialiasedLineEnable: BOOL = .FALSE,
     ForcedSampleCount: UINT = 0,
     ConservativeRaster: CONSERVATIVE_RASTERIZATION_MODE = .OFF,
 };
@@ -878,10 +878,10 @@ pub const DEPTH_STENCILOP_DESC = extern struct {
 };
 
 pub const DEPTH_STENCIL_DESC = extern struct {
-    DepthEnable: BOOL = TRUE,
+    DepthEnable: BOOL = .TRUE,
     DepthWriteMask: DEPTH_WRITE_MASK = .ALL,
     DepthFunc: COMPARISON_FUNC = .LESS,
-    StencilEnable: BOOL = FALSE,
+    StencilEnable: BOOL = .FALSE,
     StencilReadMask: UINT8 = 0xff,
     StencilWriteMask: UINT8 = 0xff,
     FrontFace: DEPTH_STENCILOP_DESC = .{},
@@ -889,15 +889,15 @@ pub const DEPTH_STENCIL_DESC = extern struct {
 };
 
 pub const DEPTH_STENCIL_DESC1 = extern struct {
-    DepthEnable: BOOL = TRUE,
+    DepthEnable: BOOL = .TRUE,
     DepthWriteMask: DEPTH_WRITE_MASK = .ALL,
     DepthFunc: COMPARISON_FUNC = .LESS,
-    StencilEnable: BOOL = FALSE,
+    StencilEnable: BOOL = .FALSE,
     StencilReadMask: UINT8 = 0xff,
     StencilWriteMask: UINT8 = 0xff,
     FrontFace: DEPTH_STENCILOP_DESC = .{},
     BackFace: DEPTH_STENCILOP_DESC = .{},
-    DepthBoundsTestEnable: BOOL = FALSE,
+    DepthBoundsTestEnable: BOOL = .FALSE,
 };
 
 pub const INPUT_LAYOUT_DESC = extern struct {
