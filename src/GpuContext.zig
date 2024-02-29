@@ -349,7 +349,7 @@ pub fn init(window: w32.HWND) GpuContext {
     const debug_info_queue = if (d3d12_debug) blk: {
         var debug_info_queue: *d3d12d.IInfoQueue = undefined;
         vhr(device.QueryInterface(&d3d12d.IInfoQueue.IID, @ptrCast(&debug_info_queue)));
-        vhr(debug_info_queue.SetBreakOnSeverity(.ERROR, w32.TRUE));
+        vhr(debug_info_queue.SetBreakOnSeverity(.ERROR, .TRUE));
         break :blk debug_info_queue;
     } else {};
 
@@ -496,11 +496,12 @@ pub fn init(window: w32.HWND) GpuContext {
     {
         var desc: dxgi.SWAP_CHAIN_DESC1 = undefined;
         vhr(swap_chain.GetDesc1(&desc));
-        log.info("Swap chain created ({d}x{d}x{d}, {s}).", .{
+        log.info("Swap chain created ({d}x{d}x{d}, format: {s}, view format: {s}).", .{
             desc.Width,
             desc.Height,
             desc.BufferCount,
             @tagName(desc.Format),
+            @tagName(display_target_format),
         });
     }
 
@@ -576,9 +577,10 @@ pub fn init(window: w32.HWND) GpuContext {
             .{ .ptr = rtv_dheap_start.ptr + max_buffered_frames * rtv_dheap_descriptor_size },
         );
         const desc = msaa_target.GetDesc();
-        log.info("MSAA render target created ({d}x{d}, NumSamples: {d}).", .{
+        log.info("MSAA render target created ({d}x{d}, {s}, NumSamples: {d}).", .{
             desc.Width,
             desc.Height,
+            @tagName(desc.Format),
             desc.SampleDesc.Count,
         });
         break :blk msaa_target;
