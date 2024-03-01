@@ -494,7 +494,7 @@ pub const IFactory = extern struct {
                 geo: *?*IRectangleGeometry,
             ) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateRectangleGeometry(@as(*IFactory, @ptrCast(self)), rect, geo);
+                    .CreateRectangleGeometry(@ptrCast(self), rect, geo);
             }
             pub inline fn CreateRoundedRectangleGeometry(
                 self: *T,
@@ -502,7 +502,7 @@ pub const IFactory = extern struct {
                 geo: *?*IRoundedRectangleGeometry,
             ) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateRoundedRectangleGeometry(@as(*IFactory, @ptrCast(self)), rect, geo);
+                    .CreateRoundedRectangleGeometry(@ptrCast(self), rect, geo);
             }
             pub inline fn CreateEllipseGeometry(
                 self: *T,
@@ -510,10 +510,10 @@ pub const IFactory = extern struct {
                 geo: *?*IEllipseGeometry,
             ) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateEllipseGeometry(@as(*IFactory, @ptrCast(self)), ellipse, geo);
+                    .CreateEllipseGeometry(@ptrCast(self), ellipse, geo);
             }
             pub inline fn CreatePathGeometry(self: *T, geo: *?*IPathGeometry) HRESULT {
-                return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreatePathGeometry(@as(*IFactory, @ptrCast(self)), geo);
+                return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreatePathGeometry(@ptrCast(self), geo);
             }
             pub inline fn CreateStrokeStyle(
                 self: *T,
@@ -523,28 +523,27 @@ pub const IFactory = extern struct {
                 stroke_style: *?*IStrokeStyle,
             ) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
-                    .CreateStrokeStyle(@as(*IFactory, @ptrCast(self)), properties, dashes, dashes_count, stroke_style);
+                    .CreateStrokeStyle(@ptrCast(self), properties, dashes, dashes_count, stroke_style);
             }
         };
     }
 
     pub const VTable = extern struct {
-        const T = IFactory;
         base: IUnknown.VTable,
         ReloadSystemMetrics: *anyopaque,
         GetDesktopDpi: *anyopaque,
-        CreateRectangleGeometry: *const fn (*T, *const RECT_F, *?*IRectangleGeometry) callconv(WINAPI) HRESULT,
+        CreateRectangleGeometry: *const fn (*IFactory, *const RECT_F, *?*IRectangleGeometry) callconv(WINAPI) HRESULT,
         CreateRoundedRectangleGeometry: *const fn (
-            *T,
+            *IFactory,
             *const ROUNDED_RECT,
             *?*IRoundedRectangleGeometry,
         ) callconv(WINAPI) HRESULT,
-        CreateEllipseGeometry: *const fn (*T, *const ELLIPSE, *?*IEllipseGeometry) callconv(WINAPI) HRESULT,
+        CreateEllipseGeometry: *const fn (*IFactory, *const ELLIPSE, *?*IEllipseGeometry) callconv(WINAPI) HRESULT,
         CreateGeometryGroup: *anyopaque,
         CreateTransformedGeometry: *anyopaque,
-        CreatePathGeometry: *const fn (*T, *?*IPathGeometry) callconv(WINAPI) HRESULT,
+        CreatePathGeometry: *const fn (*IFactory, *?*IPathGeometry) callconv(WINAPI) HRESULT,
         CreateStrokeStyle: *const fn (
-            *T,
+            *IFactory,
             *const STROKE_STYLE_PROPERTIES,
             ?[*]const FLOAT,
             UINT32,
