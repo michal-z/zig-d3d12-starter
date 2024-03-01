@@ -51,10 +51,10 @@ pub const FILL_MODE = enum(UINT) {
     WINDING = 1,
 };
 
-pub const PATH_SEGMENT = enum(UINT) {
-    NONE = 0x00000000,
-    FORCE_UNSTROKED = 0x00000001,
-    FORCE_ROUND_LINE_JOIN = 0x00000002,
+pub const PATH_SEGMENT = packed struct(UINT) {
+    FORCE_UNSTROKED: bool = false,
+    FORCE_ROUND_LINE_JOIN: bool = false,
+    __unused: u30 = 0,
 };
 
 pub const FIGURE_BEGIN = enum(UINT) {
@@ -190,7 +190,12 @@ pub const IGeometry = extern struct {
                 return @as(*const IGeometry.VTable, @ptrCast(self.__v))
                     .GetBounds(@ptrCast(self), world_transform, bounds);
             }
-            pub inline fn Tessellate(self: *T, world_transform: ?*const MATRIX_3X2_F, flattening_tolerance: FLOAT, tessellation_sink: *ITessellationSink) HRESULT {
+            pub inline fn Tessellate(
+                self: *T,
+                world_transform: ?*const MATRIX_3X2_F,
+                flattening_tolerance: FLOAT,
+                tessellation_sink: *ITessellationSink,
+            ) HRESULT {
                 return @as(*const IGeometry.VTable, @ptrCast(self.__v))
                     .Tessellate(@ptrCast(self), world_transform, flattening_tolerance, tessellation_sink);
             }
@@ -205,7 +210,12 @@ pub const IGeometry = extern struct {
         FillContainsPoint: *anyopaque,
         CompareWithGeometry: *anyopaque,
         Simplify: *anyopaque,
-        Tessellate: *const fn (*IGeometry, ?*const MATRIX_3X2_F, FLOAT, *ITessellationSink) callconv(WINAPI) HRESULT,
+        Tessellate: *const fn (
+            *IGeometry,
+            ?*const MATRIX_3X2_F,
+            FLOAT,
+            *ITessellationSink,
+        ) callconv(WINAPI) HRESULT,
         CombineWithGeometry: *anyopaque,
         Outline: *anyopaque,
         ComputeArea: *anyopaque,
@@ -318,12 +328,10 @@ pub const IPathGeometry = extern struct {
                 return @as(*const IPathGeometry.VTable, @ptrCast(self.__v)).Open(@ptrCast(self), sink);
             }
             pub inline fn GetSegmentCount(self: *T, count: *UINT32) HRESULT {
-                return @as(*const IPathGeometry.VTable, @ptrCast(self.__v))
-                    .GetSegmentCount(@ptrCast(self), count);
+                return @as(*const IPathGeometry.VTable, @ptrCast(self.__v)).GetSegmentCount(@ptrCast(self), count);
             }
             pub inline fn GetFigureCount(self: *T, count: *UINT32) HRESULT {
-                return @as(*const IPathGeometry.VTable, @ptrCast(self.__v))
-                    .GetFigureCount(@ptrCast(self), count);
+                return @as(*const IPathGeometry.VTable, @ptrCast(self.__v)).GetFigureCount(@ptrCast(self), count);
             }
         };
     }
@@ -355,8 +363,7 @@ pub const ISimplifiedGeometrySink = extern struct {
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn SetFillMode(self: *T, mode: FILL_MODE) void {
-                @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v))
-                    .SetFillMode(@ptrCast(self), mode);
+                @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v)).SetFillMode(@ptrCast(self), mode);
             }
             pub inline fn SetSegmentFlags(self: *T, flags: PATH_SEGMENT) void {
                 @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v))
@@ -375,12 +382,10 @@ pub const ISimplifiedGeometrySink = extern struct {
                     .AddBeziers(@ptrCast(self), segments, num_segments);
             }
             pub inline fn EndFigure(self: *T, end: FIGURE_END) void {
-                @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v))
-                    .EndFigure(@ptrCast(self), end);
+                @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v)).EndFigure(@ptrCast(self), end);
             }
             pub inline fn Close(self: *T) HRESULT {
-                return @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v))
-                    .Close(@ptrCast(self));
+                return @as(*const ISimplifiedGeometrySink.VTable, @ptrCast(self.__v)).Close(@ptrCast(self));
             }
         };
     }
@@ -432,7 +437,11 @@ pub const IGeometrySink = extern struct {
                 @as(*const IGeometrySink.VTable, @ptrCast(self.__v))
                     .AddQuadraticBezier(@ptrCast(self), segment);
             }
-            pub inline fn AddQuadraticBeziers(self: *T, segments: [*]const QUADRATIC_BEZIER_SEGMENT, num_segments: UINT32) void {
+            pub inline fn AddQuadraticBeziers(
+                self: *T,
+                segments: [*]const QUADRATIC_BEZIER_SEGMENT,
+                num_segments: UINT32,
+            ) void {
                 @as(*const IGeometrySink.VTable, @ptrCast(self.__v))
                     .AddQuadraticBeziers(@ptrCast(self), segments, num_segments);
             }
@@ -448,7 +457,11 @@ pub const IGeometrySink = extern struct {
         AddLine: *const fn (*IGeometrySink, POINT_2F) callconv(WINAPI) void,
         AddBezier: *const fn (*IGeometrySink, *const BEZIER_SEGMENT) callconv(WINAPI) void,
         AddQuadraticBezier: *const fn (*IGeometrySink, *const QUADRATIC_BEZIER_SEGMENT) callconv(WINAPI) void,
-        AddQuadraticBeziers: *const fn (*IGeometrySink, [*]const QUADRATIC_BEZIER_SEGMENT, UINT32) callconv(WINAPI) void,
+        AddQuadraticBeziers: *const fn (
+            *IGeometrySink,
+            [*]const QUADRATIC_BEZIER_SEGMENT,
+            UINT32,
+        ) callconv(WINAPI) void,
         AddArc: *const fn (*IGeometrySink, *const ARC_SEGMENT) callconv(WINAPI) void,
     };
 };
@@ -532,13 +545,21 @@ pub const IFactory = extern struct {
         base: IUnknown.VTable,
         ReloadSystemMetrics: *anyopaque,
         GetDesktopDpi: *anyopaque,
-        CreateRectangleGeometry: *const fn (*IFactory, *const RECT_F, *?*IRectangleGeometry) callconv(WINAPI) HRESULT,
+        CreateRectangleGeometry: *const fn (
+            *IFactory,
+            *const RECT_F,
+            *?*IRectangleGeometry,
+        ) callconv(WINAPI) HRESULT,
         CreateRoundedRectangleGeometry: *const fn (
             *IFactory,
             *const ROUNDED_RECT,
             *?*IRoundedRectangleGeometry,
         ) callconv(WINAPI) HRESULT,
-        CreateEllipseGeometry: *const fn (*IFactory, *const ELLIPSE, *?*IEllipseGeometry) callconv(WINAPI) HRESULT,
+        CreateEllipseGeometry: *const fn (
+            *IFactory,
+            *const ELLIPSE,
+            *?*IEllipseGeometry,
+        ) callconv(WINAPI) HRESULT,
         CreateGeometryGroup: *anyopaque,
         CreateTransformedGeometry: *anyopaque,
         CreatePathGeometry: *const fn (*IFactory, *?*IPathGeometry) callconv(WINAPI) HRESULT,
