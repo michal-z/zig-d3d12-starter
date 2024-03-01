@@ -23,7 +23,8 @@ const vhr = GpuContext.vhr;
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
 
-    _ = cpu_gpu_common;
+    _ = cpu_gpu_common.RDH_OBJECTS_DYNAMIC;
+    std.debug.print("aaaaaaaaaa: {d}\n", .{@sizeOf(cpu_gpu_common.CpuGpu_Vertex)});
 
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
     defer w32.CoUninitialize();
