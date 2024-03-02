@@ -4,7 +4,7 @@ const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 
-const d3d12_debug = @import("build_options").d3d12_debug or @import("build_options").d3d12_debug_gpu;
+pub const d3d12_debug = @import("build_options").d3d12_debug or @import("build_options").d3d12_debug_gpu;
 const d3d12_debug_gpu = @import("build_options").d3d12_debug_gpu;
 const d3d12_vsync = @import("build_options").d3d12_vsync;
 

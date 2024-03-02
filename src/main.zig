@@ -3,6 +3,7 @@ const w32 = @import("win32/win32.zig");
 const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
+const d2d1 = @import("win32/d2d1.zig");
 
 pub const cpu_gpu_common = @cImport({
     @cInclude("cpu_gpu_common.h");
@@ -31,6 +32,15 @@ pub fn main() !void {
 
     var app = AppState.init();
     defer app.deinit();
+
+    var d2d_factory: *d2d1.IFactory = undefined;
+    vhr(d2d1.CreateFactory(
+        .SINGLE_THREADED,
+        &d2d1.IFactory.IID,
+        if (GpuContext.d3d12_debug) &.{ .debugLevel = .INFORMATION } else &.{ .debugLevel = .NONE },
+        @ptrCast(&d2d_factory),
+    ));
+    defer _ = d2d_factory.Release();
 
     while (true) {
         var message = std.mem.zeroes(w32.MSG);

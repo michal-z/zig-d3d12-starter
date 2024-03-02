@@ -6,6 +6,7 @@ const FLOAT = w32.FLOAT;
 const WINAPI = w32.WINAPI;
 const UINT32 = w32.UINT32;
 const UINT = w32.UINT;
+const GUID = w32.GUID;
 
 pub const RECT_F = extern struct {
     left: FLOAT,
@@ -490,6 +491,8 @@ pub const IStrokeStyle = extern struct {
 pub const IFactory = extern struct {
     __v: *const VTable,
 
+    pub const IID = GUID.parse("{06152247-6f50-465a-9245-118bfd3b6007}");
+
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
@@ -577,3 +580,28 @@ pub const IFactory = extern struct {
         CreateDCRenderTarget: *anyopaque,
     };
 };
+
+pub const FACTORY_TYPE = enum(UINT) {
+    SINGLE_THREADED = 0,
+    MULTI_THREADED = 1,
+};
+
+pub const DEBUG_LEVEL = enum(UINT) {
+    NONE = 0,
+    ERROR = 1,
+    WARNING = 2,
+    INFORMATION = 3,
+};
+
+pub const FACTORY_OPTIONS = extern struct {
+    debugLevel: DEBUG_LEVEL,
+};
+
+pub const CreateFactory = D2D1CreateFactory;
+
+extern "d2d1" fn D2D1CreateFactory(
+    FACTORY_TYPE,
+    *const GUID,
+    ?*const FACTORY_OPTIONS,
+    *?*anyopaque,
+) callconv(WINAPI) HRESULT;
