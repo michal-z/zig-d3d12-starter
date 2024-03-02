@@ -4,10 +4,7 @@ const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
-
-pub const cgc = @cImport({
-    @cInclude("cpu_gpu_common.h");
-});
+const cgc = @cImport(@cInclude("cpu_gpu_common.h"));
 
 pub const std_options = .{
     .log_level = .info,
