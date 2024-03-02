@@ -5,7 +5,7 @@ const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 
-pub const cpu_gpu_common = @cImport({
+pub const cgc = @cImport({
     @cInclude("cpu_gpu_common.h");
 });
 
@@ -24,8 +24,8 @@ const vhr = GpuContext.vhr;
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
 
-    _ = cpu_gpu_common.RDH_OBJECTS_DYNAMIC;
-    std.debug.print("aaaaaaaaaa: {d}\n", .{@sizeOf(cpu_gpu_common.CpuGpu_Vertex)});
+    _ = cgc.RDH_OBJECTS_DYNAMIC;
+    std.debug.print("aaaaaaaaaa: {d}\n", .{@sizeOf(cgc.Vertex)});
 
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
     defer w32.CoUninitialize();

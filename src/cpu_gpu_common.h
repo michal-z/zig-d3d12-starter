@@ -2,7 +2,7 @@
 #define RDH_VERTEX_BUFFER_STATIC 2
 #define RDH_OBJECTS_DYNAMIC 3
 
-struct CpuGpu_Vertex
+struct Vertex
 {
     float x, y;
 };
