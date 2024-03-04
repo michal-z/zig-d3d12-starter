@@ -23,6 +23,8 @@ pub const display_target_format = if (msaa_target_num_samples > 1)
 else
     swap_chain_target_view_format;
 
+pub const upload_buffer_capacity = 2 * 1024 * 1024;
+
 const max_rtv_descriptors = 1024;
 const max_shader_descriptors = 32 * 1024;
 
@@ -62,6 +64,8 @@ frame_fence: *d3d12.IFence,
 frame_fence_event: w32.HANDLE,
 frame_fence_counter: u64 = 0,
 frame_index: u32,
+
+upload_buffers: [max_buffered_frames]*d3d12.IResource,
 
 msaa_target: if (msaa_target_num_samples > 1) *d3d12.IResource else void,
 
@@ -481,7 +485,7 @@ pub fn init(window: w32.HWND) GpuContext {
 
     var swap_chain_targets: [max_buffered_frames]*d3d12.IResource = undefined;
     for (&swap_chain_targets, 0..) |*texture, i| {
-        vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(&texture.*)));
+        vhr(swap_chain.GetBuffer(@intCast(i), &d3d12.IResource.IID, @ptrCast(texture)));
     }
     {
         var desc: dxgi.SWAP_CHAIN_DESC1 = undefined;
@@ -557,6 +561,29 @@ pub fn init(window: w32.HWND) GpuContext {
     log.info("Frame fence created.", .{});
 
     //
+    // Upload buffers
+    //
+    var upload_buffers: [max_buffered_frames]*d3d12.IResource = undefined;
+    for (&upload_buffers) |*upload_buffer| {
+        vhr(device.CreateCommittedResource3(
+            &.{ .Type = .UPLOAD },
+            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            &.{
+                .Dimension = .BUFFER,
+                .Width = upload_buffer_capacity,
+                .Layout = .ROW_MAJOR,
+            },
+            .UNDEFINED,
+            null,
+            null,
+            0,
+            null,
+            &d3d12.IResource.IID,
+            @ptrCast(upload_buffer),
+        ));
+    }
+
+    //
     // MSAA render target
     //
     const msaa_target = if (msaa_target_num_samples > 1) blk: {
@@ -599,6 +626,7 @@ pub fn init(window: w32.HWND) GpuContext {
         .frame_fence = frame_fence,
         .frame_fence_event = frame_fence_event,
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
+        .upload_buffers = upload_buffers,
         .msaa_target = msaa_target,
         .debug = debug,
         .debug_device = debug_device,
@@ -610,6 +638,7 @@ pub fn init(window: w32.HWND) GpuContext {
 
 pub fn deinit(gc: *GpuContext) void {
     if (msaa_target_num_samples > 1) _ = gc.msaa_target.Release();
+    for (gc.upload_buffers) |buffer| _ = buffer.Release();
     _ = gc.command_list.Release();
     for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
     _ = gc.frame_fence.Release();
@@ -649,7 +678,6 @@ fn create_msaa_srgb_target(device: *IDevice, width: u32, height: u32) *d3d12.IRe
             .Dimension = .TEXTURE2D,
             .Width = @intCast(width),
             .Height = @intCast(height),
-            .MipLevels = 1,
             .Format = msaa_target_format,
             .SampleDesc = .{ .Count = msaa_target_num_samples },
             .Flags = .{ .ALLOW_RENDER_TARGET = true },
