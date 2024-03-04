@@ -66,6 +66,7 @@ frame_fence_counter: u64 = 0,
 frame_index: u32,
 
 upload_buffers: [max_buffered_frames]*d3d12.IResource,
+upload_buffers_slice: [max_buffered_frames][]u8,
 
 msaa_target: if (msaa_target_num_samples > 1) *d3d12.IResource else void,
 
@@ -316,7 +317,7 @@ pub fn init(window: w32.HWND) GpuContext {
         debug.EnableDebugLayer();
         log.info("D3D12 debug layer enabled.", .{});
         if (d3d12_debug_gpu) {
-            debug.SetEnableGPUBasedValidation(w32.TRUE);
+            debug.SetEnableGPUBasedValidation(.TRUE);
             log.info("D3D12 GPU-based validation enabled.", .{});
         }
         break :blk debug;
@@ -564,7 +565,8 @@ pub fn init(window: w32.HWND) GpuContext {
     // Upload buffers
     //
     var upload_buffers: [max_buffered_frames]*d3d12.IResource = undefined;
-    for (&upload_buffers) |*upload_buffer| {
+    var upload_buffers_slice: [max_buffered_frames][]u8 = undefined;
+    for (&upload_buffers, &upload_buffers_slice) |*buffer, *slice| {
         vhr(device.CreateCommittedResource3(
             &.{ .Type = .UPLOAD },
             d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
@@ -579,8 +581,12 @@ pub fn init(window: w32.HWND) GpuContext {
             0,
             null,
             &d3d12.IResource.IID,
-            @ptrCast(upload_buffer),
+            @ptrCast(buffer),
         ));
+
+        var ptr: [*]u8 = undefined;
+        vhr(buffer.*.Map(0, &.{ .Begin = 0, .End = 0 }, @ptrCast(&ptr)));
+        slice.* = ptr[0..upload_buffer_capacity];
     }
 
     //
@@ -627,6 +633,7 @@ pub fn init(window: w32.HWND) GpuContext {
         .frame_fence_event = frame_fence_event,
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
         .upload_buffers = upload_buffers,
+        .upload_buffers_slice = upload_buffers_slice,
         .msaa_target = msaa_target,
         .debug = debug,
         .debug_device = debug_device,

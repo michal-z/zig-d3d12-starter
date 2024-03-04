@@ -68,7 +68,7 @@ fn add_dxc_cmd(
     comptime profile: []const u8,
     comptime defines: []const []const u8,
 ) void {
-    const shader_ver = "6_0";
+    const shader_ver = "6_6";
 
     const cmd_step = b.addSystemCommand(&.{"bin/dxc.exe"});
     cmd_step.addArgs(&.{

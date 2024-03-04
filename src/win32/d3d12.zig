@@ -1173,7 +1173,7 @@ pub const BUFFER_SRV = extern struct {
     FirstElement: UINT64,
     NumElements: UINT,
     StructureByteStride: UINT,
-    Flags: BUFFER_SRV_FLAGS,
+    Flags: BUFFER_SRV_FLAGS = .{},
 };
 
 pub const TEX1D_SRV = extern struct {
@@ -1250,7 +1250,7 @@ pub const SRV_DIMENSION = enum(UINT) {
 };
 
 pub const SHADER_RESOURCE_VIEW_DESC = extern struct {
-    Format: dxgi.FORMAT,
+    Format: dxgi.FORMAT = .UNKNOWN,
     ViewDimension: SRV_DIMENSION,
     Shader4ComponentMapping: UINT,
     u: extern union {
@@ -7328,8 +7328,8 @@ pub const BUFFER_BARRIER = extern struct {
     AccessBefore: BARRIER_ACCESS,
     AccessAfter: BARRIER_ACCESS,
     pResource: *IResource,
-    Offset: UINT64,
-    Size: UINT64,
+    Offset: UINT64 = 0,
+    Size: UINT64 = ~@as(u64, 0),
 };
 
 pub const BARRIER_GROUP = extern struct {

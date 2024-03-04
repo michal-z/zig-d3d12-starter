@@ -21,13 +21,14 @@ const vhr = GpuContext.vhr;
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
 
-    _ = cgc.RDH_OBJECTS_DYNAMIC;
-    std.debug.print("aaaaaaaaaa: {d}\n", .{@sizeOf(cgc.Vertex)});
-
     _ = w32.CoInitializeEx(null, w32.COINIT_MULTITHREADED);
     defer w32.CoUninitialize();
 
-    var app = AppState.init();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var app = try AppState.init(allocator);
     defer app.deinit();
 
     var d2d_factory: *d2d1.IFactory = undefined;
@@ -52,14 +53,57 @@ pub fn main() !void {
     }
 }
 
+const StaticMesh = extern struct {
+    first_vertex: u32,
+    num_vertices: u32,
+
+    const test_triangle: usize = 0;
+};
+
+const max_static_vertices = 10_000;
+
 const AppState = struct {
     gpu_context: GpuContext,
+
+    static_vertex_buffer: *d3d12.IResource,
 
     pso: *d3d12.IPipelineState,
     pso_root_signature: *d3d12.IRootSignature,
 
-    fn init() AppState {
+    meshes: std.ArrayList(StaticMesh),
+
+    fn init(allocator: std.mem.Allocator) !AppState {
         var gc = GpuContext.init(create_window(1600, 1200));
+
+        var static_vertex_buffer: *d3d12.IResource = undefined;
+        vhr(gc.device.CreateCommittedResource3(
+            &.{ .Type = .DEFAULT },
+            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            &.{
+                .Dimension = .BUFFER,
+                .Width = max_static_vertices * @sizeOf(cgc.Vertex),
+                .Layout = .ROW_MAJOR,
+            },
+            .UNDEFINED,
+            null,
+            null,
+            0,
+            null,
+            &d3d12.IResource.IID,
+            @ptrCast(&static_vertex_buffer),
+        ));
+
+        gc.device.CreateShaderResourceView(
+            static_vertex_buffer,
+            &d3d12.SHADER_RESOURCE_VIEW_DESC.init_structured_buffer(
+                0,
+                max_static_vertices,
+                @sizeOf(cgc.Vertex),
+            ),
+            .{ .ptr = gc.shader_dheap_start_cpu.ptr +
+                @as(u32, @intCast(cgc.sheap_static_vertex_buffer)) *
+                gc.shader_dheap_descriptor_size },
+        );
 
         const pso_root_signature: *d3d12.IRootSignature, const pso: *d3d12.IPipelineState = blk: {
             const vs_cso = @embedFile("cso/s00.vs.cso");
@@ -97,18 +141,74 @@ const AppState = struct {
             break :blk .{ root_signature, pipeline };
         };
 
+        var meshes = std.ArrayList(StaticMesh).init(allocator);
+        try meshes.resize(1);
+
+        meshes.items[StaticMesh.test_triangle] = .{ .first_vertex = 0, .num_vertices = 3 };
+
+        @memcpy(
+            gc.upload_buffers_slice[0][0 .. 3 * @sizeOf(cgc.Vertex)],
+            std.mem.asBytes(&[_]cgc.Vertex{
+                .{ .x = -0.7, .y = -0.7 },
+                .{ .x = -0.7, .y = 0.7 },
+                .{ .x = 0.7, .y = -0.7 },
+            }),
+        );
+
+        vhr(gc.command_allocators[0].Reset());
+        vhr(gc.command_list.Reset(gc.command_allocators[0], null));
+
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .BUFFER,
+            .NumBarriers = 2,
+            .u = .{
+                .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{ .{
+                    .SyncBefore = .{},
+                    .SyncAfter = .{ .COPY = true },
+                    .AccessBefore = .{ .NO_ACCESS = true },
+                    .AccessAfter = .{ .COPY_SOURCE = true },
+                    .pResource = gc.upload_buffers[0],
+                }, .{
+                    .SyncBefore = .{},
+                    .SyncAfter = .{ .COPY = true },
+                    .AccessBefore = .{ .NO_ACCESS = true },
+                    .AccessAfter = .{ .COPY_DEST = true },
+                    .pResource = static_vertex_buffer,
+                } },
+            },
+        }});
+
+        gc.command_list.CopyBufferRegion(
+            static_vertex_buffer,
+            0,
+            gc.upload_buffers[0],
+            0,
+            3 * @sizeOf(cgc.Vertex),
+        );
+
+        vhr(gc.command_list.Close());
+
+        gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+
+        gc.finish_gpu_commands();
+
         return .{
             .gpu_context = gc,
+            .static_vertex_buffer = static_vertex_buffer,
             .pso = pso,
             .pso_root_signature = pso_root_signature,
+            .meshes = meshes,
         };
     }
 
     fn deinit(app: *AppState) void {
         app.gpu_context.finish_gpu_commands();
 
+        app.meshes.deinit();
+
         _ = app.pso.Release();
         _ = app.pso_root_signature.Release();
+        _ = app.static_vertex_buffer.Release();
 
         app.gpu_context.deinit();
 
@@ -141,7 +241,23 @@ const AppState = struct {
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);
-        gc.command_list.DrawInstanced(3, 1, 0, 0);
+
+        gc.command_list.SetGraphicsRoot32BitConstants(
+            0,
+            2,
+            &[_]u32{
+                app.meshes.items[StaticMesh.test_triangle].first_vertex,
+                0, // object_id
+            },
+            0,
+        );
+        gc.command_list.DrawInstanced(
+            app.meshes.items[StaticMesh.test_triangle].num_vertices,
+            1,
+            0,
+            0,
+        );
+
         gc.end_command_list();
 
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
