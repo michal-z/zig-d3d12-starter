@@ -138,10 +138,10 @@ const AppState = struct {
     }
 
     fn deinit(app: *AppState) void {
-        app.gpu_context.finish_gpu_commands();
-
         app.meshes.deinit();
         app.objects.deinit();
+
+        app.gpu_context.finish_gpu_commands();
 
         _ = app.pso.Release();
         _ = app.pso_root_signature.Release();
@@ -177,6 +177,7 @@ const AppState = struct {
             null,
         );
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
+
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);
@@ -232,6 +233,7 @@ fn define_and_upload_objects(
         &d3d12.IResource.IID,
         @ptrCast(&object_buffer),
     ));
+
     gc.device.CreateShaderResourceView(
         object_buffer,
         &d3d12.SHADER_RESOURCE_VIEW_DESC.init_structured_buffer(
@@ -316,6 +318,7 @@ fn define_and_upload_meshes(
         &d3d12.IResource.IID,
         @ptrCast(&vertex_buffer),
     ));
+
     gc.device.CreateShaderResourceView(
         vertex_buffer,
         &d3d12.SHADER_RESOURCE_VIEW_DESC.init_structured_buffer(
