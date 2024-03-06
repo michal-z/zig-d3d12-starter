@@ -69,7 +69,7 @@ const AppState = struct {
     object_buffer: *d3d12.IResource,
 
     pso: *d3d12.IPipelineState,
-    pso_root_signature: *d3d12.IRootSignature,
+    pso_rs: *d3d12.IRootSignature,
 
     meshes: std.ArrayList(Mesh),
     objects: std.ArrayList(cgc.Object),
@@ -77,50 +77,13 @@ const AppState = struct {
     fn init(allocator: std.mem.Allocator) !AppState {
         var gc = GpuContext.init(create_window(1600, 1200));
 
-        const pso_root_signature: *d3d12.IRootSignature, const pso: *d3d12.IPipelineState = blk: {
-            const vs_cso = @embedFile("cso/s00.vs.cso");
-            const ps_cso = @embedFile("cso/s00.ps.cso");
-
-            var root_signature: *d3d12.IRootSignature = undefined;
-            vhr(gc.device.CreateRootSignature(
-                0,
-                vs_cso,
-                vs_cso.len,
-                &d3d12.IRootSignature.IID,
-                @ptrCast(&root_signature),
-            ));
-
-            var pipeline: *d3d12.IPipelineState = undefined;
-            vhr(gc.device.CreateGraphicsPipelineState(
-                &.{
-                    .DepthStencilState = .{ .DepthEnable = .FALSE },
-                    .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
-                    .NumRenderTargets = 1,
-                    .BlendState = .{
-                        .RenderTarget = .{.{
-                            .RenderTargetWriteMask = 0x0f,
-                        }} ++ .{.{}} ** 7,
-                    },
-                    .PrimitiveTopologyType = .TRIANGLE,
-                    .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
-                    .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
-                    .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
-                },
-                &d3d12.IPipelineState.IID,
-                @ptrCast(&pipeline),
-            ));
-
-            break :blk .{ root_signature, pipeline };
-        };
+        const pso, const pso_rs = create_pso(gc.device);
 
         vhr(gc.command_allocators[0].Reset());
         vhr(gc.command_list.Reset(gc.command_allocators[0], null));
 
-        const meshes, const vertex_buffer =
-            try define_and_upload_meshes(allocator, &gc);
-
-        const objects, const object_buffer =
-            try define_and_upload_objects(allocator, &gc);
+        const meshes, const vertex_buffer = try define_and_upload_meshes(allocator, &gc);
+        const objects, const object_buffer = try define_and_upload_objects(allocator, &gc);
 
         vhr(gc.command_list.Close());
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
@@ -131,7 +94,7 @@ const AppState = struct {
             .vertex_buffer = vertex_buffer,
             .object_buffer = object_buffer,
             .pso = pso,
-            .pso_root_signature = pso_root_signature,
+            .pso_rs = pso_rs,
             .meshes = meshes,
             .objects = objects,
         };
@@ -144,7 +107,7 @@ const AppState = struct {
         app.gpu_context.finish_gpu_commands();
 
         _ = app.pso.Release();
-        _ = app.pso_root_signature.Release();
+        _ = app.pso_rs.Release();
         _ = app.vertex_buffer.Release();
         _ = app.object_buffer.Release();
 
@@ -180,7 +143,7 @@ const AppState = struct {
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
-        gc.command_list.SetGraphicsRootSignature(app.pso_root_signature);
+        gc.command_list.SetGraphicsRootSignature(app.pso_rs);
 
         for (app.objects.items, 0..) |object, object_id| {
             gc.command_list.SetGraphicsRoot32BitConstants(
@@ -206,6 +169,42 @@ const AppState = struct {
         gc.present_frame();
     }
 };
+
+fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d12.IRootSignature } {
+    const vs_cso = @embedFile("cso/s00.vs.cso");
+    const ps_cso = @embedFile("cso/s00.ps.cso");
+
+    var root_signature: *d3d12.IRootSignature = undefined;
+    vhr(device.CreateRootSignature(
+        0,
+        vs_cso,
+        vs_cso.len,
+        &d3d12.IRootSignature.IID,
+        @ptrCast(&root_signature),
+    ));
+
+    var pipeline: *d3d12.IPipelineState = undefined;
+    vhr(device.CreateGraphicsPipelineState(
+        &.{
+            .DepthStencilState = .{ .DepthEnable = .FALSE },
+            .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
+            .NumRenderTargets = 1,
+            .BlendState = .{
+                .RenderTarget = .{.{
+                    .RenderTargetWriteMask = 0x0f,
+                }} ++ .{.{}} ** 7,
+            },
+            .PrimitiveTopologyType = .TRIANGLE,
+            .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
+            .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
+            .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
+        },
+        &d3d12.IPipelineState.IID,
+        @ptrCast(&pipeline),
+    ));
+
+    return .{ pipeline, root_signature };
+}
 
 fn define_and_upload_objects(
     allocator: std.mem.Allocator,
@@ -454,4 +453,25 @@ fn update_frame_stats(window: w32.HWND, name: [:0]const u8) struct { f64, f32 } 
     state.frame_count += 1;
 
     return .{ time, delta_time };
+}
+
+fn orthographic_off_center(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) [16]f32 {
+    std.debug.assert(!std.math.approxEqAbs(f32, f, n, 0.001));
+
+    const d = 1 / (f - n);
+    return .{
+        2 / (r - l),        0.0,                0.0,    0.0,
+        0.0,                2 / (t - b),        0.0,    0.0,
+        0.0,                0.0,                d,      0.0,
+        -(r + l) / (r - l), -(t + b) / (t - b), -d * n, 1.0,
+    };
+}
+
+fn transpose(m: [16]f32) [16]f32 {
+    return .{
+        m[0], m[4], m[8],  m[12],
+        m[1], m[5], m[9],  m[13],
+        m[2], m[6], m[10], m[14],
+        m[3], m[7], m[11], m[15],
+    };
 }
