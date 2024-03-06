@@ -23,7 +23,7 @@ pub const display_target_format = if (msaa_target_num_samples > 1)
 else
     swap_chain_target_view_format;
 
-pub const upload_buffer_capacity = 2 * 1024 * 1024;
+pub const upload_heap_capacity = 2 * 1024 * 1024;
 
 const max_rtv_descriptors = 1024;
 const max_shader_descriptors = 32 * 1024;
@@ -65,8 +65,7 @@ frame_fence_event: w32.HANDLE,
 frame_fence_counter: u64 = 0,
 frame_index: u32,
 
-upload_buffers: [max_buffered_frames]*d3d12.IResource,
-upload_buffers_slice: [max_buffered_frames][]u8,
+upload_heaps: [max_buffered_frames]UploadMemoryHeap,
 
 msaa_target: if (msaa_target_num_samples > 1) *d3d12.IResource else void,
 
@@ -81,6 +80,40 @@ pub fn display_target_descriptor(gc: GpuContext) d3d12.CPU_DESCRIPTOR_HANDLE {
         .{ .ptr = gc.rtv_dheap_start.ptr + max_buffered_frames * gc.rtv_dheap_descriptor_size }
     else
         .{ .ptr = gc.rtv_dheap_start.ptr + gc.frame_index * gc.rtv_dheap_descriptor_size };
+}
+
+pub fn allocate_upload_memory(gc: *GpuContext, comptime T: type, num_elements: u32) []T {
+    std.debug.assert(num_elements > 0);
+
+    const size = num_elements * @sizeOf(T);
+    var slice = gc.upload_heaps[gc.frame_index].allocate(size);
+    if (slice == null) {
+        log.info("Upload memory exhausted - waiting for the GPU... (command list state is lost!).", .{});
+
+        gc.finish_gpu_commands();
+
+        slice = gc.upload_heaps[gc.frame_index].allocate(size);
+    }
+    return std.mem.bytesAsSlice(T, @as([]align(@alignOf(T)) u8, @alignCast(slice.?)));
+}
+
+pub fn allocate_upload_buffer_region(
+    gc: *GpuContext,
+    comptime T: type,
+    num_elements: u32,
+) struct { []T, *d3d12.IResource, u64 } {
+    std.debug.assert(num_elements > 0);
+
+    const slice = gc.allocate_upload_memory(T, num_elements);
+
+    const size = num_elements * @sizeOf(T);
+    const aligned_size = (size + (UploadMemoryHeap.alloc_alignment - 1)) & ~(UploadMemoryHeap.alloc_alignment - 1);
+
+    return .{
+        slice,
+        gc.upload_heaps[gc.frame_index].buffer,
+        gc.upload_heaps[gc.frame_index].size - aligned_size,
+    };
 }
 
 pub fn begin_command_list(gc: *GpuContext) void {
@@ -219,6 +252,8 @@ pub fn present_frame(gc: *GpuContext) void {
     }
 
     gc.frame_index = gc.swap_chain.GetCurrentBackBufferIndex();
+
+    gc.upload_heaps[gc.frame_index].size = 0;
 }
 
 pub fn finish_gpu_commands(gc: *GpuContext) void {
@@ -228,6 +263,8 @@ pub fn finish_gpu_commands(gc: *GpuContext) void {
     vhr(gc.frame_fence.SetEventOnCompletion(gc.frame_fence_counter, gc.frame_fence_event));
 
     _ = w32.WaitForSingleObject(gc.frame_fence_event, w32.INFINITE);
+
+    gc.upload_heaps[gc.frame_index].size = 0;
 }
 
 pub fn handle_window_resize(gc: *GpuContext) enum { minimized, resized, unchanged } {
@@ -562,31 +599,11 @@ pub fn init(window: w32.HWND) GpuContext {
     log.info("Frame fence created.", .{});
 
     //
-    // Upload buffers
+    // Upload heaps
     //
-    var upload_buffers: [max_buffered_frames]*d3d12.IResource = undefined;
-    var upload_buffers_slice: [max_buffered_frames][]u8 = undefined;
-    for (&upload_buffers, &upload_buffers_slice) |*buffer, *slice| {
-        vhr(device.CreateCommittedResource3(
-            &.{ .Type = .UPLOAD },
-            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
-            &.{
-                .Dimension = .BUFFER,
-                .Width = upload_buffer_capacity,
-                .Layout = .ROW_MAJOR,
-            },
-            .UNDEFINED,
-            null,
-            null,
-            0,
-            null,
-            &d3d12.IResource.IID,
-            @ptrCast(buffer),
-        ));
-
-        var ptr: [*]u8 = undefined;
-        vhr(buffer.*.Map(0, &.{ .Begin = 0, .End = 0 }, @ptrCast(&ptr)));
-        slice.* = ptr[0..upload_buffer_capacity];
+    var upload_heaps: [max_buffered_frames]UploadMemoryHeap = undefined;
+    for (&upload_heaps) |*heap| {
+        heap.* = UploadMemoryHeap.init(device, upload_heap_capacity);
     }
 
     //
@@ -632,8 +649,7 @@ pub fn init(window: w32.HWND) GpuContext {
         .frame_fence = frame_fence,
         .frame_fence_event = frame_fence_event,
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
-        .upload_buffers = upload_buffers,
-        .upload_buffers_slice = upload_buffers_slice,
+        .upload_heaps = upload_heaps,
         .msaa_target = msaa_target,
         .debug = debug,
         .debug_device = debug_device,
@@ -645,7 +661,7 @@ pub fn init(window: w32.HWND) GpuContext {
 
 pub fn deinit(gc: *GpuContext) void {
     if (msaa_target_num_samples > 1) _ = gc.msaa_target.Release();
-    for (gc.upload_buffers) |buffer| _ = buffer.Release();
+    for (&gc.upload_heaps) |*heap| heap.deinit();
     _ = gc.command_list.Release();
     for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
     _ = gc.frame_fence.Release();
@@ -699,3 +715,62 @@ fn create_msaa_srgb_target(device: *IDevice, width: u32, height: u32) *d3d12.IRe
     ));
     return texture;
 }
+
+const UploadMemoryHeap = struct {
+    buffer: *d3d12.IResource,
+    slice: []u8,
+    size: u32,
+    capacity: u32,
+
+    const alloc_alignment: u32 = 512;
+
+    fn init(device: *IDevice, capacity: u32) UploadMemoryHeap {
+        std.debug.assert(capacity > 0);
+
+        var buffer: *d3d12.IResource = undefined;
+        vhr(device.CreateCommittedResource3(
+            &.{ .Type = .UPLOAD },
+            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            &.{
+                .Dimension = .BUFFER,
+                .Width = capacity,
+                .Layout = .ROW_MAJOR,
+            },
+            .UNDEFINED,
+            null,
+            null,
+            0,
+            null,
+            &d3d12.IResource.IID,
+            @ptrCast(&buffer),
+        ));
+
+        var ptr: [*]u8 = undefined;
+        vhr(buffer.Map(0, &.{ .Begin = 0, .End = 0 }, @ptrCast(&ptr)));
+
+        return .{
+            .buffer = buffer,
+            .slice = ptr[0..capacity],
+            .size = 0,
+            .capacity = capacity,
+        };
+    }
+
+    fn deinit(self: *UploadMemoryHeap) void {
+        _ = self.buffer.Release();
+        self.* = undefined;
+    }
+
+    fn allocate(self: *UploadMemoryHeap, size: u32) ?[]u8 {
+        std.debug.assert(size > 0);
+
+        const aligned_size = (size + (alloc_alignment - 1)) & ~(alloc_alignment - 1);
+        if ((self.size + aligned_size) >= self.capacity) {
+            return null;
+        }
+
+        const slice = self.slice[self.size..][0..size];
+        self.size += aligned_size;
+        return slice;
+    }
+};
