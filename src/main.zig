@@ -10,7 +10,7 @@ pub const std_options = .{
     .log_level = .info,
 };
 
-export const D3D12SDKVersion: u32 = 611;
+export const D3D12SDKVersion: u32 = 613;
 export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
 
 const window_name = "zig-d3d12-starter";
