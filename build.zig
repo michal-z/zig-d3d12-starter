@@ -78,6 +78,7 @@ fn add_dxc_cmd(
         "/HV 2021",
         "/E " ++ entry_point,
         "/T " ++ profile ++ "_" ++ shader_ver,
+        "/DHLSL",
     });
     if (optimize == .Debug)
         cmd_step.addArgs(&.{ "/Od", "/Zi", "/Qembed_debug" })

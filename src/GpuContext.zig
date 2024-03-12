@@ -156,6 +156,20 @@ pub fn begin_command_list(gc: *GpuContext) void {
             },
         }});
     }
+
+    gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+        .Type = .BUFFER,
+        .NumBarriers = 1,
+        .u = .{
+            .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{.{
+                .SyncBefore = .{},
+                .SyncAfter = .{ .COPY = true },
+                .AccessBefore = .{ .NO_ACCESS = true },
+                .AccessAfter = .{ .COPY_SOURCE = true },
+                .pResource = gc.upload_heaps[gc.frame_index].buffer,
+            }},
+        },
+    }});
 }
 
 pub fn end_command_list(gc: *GpuContext) void {

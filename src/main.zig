@@ -31,15 +31,6 @@ pub fn main() !void {
     var app = try AppState.init(allocator);
     defer app.deinit();
 
-    var d2d_factory: *d2d1.IFactory = undefined;
-    vhr(d2d1.CreateFactory(
-        .SINGLE_THREADED,
-        &d2d1.IFactory.IID,
-        if (GpuContext.d3d12_debug) &.{ .debugLevel = .INFORMATION } else &.{ .debugLevel = .NONE },
-        @ptrCast(&d2d_factory),
-    ));
-    defer _ = d2d_factory.Release();
-
     while (true) {
         var message = std.mem.zeroes(w32.MSG);
         if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == .TRUE) {
@@ -57,16 +48,22 @@ const Mesh = struct {
     first_vertex: u32,
     num_vertices: u32,
 
-    const test_triangle: usize = 0;
-    const test_quad: usize = 1;
-    const num_mesh_types = 2;
+    const test_mesh0: usize = 0;
+    const test_mesh1: usize = 1;
+    const test_mesh2: usize = 2;
+    const test_mesh3: usize = 3;
+    const circle_50: usize = 4;
+    const num_mesh_types = 5;
 };
+
+const screen_size = 800.0;
 
 const AppState = struct {
     gpu_context: GpuContext,
 
     vertex_buffer: *d3d12.IResource,
     object_buffer: *d3d12.IResource,
+    frame_state_buffer: *d3d12.IResource,
 
     pso: *d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
@@ -74,15 +71,52 @@ const AppState = struct {
     meshes: std.ArrayList(Mesh),
     objects: std.ArrayList(cgc.Object),
 
+    d2d_factory: *d2d1.IFactory,
+
     fn init(allocator: std.mem.Allocator) !AppState {
         var gc = GpuContext.init(create_window(1600, 1200));
 
         const pso, const pso_rs = create_pso(gc.device);
 
+        var frame_state_buffer: *d3d12.IResource = undefined;
+        vhr(gc.device.CreateCommittedResource3(
+            &.{ .Type = .DEFAULT },
+            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            &.{
+                .Dimension = .BUFFER,
+                .Width = @sizeOf(cgc.FrameState),
+                .Layout = .ROW_MAJOR,
+            },
+            .UNDEFINED,
+            null,
+            null,
+            0,
+            null,
+            &d3d12.IResource.IID,
+            @ptrCast(&frame_state_buffer),
+        ));
+        gc.device.CreateConstantBufferView(
+            &.{
+                .BufferLocation = frame_state_buffer.GetGPUVirtualAddress(),
+                .SizeInBytes = @sizeOf(cgc.FrameState),
+            },
+            .{ .ptr = gc.shader_dheap_start_cpu.ptr +
+                @as(u32, @intCast(cgc.rdh_frame_state_buffer)) *
+                gc.shader_dheap_descriptor_size },
+        );
+
+        var d2d_factory: *d2d1.IFactory = undefined;
+        vhr(d2d1.CreateFactory(
+            .SINGLE_THREADED,
+            &d2d1.IFactory.IID,
+            if (GpuContext.d3d12_debug) &.{ .debugLevel = .INFORMATION } else &.{ .debugLevel = .NONE },
+            @ptrCast(&d2d_factory),
+        ));
+
         vhr(gc.command_allocators[0].Reset());
         vhr(gc.command_list.Reset(gc.command_allocators[0], null));
 
-        const meshes, const vertex_buffer = try define_and_upload_meshes(allocator, &gc);
+        const meshes, const vertex_buffer = try define_and_upload_meshes(allocator, &gc, d2d_factory);
         const objects, const object_buffer = try define_and_upload_objects(allocator, &gc);
 
         vhr(gc.command_list.Close());
@@ -93,10 +127,12 @@ const AppState = struct {
             .gpu_context = gc,
             .vertex_buffer = vertex_buffer,
             .object_buffer = object_buffer,
+            .frame_state_buffer = frame_state_buffer,
             .pso = pso,
             .pso_rs = pso_rs,
             .meshes = meshes,
             .objects = objects,
+            .d2d_factory = d2d_factory,
         };
     }
 
@@ -104,12 +140,15 @@ const AppState = struct {
         app.meshes.deinit();
         app.objects.deinit();
 
+        _ = app.d2d_factory.Release();
+
         app.gpu_context.finish_gpu_commands();
 
         _ = app.pso.Release();
         _ = app.pso_rs.Release();
         _ = app.vertex_buffer.Release();
         _ = app.object_buffer.Release();
+        _ = app.frame_state_buffer.Release();
 
         app.gpu_context.deinit();
 
@@ -132,6 +171,83 @@ const AppState = struct {
         const gc = &app.gpu_context;
 
         gc.begin_command_list();
+
+        {
+            const proj = if (true) blk: { //gc.window_width > gc.window_height) blk: {
+                const aspect: f32 = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
+
+                break :blk orthographic_off_center(
+                    0.0,
+                    screen_size * aspect,
+                    0.0,
+                    screen_size,
+                    0.0,
+                    1.0,
+                );
+                //break :blk orthographic_off_center(
+                //    -screen_size * 0.5 * aspect,
+                //    screen_size * 0.5 * aspect,
+                //    screen_size * 0.5,
+                //    -screen_size * 0.5,
+                //    0.0,
+                //    1.0,
+                //);
+            } else blk: {
+                const aspect: f32 = @as(f32, @floatFromInt(gc.window_height)) / @as(f32, @floatFromInt(gc.window_width));
+
+                break :blk orthographic_off_center(
+                    -screen_size * 0.5,
+                    screen_size * 0.5,
+                    screen_size * 0.5 * aspect,
+                    -screen_size * 0.5 * aspect,
+                    0.0,
+                    1.0,
+                );
+            };
+
+            const frame_state, const buffer, const offset =
+                gc.allocate_upload_buffer_region(cgc.FrameState, 1);
+
+            frame_state[0] = .{
+                .proj = transpose(proj),
+            };
+
+            gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+                .Type = .BUFFER,
+                .NumBarriers = 1,
+                .u = .{
+                    .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{.{
+                        .SyncBefore = .{},
+                        .SyncAfter = .{ .COPY = true },
+                        .AccessBefore = .{ .NO_ACCESS = true },
+                        .AccessAfter = .{ .COPY_DEST = true },
+                        .pResource = app.frame_state_buffer,
+                    }},
+                },
+            }});
+
+            gc.command_list.CopyBufferRegion(
+                app.frame_state_buffer,
+                0,
+                buffer,
+                offset,
+                @sizeOf(cgc.FrameState),
+            );
+
+            gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+                .Type = .BUFFER,
+                .NumBarriers = 1,
+                .u = .{
+                    .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{.{
+                        .SyncBefore = .{ .COPY = true },
+                        .SyncAfter = .{ .DRAW = true },
+                        .AccessBefore = .{ .COPY_DEST = true },
+                        .AccessAfter = .{ .CONSTANT_BUFFER = true },
+                        .pResource = app.frame_state_buffer,
+                    }},
+                },
+            }});
+        }
 
         gc.command_list.OMSetRenderTargets(
             1,
@@ -194,6 +310,10 @@ fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d1
                     .RenderTargetWriteMask = 0x0f,
                 }} ++ .{.{}} ** 7,
             },
+            .RasterizerState = .{
+                //.FillMode = .WIREFRAME,
+                .CullMode = .NONE,
+            },
             .PrimitiveTopologyType = .TRIANGLE,
             .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
             .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
@@ -212,8 +332,21 @@ fn define_and_upload_objects(
 ) !struct { std.ArrayList(cgc.Object), *d3d12.IResource } {
     var objects = std.ArrayList(cgc.Object).init(allocator);
 
-    try objects.append(.{ .color = 0xaa_ff_00_00, .mesh_index = Mesh.test_triangle });
-    try objects.append(.{ .color = 0xaa_00_ff_00, .mesh_index = Mesh.test_quad });
+    try objects.append(.{ .color = 0xaa_ff_00_00, .mesh_index = Mesh.test_mesh0 });
+    try objects.append(.{ .color = 0xaa_00_ff_00, .mesh_index = Mesh.test_mesh1 });
+    try objects.append(.{
+        .color = 0xaa_ff_ff_00,
+        .mesh_index = Mesh.circle_50,
+        .x = 300.0,
+        .y = 500.0,
+    });
+    try objects.append(.{
+        .color = 0xaa_ff_00_ff,
+        .mesh_index = Mesh.circle_50,
+        .x = 500.0,
+        .y = 300.0,
+    });
+    try objects.append(.{ .color = 0xaa_00_ff_00, .mesh_index = Mesh.test_mesh2 });
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
@@ -264,6 +397,7 @@ fn define_and_upload_objects(
 fn define_and_upload_meshes(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
+    d2d_factory: *d2d1.IFactory,
 ) !struct { std.ArrayList(Mesh), *d3d12.IResource } {
     var meshes = std.ArrayList(Mesh).init(allocator);
     try meshes.resize(Mesh.num_mesh_types);
@@ -271,14 +405,16 @@ fn define_and_upload_meshes(
     var vertices = std.ArrayList(cgc.Vertex).init(allocator);
     defer vertices.deinit();
 
+    var tessellation_sink: TessellationSink = .{ .vertices = &vertices };
+
     {
         const first_vertex = vertices.items.len;
 
-        try vertices.append(.{ .x = -0.3, .y = -0.3 });
-        try vertices.append(.{ .x = -0.3, .y = 0.3 });
-        try vertices.append(.{ .x = 0.3, .y = -0.3 });
+        try vertices.append(.{ .x = 0.0, .y = 0.0 });
+        try vertices.append(.{ .x = 100.0, .y = 0.0 });
+        try vertices.append(.{ .x = 0.0, .y = 100.0 });
 
-        meshes.items[Mesh.test_triangle] = .{
+        meshes.items[Mesh.test_mesh0] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
         };
@@ -287,14 +423,75 @@ fn define_and_upload_meshes(
     {
         const first_vertex = vertices.items.len;
 
-        try vertices.append(.{ .x = -0.3 + 0.5, .y = -0.3 + 0.5 });
-        try vertices.append(.{ .x = -0.3 + 0.5, .y = 0.3 + 0.5 });
-        try vertices.append(.{ .x = 0.3 + 0.5, .y = -0.3 + 0.5 });
-        try vertices.append(.{ .x = 0.3 + 0.5, .y = -0.3 + 0.5 });
-        try vertices.append(.{ .x = -0.3 + 0.5, .y = 0.3 + 0.5 });
-        try vertices.append(.{ .x = 0.3 + 0.5, .y = 0.3 + 0.5 });
+        try vertices.append(.{ .x = screen_size, .y = screen_size });
+        try vertices.append(.{ .x = screen_size - 100.0, .y = screen_size });
+        try vertices.append(.{ .x = screen_size, .y = screen_size - 100.0 });
 
-        meshes.items[Mesh.test_quad] = .{
+        meshes.items[Mesh.test_mesh1] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+        };
+    }
+
+    {
+        var geo: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 50.0,
+                .radiusY = 50.0,
+            },
+            @ptrCast(&geo),
+        ));
+        defer _ = geo.Release();
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(
+            null,
+            d2d1.DEFAULT_FLATTENING_TOLERANCE,
+            @ptrCast(&tessellation_sink),
+        ));
+
+        meshes.items[Mesh.circle_50] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+        };
+    }
+
+    {
+        var geo: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+        defer _ = geo.Release();
+
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo.Open(@ptrCast(&geo_sink)));
+
+        geo_sink.BeginFigure(.{ .x = 100.0, .y = 100.0 }, .FILLED);
+        geo_sink.AddLine(.{ .x = 200.0, .y = 400.0 });
+        geo_sink.AddLine(.{ .x = 300.0, .y = 500.0 });
+        geo_sink.EndFigure(.OPEN);
+
+        vhr(geo_sink.Close());
+        _ = geo_sink.Release();
+
+        //var geo1: *d2d1.IPathGeometry = undefined;
+        //vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo1)));
+        //defer _ = geo1.Release();
+
+        //vhr(geo1.Open(@ptrCast(&geo_sink)));
+
+        //geo.Widen(5.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, geo_sink);
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(
+            null,
+            d2d1.DEFAULT_FLATTENING_TOLERANCE,
+            @ptrCast(&tessellation_sink),
+        ));
+
+        meshes.items[Mesh.test_mesh2] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
         };
@@ -454,6 +651,54 @@ fn update_frame_stats(window: w32.HWND, name: [:0]const u8) struct { f64, f32 } 
 
     return .{ time, delta_time };
 }
+
+const TessellationSink = extern struct {
+    __v: *const d2d1.ITessellationSink.VTable = &.{
+        .base = .{
+            .QueryInterface = _query_interface,
+            .AddRef = _add_ref,
+            .Release = _release,
+        },
+        .AddTriangles = _add_triangles,
+        .Close = _close,
+    },
+
+    vertices: *std.ArrayList(cgc.Vertex),
+
+    pub const QueryInterface = w32.IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = w32.IUnknown.Methods(@This()).AddRef;
+    pub const Release = w32.IUnknown.Methods(@This()).Release;
+
+    pub const AddTriangles = d2d1.ITessellationSink(@This()).AddTriangles;
+    pub const Close = d2d1.ITessellationSink(@This()).Close;
+
+    fn _query_interface(_: *w32.IUnknown, _: *const w32.GUID, _: ?*?*anyopaque) callconv(w32.WINAPI) w32.HRESULT {
+        return w32.S_OK;
+    }
+    fn _add_ref(_: *w32.IUnknown) callconv(w32.WINAPI) w32.ULONG {
+        return 0;
+    }
+    fn _release(_: *w32.IUnknown) callconv(w32.WINAPI) w32.ULONG {
+        return 0;
+    }
+
+    fn _add_triangles(
+        this: *d2d1.ITessellationSink,
+        triangles: [*]const d2d1.TRIANGLE,
+        num_triangles: w32.UINT32,
+    ) callconv(w32.WINAPI) void {
+        const self: *TessellationSink = @ptrCast(this);
+
+        for (triangles[0..@intCast(num_triangles)]) |tri| {
+            self.vertices.append(.{ .x = tri.point1.x, .y = tri.point1.y }) catch unreachable;
+            self.vertices.append(.{ .x = tri.point2.x, .y = tri.point2.y }) catch unreachable;
+            self.vertices.append(.{ .x = tri.point3.x, .y = tri.point3.y }) catch unreachable;
+        }
+    }
+    fn _close(_: *d2d1.ITessellationSink) callconv(w32.WINAPI) w32.HRESULT {
+        return w32.S_OK;
+    }
+};
 
 fn orthographic_off_center(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) [16]f32 {
     std.debug.assert(!std.math.approxEqAbs(f32, f, n, 0.001));

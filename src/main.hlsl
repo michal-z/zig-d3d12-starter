@@ -28,13 +28,15 @@ void s00_vertex(
     StructuredBuffer<Vertex> vertex_buffer = ResourceDescriptorHeap[rdh_vertex_buffer];
     StructuredBuffer<Object> object_buffer = ResourceDescriptorHeap[rdh_object_buffer];
 
+    ConstantBuffer<FrameState> frame_state = ResourceDescriptorHeap[rdh_frame_state_buffer];
+
     const uint first_vertex = root_const.first_vertex;
     const uint object_id = root_const.object_id;
 
     const Vertex vertex = vertex_buffer[vertex_id + first_vertex];
     const Object object = object_buffer[object_id];
 
-    out_position = float4(vertex.x, vertex.y, 0.0, 1.0);
+    out_position = mul(float4(vertex.x + object.x, vertex.y + object.y, 0.0, 1.0), frame_state.proj);
     out_color = unpack_color(object.color);
 }
 

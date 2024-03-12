@@ -1,6 +1,11 @@
 // Indices to `ResourceDescriptorHeap` array
 #define rdh_vertex_buffer 1
 #define rdh_object_buffer 2
+#define rdh_frame_state_buffer 3
+
+#ifndef HLSL
+typedef float float4x4[16];
+#endif
 
 struct Vertex {
     float x, y;
@@ -9,5 +14,11 @@ struct Vertex {
 struct Object {
     unsigned int color;
     unsigned int mesh_index;
-    float _padding[2];
+    float x, y;
+    float _padding[4];
+};
+
+struct FrameState {
+    float4x4 proj;
+    float _padding[112];
 };

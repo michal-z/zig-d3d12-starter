@@ -142,6 +142,9 @@ pub const ITessellationSink = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const AddTriangles = ITessellationSink(@This()).AddTriangles;
+    pub const Close = ITessellationSink(@This()).Close;
+
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn AddTriangles(self: *T, triangles: [*]const TRIANGLE, num_triangles: UINT32) void {
@@ -174,6 +177,8 @@ pub const IResource = extern struct {
         GetFactory: *anyopaque,
     };
 };
+
+pub const DEFAULT_FLATTENING_TOLERANCE = 0.25;
 
 pub const IGeometry = extern struct {
     __v: *const VTable,
