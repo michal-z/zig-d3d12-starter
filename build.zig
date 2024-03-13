@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
 
     const d3d12_debug = b.option(bool, "d3d12-debug", "Enable D3D12 debug layer") orelse false;
     const d3d12_debug_gpu = b.option(bool, "d3d12-debug-gpu", "Enable D3D12 GPU-based validation") orelse false;
-    const d3d12_vsync = b.option(bool, "d3d12-vsync", "Enable VSync") orelse false;
+    const d3d12_vsync = b.option(bool, "d3d12-vsync", "Enable VSync") orelse true;
     const d3d12_msaa = b.option(u32, "d3d12-msaa", "MSAA samples (0 and 1 disables MSAA)") orelse 8;
 
     const build_options = b.addOptions();

@@ -7,6 +7,7 @@ const WINAPI = w32.WINAPI;
 const UINT32 = w32.UINT32;
 const UINT = w32.UINT;
 const GUID = w32.GUID;
+const BOOL = w32.BOOL;
 
 pub const RECT_F = extern struct {
     left: FLOAT,
@@ -22,6 +23,16 @@ pub const VECTOR_2F = extern struct {
 
 pub const MATRIX_3X2_F = extern struct {
     m: [3][2]FLOAT,
+
+    pub fn translation(x: f32, y: f32) MATRIX_3X2_F {
+        return .{
+            .m = [_][2]FLOAT{
+                .{ 1.0, 0.0 },
+                .{ 0.0, 1.0 },
+                .{ x, y },
+            },
+        };
+    }
 };
 
 pub const POINT_2F = extern struct {
@@ -189,6 +200,7 @@ pub const IGeometry = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const FillContainsPoint = IGeometry.Methods(@This()).FillContainsPoint;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -205,6 +217,16 @@ pub const IGeometry = extern struct {
                 return @as(*const IGeometry.VTable, @ptrCast(self.__v))
                     .Tessellate(@ptrCast(self), world_transform, flattening_tolerance, tessellation_sink);
             }
+            pub inline fn FillContainsPoint(
+                self: *T,
+                point: POINT_2F,
+                world_transform: ?*const MATRIX_3X2_F,
+                flattening_tolerance: FLOAT,
+                contains: *BOOL,
+            ) HRESULT {
+                return @as(*const IGeometry.VTable, @ptrCast(self.__v))
+                    .FillContainsPoint(@ptrCast(self), point, world_transform, flattening_tolerance, contains);
+            }
         };
     }
 
@@ -213,7 +235,13 @@ pub const IGeometry = extern struct {
         GetBounds: *const fn (*IGeometry, ?*const MATRIX_3X2_F, *RECT_F) callconv(WINAPI) HRESULT,
         GetWidenedBounds: *anyopaque,
         StrokeContainsPoint: *anyopaque,
-        FillContainsPoint: *anyopaque,
+        FillContainsPoint: *const fn (
+            *IGeometry,
+            POINT_2F,
+            ?*const MATRIX_3X2_F,
+            FLOAT,
+            *BOOL,
+        ) callconv(WINAPI) HRESULT,
         CompareWithGeometry: *anyopaque,
         Simplify: *anyopaque,
         Tessellate: *const fn (

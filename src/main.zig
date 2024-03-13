@@ -48,15 +48,19 @@ const Mesh = struct {
     first_vertex: u32,
     num_vertices: u32,
 
-    const test_mesh0: usize = 0;
-    const test_mesh1: usize = 1;
-    const test_mesh2: usize = 2;
-    const test_mesh3: usize = 3;
-    const circle_50: usize = 4;
-    const num_mesh_types = 5;
+    geometry: *d2d1.IGeometry,
+
+    const player: usize = 0;
+    const circle_50: usize = 1;
+    const path0: usize = 2;
+    const num_mesh_types = 3;
 };
 
 const screen_size = 800.0;
+
+fn is_key_down(vkey: c_int) bool {
+    return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
+}
 
 const AppState = struct {
     gpu_context: GpuContext,
@@ -137,6 +141,7 @@ const AppState = struct {
     }
 
     fn deinit(app: *AppState) void {
+        for (app.meshes.items) |mesh| _ = mesh.geometry.Release();
         app.meshes.deinit();
         app.objects.deinit();
 
@@ -162,7 +167,38 @@ const AppState = struct {
             return false;
         }
 
-        _ = update_frame_stats(app.gpu_context.window, window_name);
+        _, const delta_time = update_frame_stats(app.gpu_context.window, window_name);
+
+        var player = &app.objects.items[0];
+        const player_speed = 100.0;
+
+        if (is_key_down(w32.VK_RIGHT)) {
+            player.x += player_speed * delta_time;
+        } else if (is_key_down(w32.VK_LEFT)) {
+            player.x -= player_speed * delta_time;
+        }
+
+        if (is_key_down(w32.VK_DOWN)) {
+            player.y += player_speed * delta_time;
+        } else if (is_key_down(w32.VK_UP)) {
+            player.y -= player_speed * delta_time;
+        }
+
+        for (app.objects.items[1..]) |*object| {
+            var contains: w32.BOOL = .FALSE;
+            vhr(app.meshes.items[object.mesh_index].geometry.FillContainsPoint(
+                .{ .x = player.x, .y = player.y },
+                &d2d1.MATRIX_3X2_F.translation(object.x, object.y),
+                d2d1.DEFAULT_FLATTENING_TOLERANCE,
+                &contains,
+            ));
+
+            if (contains == .TRUE) {
+                object.color = 0xaa_ff_ff_ff;
+            } else {
+                object.color = 0xaa_ff_aa_11;
+            }
+        }
 
         return true;
     }
@@ -172,11 +208,29 @@ const AppState = struct {
 
         gc.begin_command_list();
 
-        {
-            const proj = if (true) blk: { //gc.window_width > gc.window_height) blk: {
-                const aspect: f32 = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .BUFFER,
+            .NumBarriers = 2,
+            .u = .{ .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{ .{
+                .SyncBefore = .{},
+                .SyncAfter = .{ .COPY = true },
+                .AccessBefore = .{ .NO_ACCESS = true },
+                .AccessAfter = .{ .COPY_DEST = true },
+                .pResource = app.frame_state_buffer,
+            }, .{
+                .SyncBefore = .{},
+                .SyncAfter = .{ .COPY = true },
+                .AccessBefore = .{ .NO_ACCESS = true },
+                .AccessAfter = .{ .COPY_DEST = true },
+                .pResource = app.object_buffer,
+            } } },
+        }});
 
-                break :blk orthographic_off_center(
+        {
+            const proj = proj: {
+                const aspect = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
+
+                break :proj orthographic_off_center(
                     0.0,
                     screen_size * aspect,
                     0.0,
@@ -184,70 +238,56 @@ const AppState = struct {
                     0.0,
                     1.0,
                 );
-                //break :blk orthographic_off_center(
-                //    -screen_size * 0.5 * aspect,
-                //    screen_size * 0.5 * aspect,
-                //    screen_size * 0.5,
-                //    -screen_size * 0.5,
-                //    0.0,
-                //    1.0,
-                //);
-            } else blk: {
-                const aspect: f32 = @as(f32, @floatFromInt(gc.window_height)) / @as(f32, @floatFromInt(gc.window_width));
-
-                break :blk orthographic_off_center(
-                    -screen_size * 0.5,
-                    screen_size * 0.5,
-                    screen_size * 0.5 * aspect,
-                    -screen_size * 0.5 * aspect,
-                    0.0,
-                    1.0,
-                );
             };
 
-            const frame_state, const buffer, const offset =
+            const upload_mem, const buffer, const offset =
                 gc.allocate_upload_buffer_region(cgc.FrameState, 1);
 
-            frame_state[0] = .{
+            upload_mem[0] = .{
                 .proj = transpose(proj),
             };
-
-            gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-                .Type = .BUFFER,
-                .NumBarriers = 1,
-                .u = .{
-                    .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{.{
-                        .SyncBefore = .{},
-                        .SyncAfter = .{ .COPY = true },
-                        .AccessBefore = .{ .NO_ACCESS = true },
-                        .AccessAfter = .{ .COPY_DEST = true },
-                        .pResource = app.frame_state_buffer,
-                    }},
-                },
-            }});
 
             gc.command_list.CopyBufferRegion(
                 app.frame_state_buffer,
                 0,
                 buffer,
                 offset,
-                @sizeOf(cgc.FrameState),
+                upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
             );
-
-            gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-                .Type = .BUFFER,
-                .NumBarriers = 1,
-                .u = .{
-                    .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{.{
-                        .SyncBefore = .{ .COPY = true },
-                        .SyncAfter = .{ .DRAW = true },
-                        .AccessBefore = .{ .COPY_DEST = true },
-                        .AccessAfter = .{ .CONSTANT_BUFFER = true },
-                        .pResource = app.frame_state_buffer,
-                    }},
-                },
-            }});
         }
+
+        {
+            const upload_mem, const buffer, const offset =
+                gc.allocate_upload_buffer_region(cgc.Object, @intCast(app.objects.items.len));
+
+            for (app.objects.items, 0..) |object, i| upload_mem[i] = object;
+
+            gc.command_list.CopyBufferRegion(
+                app.object_buffer,
+                0,
+                buffer,
+                offset,
+                upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
+            );
+        }
+
+        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+            .Type = .BUFFER,
+            .NumBarriers = 2,
+            .u = .{ .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{ .{
+                .SyncBefore = .{ .COPY = true },
+                .SyncAfter = .{ .DRAW = true },
+                .AccessBefore = .{ .COPY_DEST = true },
+                .AccessAfter = .{ .CONSTANT_BUFFER = true },
+                .pResource = app.frame_state_buffer,
+            }, .{
+                .SyncBefore = .{ .COPY = true },
+                .SyncAfter = .{ .DRAW = true },
+                .AccessBefore = .{ .COPY_DEST = true },
+                .AccessAfter = .{ .SHADER_RESOURCE = true },
+                .pResource = app.object_buffer,
+            } } },
+        }});
 
         gc.command_list.OMSetRenderTargets(
             1,
@@ -261,7 +301,8 @@ const AppState = struct {
         gc.command_list.SetPipelineState(app.pso);
         gc.command_list.SetGraphicsRootSignature(app.pso_rs);
 
-        for (app.objects.items, 0..) |object, object_id| {
+        // Draw all objects except player
+        for (app.objects.items[1..], 1..) |object, object_id| {
             gc.command_list.SetGraphicsRoot32BitConstants(
                 0,
                 2,
@@ -278,6 +319,19 @@ const AppState = struct {
                 0,
             );
         }
+        // Draw player
+        gc.command_list.SetGraphicsRoot32BitConstants(
+            0,
+            2,
+            &[_]u32{ app.meshes.items[Mesh.player].first_vertex, 0 },
+            0,
+        );
+        gc.command_list.DrawInstanced(
+            app.meshes.items[Mesh.player].num_vertices,
+            1,
+            0,
+            0,
+        );
 
         gc.end_command_list();
 
@@ -332,21 +386,24 @@ fn define_and_upload_objects(
 ) !struct { std.ArrayList(cgc.Object), *d3d12.IResource } {
     var objects = std.ArrayList(cgc.Object).init(allocator);
 
-    try objects.append(.{ .color = 0xaa_ff_00_00, .mesh_index = Mesh.test_mesh0 });
-    try objects.append(.{ .color = 0xaa_00_ff_00, .mesh_index = Mesh.test_mesh1 });
     try objects.append(.{
-        .color = 0xaa_ff_ff_00,
+        .color = 0xaa_bb_00_00,
+        .mesh_index = Mesh.player,
+        .x = 200.0,
+        .y = 100.0,
+    });
+    try objects.append(.{
+        .color = 0xaa_ff_aa_11,
         .mesh_index = Mesh.circle_50,
         .x = 300.0,
         .y = 500.0,
     });
     try objects.append(.{
-        .color = 0xaa_ff_00_ff,
+        .color = 0xaa_ff_aa_11,
         .mesh_index = Mesh.circle_50,
         .x = 500.0,
         .y = 300.0,
     });
-    try objects.append(.{ .color = 0xaa_00_ff_00, .mesh_index = Mesh.test_mesh2 });
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
@@ -378,17 +435,17 @@ fn define_and_upload_objects(
             gc.shader_dheap_descriptor_size },
     );
 
-    const mem, const buffer, const offset =
+    const upload_mem, const buffer, const offset =
         gc.allocate_upload_buffer_region(cgc.Object, @intCast(objects.items.len));
 
-    for (objects.items, 0..) |object, i| mem[i] = object;
+    for (objects.items, 0..) |object, i| upload_mem[i] = object;
 
     gc.command_list.CopyBufferRegion(
         object_buffer,
         0,
         buffer,
         offset,
-        mem.len * @sizeOf(@TypeOf(mem[0])),
+        upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
     );
 
     return .{ objects, object_buffer };
@@ -408,32 +465,6 @@ fn define_and_upload_meshes(
     var tessellation_sink: TessellationSink = .{ .vertices = &vertices };
 
     {
-        const first_vertex = vertices.items.len;
-
-        try vertices.append(.{ .x = 0.0, .y = 0.0 });
-        try vertices.append(.{ .x = 100.0, .y = 0.0 });
-        try vertices.append(.{ .x = 0.0, .y = 100.0 });
-
-        meshes.items[Mesh.test_mesh0] = .{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-        };
-    }
-
-    {
-        const first_vertex = vertices.items.len;
-
-        try vertices.append(.{ .x = screen_size, .y = screen_size });
-        try vertices.append(.{ .x = screen_size - 100.0, .y = screen_size });
-        try vertices.append(.{ .x = screen_size, .y = screen_size - 100.0 });
-
-        meshes.items[Mesh.test_mesh1] = .{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-        };
-    }
-
-    {
         var geo: *d2d1.IEllipseGeometry = undefined;
         vhr(d2d_factory.CreateEllipseGeometry(
             &.{
@@ -443,7 +474,6 @@ fn define_and_upload_meshes(
             },
             @ptrCast(&geo),
         ));
-        defer _ = geo.Release();
 
         const first_vertex = vertices.items.len;
 
@@ -456,13 +486,39 @@ fn define_and_upload_meshes(
         meshes.items[Mesh.circle_50] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    {
+        var geo: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 10.0,
+                .radiusY = 10.0,
+            },
+            @ptrCast(&geo),
+        ));
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(
+            null,
+            d2d1.DEFAULT_FLATTENING_TOLERANCE,
+            @ptrCast(&tessellation_sink),
+        ));
+
+        meshes.items[Mesh.player] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
         };
     }
 
     {
         var geo: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
-        defer _ = geo.Release();
 
         var geo_sink: *d2d1.IGeometrySink = undefined;
         vhr(geo.Open(@ptrCast(&geo_sink)));
@@ -491,9 +547,10 @@ fn define_and_upload_meshes(
             @ptrCast(&tessellation_sink),
         ));
 
-        meshes.items[Mesh.test_mesh2] = .{
+        meshes.items[Mesh.path0] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
         };
     }
 
@@ -527,17 +584,17 @@ fn define_and_upload_meshes(
             gc.shader_dheap_descriptor_size },
     );
 
-    const mem, const buffer, const offset =
+    const upload_mem, const buffer, const offset =
         gc.allocate_upload_buffer_region(cgc.Vertex, @intCast(vertices.items.len));
 
-    for (vertices.items, 0..) |vert, i| mem[i] = vert;
+    for (vertices.items, 0..) |vert, i| upload_mem[i] = vert;
 
     gc.command_list.CopyBufferRegion(
         vertex_buffer,
         0,
         buffer,
         offset,
-        mem.len * @sizeOf(@TypeOf(mem[0])),
+        upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
     );
 
     return .{ meshes, vertex_buffer };
