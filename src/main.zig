@@ -196,7 +196,7 @@ const AppState = struct {
             if (contains == .TRUE) {
                 object.color = 0xaa_ff_ff_ff;
             } else {
-                object.color = 0xaa_ff_aa_11;
+                object.color = object.orig_color;
             }
         }
 
@@ -389,27 +389,37 @@ fn define_and_upload_objects(
     try objects.append(.{
         .color = 0xaa_bb_00_00,
         .mesh_index = Mesh.player,
-        .x = 200.0,
-        .y = 100.0,
+        .x = 50.0,
+        .y = 50.0,
     });
     try objects.append(.{
-        .color = 0xaa_ff_aa_11,
+        .color = 0xaa_ff_aa_00,
         .mesh_index = Mesh.circle_50,
         .x = 300.0,
         .y = 500.0,
     });
     try objects.append(.{
-        .color = 0xaa_ff_aa_11,
+        .color = 0xaa_aa_ff_00,
         .mesh_index = Mesh.circle_50,
         .x = 500.0,
-        .y = 300.0,
+        .y = 200.0,
     });
     try objects.append(.{
-        .color = 0xaa_ff_aa_11,
+        .color = 0xaa_00_aa_77,
         .mesh_index = Mesh.path0,
         .x = 0.0,
         .y = 0.0,
     });
+    try objects.append(.{
+        .color = 0xaa_ff_22_00,
+        .mesh_index = Mesh.circle_50,
+        .x = screen_size - 100.0,
+        .y = screen_size - 200.0,
+    });
+
+    for (objects.items) |*object| {
+        object.orig_color = object.color;
+    }
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
