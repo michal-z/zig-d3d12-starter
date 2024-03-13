@@ -404,6 +404,12 @@ fn define_and_upload_objects(
         .x = 500.0,
         .y = 300.0,
     });
+    try objects.append(.{
+        .color = 0xaa_ff_aa_11,
+        .mesh_index = Mesh.path0,
+        .x = 0.0,
+        .y = 0.0,
+    });
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
@@ -522,22 +528,16 @@ fn define_and_upload_meshes(
 
         var geo_sink: *d2d1.IGeometrySink = undefined;
         vhr(geo.Open(@ptrCast(&geo_sink)));
+        defer _ = geo_sink.Release();
 
         geo_sink.BeginFigure(.{ .x = 100.0, .y = 100.0 }, .FILLED);
-        geo_sink.AddLine(.{ .x = 200.0, .y = 400.0 });
-        geo_sink.AddLine(.{ .x = 300.0, .y = 500.0 });
+        geo_sink.AddBezier(&.{
+            .point1 = .{ .x = 150.0, .y = 400.0 },
+            .point2 = .{ .x = 550.0, .y = -200.0 },
+            .point3 = .{ .x = 600.0, .y = 100.0 },
+        });
         geo_sink.EndFigure(.OPEN);
-
         vhr(geo_sink.Close());
-        _ = geo_sink.Release();
-
-        //var geo1: *d2d1.IPathGeometry = undefined;
-        //vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo1)));
-        //defer _ = geo1.Release();
-
-        //vhr(geo1.Open(@ptrCast(&geo_sink)));
-
-        //geo.Widen(5.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, geo_sink);
 
         const first_vertex = vertices.items.len;
 
