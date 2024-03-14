@@ -50,9 +50,9 @@ const Mesh = struct {
 
     geometry: *d2d1.IGeometry,
 
-    const player: usize = 0;
-    const circle_50: usize = 1;
-    const path0: usize = 2;
+    const player = 0;
+    const circle_50 = 1;
+    const path0 = 2;
     const num_mesh_types = 3;
 };
 
@@ -169,20 +169,19 @@ const AppState = struct {
 
         _, const delta_time = update_frame_stats(app.gpu_context.window, window_name);
 
+        const translation_speed = 200.0;
+        const rotation_speed = 4.0;
+
         var player = &app.objects.items[0];
-        const player_speed = 100.0;
 
-        if (is_key_down(w32.VK_RIGHT)) {
-            player.x += player_speed * delta_time;
-        } else if (is_key_down(w32.VK_LEFT)) {
-            player.x -= player_speed * delta_time;
+        if (is_key_down(w32.VK_RIGHT) or is_key_down('D')) {
+            player.rotation += rotation_speed * delta_time;
+        } else if (is_key_down(w32.VK_LEFT) or is_key_down('A')) {
+            player.rotation -= rotation_speed * delta_time;
         }
 
-        if (is_key_down(w32.VK_DOWN)) {
-            player.y += player_speed * delta_time;
-        } else if (is_key_down(w32.VK_UP)) {
-            player.y -= player_speed * delta_time;
-        }
+        player.x += @cos(player.rotation) * translation_speed * delta_time;
+        player.y += @sin(player.rotation) * translation_speed * delta_time;
 
         for (app.objects.items[1..]) |*object| {
             var contains: w32.BOOL = .FALSE;
@@ -229,7 +228,6 @@ const AppState = struct {
         {
             const proj = proj: {
                 const aspect = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
-
                 break :proj orthographic_off_center(
                     0.0,
                     screen_size * aspect,
