@@ -384,30 +384,10 @@ fn define_and_upload_objects(
 ) !struct { std.ArrayList(cgc.Object), *d3d12.IResource } {
     var objects = std.ArrayList(cgc.Object).init(allocator);
 
-    try objects.append(.{
-        .color = 0xaa_bb_00_00,
-        .mesh_index = Mesh.player,
-        .x = 50.0,
-        .y = 50.0,
-    });
-    try objects.append(.{
-        .color = 0xaa_ff_aa_00,
-        .mesh_index = Mesh.circle_50,
-        .x = 300.0,
-        .y = 500.0,
-    });
-    try objects.append(.{
-        .color = 0xaa_aa_ff_00,
-        .mesh_index = Mesh.circle_50,
-        .x = 500.0,
-        .y = 200.0,
-    });
-    try objects.append(.{
-        .color = 0xaa_00_aa_77,
-        .mesh_index = Mesh.path0,
-        .x = 0.0,
-        .y = 0.0,
-    });
+    try objects.append(.{ .color = 0xaa_bb_00_00, .mesh_index = Mesh.player, .x = 50.0, .y = 50.0 });
+    try objects.append(.{ .color = 0xaa_ff_aa_00, .mesh_index = Mesh.circle_50, .x = 300.0, .y = 500.0 });
+    try objects.append(.{ .color = 0xaa_aa_ff_00, .mesh_index = Mesh.circle_50, .x = 500.0, .y = 200.0 });
+    try objects.append(.{ .color = 0xaa_00_aa_77, .mesh_index = Mesh.path0, .x = 0.0, .y = 0.0 });
     try objects.append(.{
         .color = 0xaa_ff_22_00,
         .mesh_index = Mesh.circle_50,
@@ -491,11 +471,7 @@ fn define_and_upload_meshes(
 
         const first_vertex = vertices.items.len;
 
-        vhr(geo.Tessellate(
-            null,
-            d2d1.DEFAULT_FLATTENING_TOLERANCE,
-            @ptrCast(&tessellation_sink),
-        ));
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
         meshes.items[Mesh.circle_50] = .{
             .first_vertex = @intCast(first_vertex),
@@ -517,11 +493,7 @@ fn define_and_upload_meshes(
 
         const first_vertex = vertices.items.len;
 
-        vhr(geo.Tessellate(
-            null,
-            d2d1.DEFAULT_FLATTENING_TOLERANCE,
-            @ptrCast(&tessellation_sink),
-        ));
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
         meshes.items[Mesh.player] = .{
             .first_vertex = @intCast(first_vertex),
@@ -549,11 +521,7 @@ fn define_and_upload_meshes(
 
         const first_vertex = vertices.items.len;
 
-        vhr(geo.Tessellate(
-            null,
-            d2d1.DEFAULT_FLATTENING_TOLERANCE,
-            @ptrCast(&tessellation_sink),
-        ));
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
         meshes.items[Mesh.path0] = .{
             .first_vertex = @intCast(first_vertex),
