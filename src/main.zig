@@ -53,10 +53,15 @@ const Mesh = struct {
     const player = 0;
     const circle_50 = 1;
     const path0 = 2;
-    const num_mesh_types = 3;
+    const rect_30_map_size_y = 3;
+    const rect_map_size_x_30 = 4;
+    const num_mesh_types = 5;
 };
 
-const screen_size = 800.0;
+const map_size_x = 1400.0;
+const map_size_y = 1050.0;
+const player_start_x = 50.0;
+const player_start_y = 50.0;
 
 fn is_key_down(vkey: c_int) bool {
     return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
@@ -76,6 +81,8 @@ const AppState = struct {
     objects: std.ArrayList(cgc.Object),
 
     d2d_factory: *d2d1.IFactory,
+
+    player_is_dead: f32 = 0.0,
 
     fn init(allocator: std.mem.Allocator) !AppState {
         var gc = GpuContext.init(create_window(1600, 1200));
@@ -169,10 +176,23 @@ const AppState = struct {
 
         _, const delta_time = update_frame_stats(app.gpu_context.window, window_name);
 
-        const translation_speed = 200.0;
-        const rotation_speed = 4.0;
-
         var player = &app.objects.items[0];
+
+        if (app.player_is_dead > 0.0) {
+            app.player_is_dead -= delta_time;
+
+            if (app.player_is_dead <= 0.0) {
+                app.player_is_dead = 0.0;
+                player.x = player_start_x;
+                player.y = player_start_y;
+                player.rotation = 0.0;
+            }
+
+            return true;
+        }
+
+        const translation_speed = 250.0;
+        const rotation_speed = 5.0;
 
         if (is_key_down(w32.VK_RIGHT) or is_key_down('D')) {
             player.rotation += rotation_speed * delta_time;
@@ -183,7 +203,7 @@ const AppState = struct {
         player.x += @cos(player.rotation) * translation_speed * delta_time;
         player.y += @sin(player.rotation) * translation_speed * delta_time;
 
-        for (app.objects.items[1..]) |*object| {
+        for (app.objects.items[1..]) |object| {
             var contains: w32.BOOL = .FALSE;
             vhr(app.meshes.items[object.mesh_index].geometry.FillContainsPoint(
                 .{ .x = player.x, .y = player.y },
@@ -193,9 +213,8 @@ const AppState = struct {
             ));
 
             if (contains == .TRUE) {
-                object.color = 0xaa_ff_ff_ff;
-            } else {
-                object.color = object.orig_color;
+                app.player_is_dead = 1.0;
+                break;
             }
         }
 
@@ -230,9 +249,9 @@ const AppState = struct {
                 const aspect = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
                 break :proj orthographic_off_center(
                     0.0,
-                    screen_size * aspect,
+                    map_size_y * aspect,
                     0.0,
-                    screen_size,
+                    map_size_y,
                     0.0,
                     1.0,
                 );
@@ -384,16 +403,27 @@ fn define_and_upload_objects(
 ) !struct { std.ArrayList(cgc.Object), *d3d12.IResource } {
     var objects = std.ArrayList(cgc.Object).init(allocator);
 
-    try objects.append(.{ .color = 0xaa_bb_00_00, .mesh_index = Mesh.player, .x = 50.0, .y = 50.0 });
+    try objects.append(.{
+        .color = 0xaa_bb_00_00,
+        .mesh_index = Mesh.player,
+        .x = player_start_x,
+        .y = player_start_y,
+    });
+    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_30_map_size_y, .x = 0.0, .y = 0.0 });
+    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_30_map_size_y, .x = map_size_x - 30.0, .y = 0.0 });
+    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_map_size_x_30, .x = 0.0, .y = 0.0 });
+    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_map_size_x_30, .x = 0.0, .y = map_size_y - 30.0 });
     try objects.append(.{ .color = 0xaa_ff_aa_00, .mesh_index = Mesh.circle_50, .x = 300.0, .y = 500.0 });
     try objects.append(.{ .color = 0xaa_aa_ff_00, .mesh_index = Mesh.circle_50, .x = 500.0, .y = 200.0 });
-    try objects.append(.{ .color = 0xaa_00_aa_77, .mesh_index = Mesh.path0, .x = 0.0, .y = 0.0 });
-    try objects.append(.{
-        .color = 0xaa_ff_22_00,
-        .mesh_index = Mesh.circle_50,
-        .x = screen_size - 100.0,
-        .y = screen_size - 200.0,
-    });
+    if (false) {
+        try objects.append(.{ .color = 0xaa_00_aa_22, .mesh_index = Mesh.path0, .x = 0.0, .y = 0.0 });
+        try objects.append(.{
+            .color = 0xaa_ff_22_00,
+            .mesh_index = Mesh.circle_50,
+            .x = map_size_x - 100.0,
+            .y = map_size_y - 200.0,
+        });
+    }
 
     for (objects.items) |*object| {
         object.orig_color = object.color;
@@ -503,6 +533,52 @@ fn define_and_upload_meshes(
     }
 
     {
+        var geo: *d2d1.IRectangleGeometry = undefined;
+        vhr(d2d_factory.CreateRectangleGeometry(
+            &.{
+                .left = 0.0,
+                .top = 0.0,
+                .right = 30.0,
+                .bottom = map_size_y,
+            },
+            @ptrCast(&geo),
+        ));
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.rect_30_map_size_y] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    {
+        var geo: *d2d1.IRectangleGeometry = undefined;
+        vhr(d2d_factory.CreateRectangleGeometry(
+            &.{
+                .left = 0.0,
+                .top = 0.0,
+                .right = map_size_x,
+                .bottom = 30,
+            },
+            @ptrCast(&geo),
+        ));
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.rect_map_size_x_30] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    {
         var geo: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
 
@@ -510,12 +586,40 @@ fn define_and_upload_meshes(
         vhr(geo.Open(@ptrCast(&geo_sink)));
         defer _ = geo_sink.Release();
 
-        geo_sink.BeginFigure(.{ .x = 100.0, .y = 100.0 }, .FILLED);
+        //geo_sink.BeginFigure(.{ .x = 100.0, .y = 100.0 }, .FILLED);
+        //geo_sink.AddBezier(&.{
+        //    .point1 = .{ .x = 150.0, .y = 400.0 },
+        //    .point2 = .{ .x = 550.0, .y = -200.0 },
+        //    .point3 = .{ .x = 600.0, .y = 100.0 },
+        //});
+        geo_sink.BeginFigure(.{ .x = 51.0, .y = 89.0 }, .FILLED);
         geo_sink.AddBezier(&.{
-            .point1 = .{ .x = 150.0, .y = 400.0 },
-            .point2 = .{ .x = 550.0, .y = -200.0 },
-            .point3 = .{ .x = 600.0, .y = 100.0 },
+            .point1 = .{ .x = 416.18453, .y = 231.07754 },
+            .point2 = .{ .x = 618.84493, .y = -86.375548 },
+            .point3 = .{ .x = 647, .y = 115.0 },
         });
+        geo_sink.AddBezier(&.{
+            .point1 = .{ .x = 675.15507, .y = 316.37555 },
+            .point2 = .{ .x = 271.44268, .y = 275.31054 },
+            .point3 = .{ .x = 192.93487, .y = 370.62325 },
+        });
+        if (false) {
+            geo_sink.AddBezier(&.{
+                .point1 = .{ .x = 114.42706, .y = 465.93596 },
+                .point2 = .{ .x = 304.99688, .y = 575.04398 },
+                .point3 = .{ .x = 348.53395, .y = 383.38734 },
+            });
+            geo_sink.AddBezier(&.{
+                .point1 = .{ .x = 392.07102, .y = 191.7307 },
+                .point2 = .{ .x = 685.91399, .y = 437.42702 },
+                .point3 = .{ .x = 757.15996, .y = 377.37813 },
+            });
+            geo_sink.AddBezier(&.{
+                .point1 = .{ .x = 828.40592, .y = 317.32925 },
+                .point2 = .{ .x = 146.62463, .y = 199.50564 },
+                .point3 = .{ .x = 146.62463, .y = 199.50564 },
+            });
+        }
         geo_sink.EndFigure(.OPEN);
         vhr(geo_sink.Close());
 
