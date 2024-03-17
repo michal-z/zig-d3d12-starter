@@ -51,16 +51,13 @@ const Mesh = struct {
     geometry: *d2d1.IGeometry,
 
     const player = 0;
-    const circle_50 = 1;
-    const path0 = 2;
-    const rect_30_map_size_y = 3;
-    const rect_map_size_x_30 = 4;
-    const num_mesh_types = 5;
+    const level1 = 1;
+    const num_mesh_types = 2;
 };
 
 const map_size_x = 1400.0;
 const map_size_y = 1050.0;
-const player_start_x = 50.0;
+const player_start_x = -600.0;
 const player_start_y = 50.0;
 
 fn is_key_down(vkey: c_int) bool {
@@ -248,8 +245,8 @@ const AppState = struct {
             const proj = proj: {
                 const aspect = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
                 break :proj orthographic_off_center(
-                    0.0,
-                    map_size_y * aspect,
+                    -0.5 * map_size_y * aspect,
+                    0.5 * map_size_y * aspect,
                     0.0,
                     map_size_y,
                     0.0,
@@ -312,7 +309,7 @@ const AppState = struct {
             .TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 0, 0, 0, 0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 1, 1, 1, 0 }, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
@@ -409,21 +406,7 @@ fn define_and_upload_objects(
         .x = player_start_x,
         .y = player_start_y,
     });
-    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_30_map_size_y, .x = 0.0, .y = 0.0 });
-    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_30_map_size_y, .x = map_size_x - 30.0, .y = 0.0 });
-    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_map_size_x_30, .x = 0.0, .y = 0.0 });
-    try objects.append(.{ .color = 0xaa_0f_6c_0b, .mesh_index = Mesh.rect_map_size_x_30, .x = 0.0, .y = map_size_y - 30.0 });
-    try objects.append(.{ .color = 0xaa_ff_aa_00, .mesh_index = Mesh.circle_50, .x = 300.0, .y = 500.0 });
-    try objects.append(.{ .color = 0xaa_aa_ff_00, .mesh_index = Mesh.circle_50, .x = 500.0, .y = 200.0 });
-    if (false) {
-        try objects.append(.{ .color = 0xaa_00_aa_22, .mesh_index = Mesh.path0, .x = 0.0, .y = 0.0 });
-        try objects.append(.{
-            .color = 0xaa_ff_22_00,
-            .mesh_index = Mesh.circle_50,
-            .x = map_size_x - 100.0,
-            .y = map_size_y - 200.0,
-        });
-    }
+    try objects.append(.{ .color = 0, .mesh_index = Mesh.level1, .x = 0.0, .y = 0.0 });
 
     for (objects.items) |*object| {
         object.orig_color = object.color;
@@ -493,28 +476,6 @@ fn define_and_upload_meshes(
         vhr(d2d_factory.CreateEllipseGeometry(
             &.{
                 .point = .{ .x = 0.0, .y = 0.0 },
-                .radiusX = 50.0,
-                .radiusY = 50.0,
-            },
-            @ptrCast(&geo),
-        ));
-
-        const first_vertex = vertices.items.len;
-
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-        meshes.items[Mesh.circle_50] = .{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        };
-    }
-
-    {
-        var geo: *d2d1.IEllipseGeometry = undefined;
-        vhr(d2d_factory.CreateEllipseGeometry(
-            &.{
-                .point = .{ .x = 0.0, .y = 0.0 },
                 .radiusX = 10.0,
                 .radiusY = 10.0,
             },
@@ -533,52 +494,6 @@ fn define_and_upload_meshes(
     }
 
     {
-        var geo: *d2d1.IRectangleGeometry = undefined;
-        vhr(d2d_factory.CreateRectangleGeometry(
-            &.{
-                .left = 0.0,
-                .top = 0.0,
-                .right = 30.0,
-                .bottom = map_size_y,
-            },
-            @ptrCast(&geo),
-        ));
-
-        const first_vertex = vertices.items.len;
-
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-        meshes.items[Mesh.rect_30_map_size_y] = .{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        };
-    }
-
-    {
-        var geo: *d2d1.IRectangleGeometry = undefined;
-        vhr(d2d_factory.CreateRectangleGeometry(
-            &.{
-                .left = 0.0,
-                .top = 0.0,
-                .right = map_size_x,
-                .bottom = 30,
-            },
-            @ptrCast(&geo),
-        ));
-
-        const first_vertex = vertices.items.len;
-
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-        meshes.items[Mesh.rect_map_size_x_30] = .{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        };
-    }
-
-    {
         var geo: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
 
@@ -586,48 +501,47 @@ fn define_and_upload_meshes(
         vhr(geo.Open(@ptrCast(&geo_sink)));
         defer _ = geo_sink.Release();
 
-        //geo_sink.BeginFigure(.{ .x = 100.0, .y = 100.0 }, .FILLED);
-        //geo_sink.AddBezier(&.{
-        //    .point1 = .{ .x = 150.0, .y = 400.0 },
-        //    .point2 = .{ .x = 550.0, .y = -200.0 },
-        //    .point3 = .{ .x = 600.0, .y = 100.0 },
-        //});
-        geo_sink.BeginFigure(.{ .x = 51.0, .y = 89.0 }, .FILLED);
-        geo_sink.AddBezier(&.{
-            .point1 = .{ .x = 416.18453, .y = 231.07754 },
-            .point2 = .{ .x = 618.84493, .y = -86.375548 },
-            .point3 = .{ .x = 647, .y = 115.0 },
-        });
-        geo_sink.AddBezier(&.{
-            .point1 = .{ .x = 675.15507, .y = 316.37555 },
-            .point2 = .{ .x = 271.44268, .y = 275.31054 },
-            .point3 = .{ .x = 192.93487, .y = 370.62325 },
-        });
-        if (false) {
-            geo_sink.AddBezier(&.{
-                .point1 = .{ .x = 114.42706, .y = 465.93596 },
-                .point2 = .{ .x = 304.99688, .y = 575.04398 },
-                .point3 = .{ .x = 348.53395, .y = 383.38734 },
-            });
-            geo_sink.AddBezier(&.{
-                .point1 = .{ .x = 392.07102, .y = 191.7307 },
-                .point2 = .{ .x = 685.91399, .y = 437.42702 },
-                .point3 = .{ .x = 757.15996, .y = 377.37813 },
-            });
-            geo_sink.AddBezier(&.{
-                .point1 = .{ .x = 828.40592, .y = 317.32925 },
-                .point2 = .{ .x = 146.62463, .y = 199.50564 },
-                .point3 = .{ .x = 146.62463, .y = 199.50564 },
-            });
-        }
-        geo_sink.EndFigure(.OPEN);
+        const path1 = [_]f32{
+            -567.1, 259,   -616.3, 313.1, -616.3, 375.7,
+            -616.3, 416,   -612.9, 469,   -578.9, 490.8,
+            -568.7, 497.4, -548.6, 497.2, -542.7, 486.6,
+            -523.9, 452.7, -594.2, 420.3, -592.6, 381.6,
+            -591.6, 357.2, -562.4, 341.7, -555.8, 318.1,
+            -550.2, 297.9, -561,   275.2, -554.6, 255.2,
+            -538.3, 204.1, -446,   172.9, -463.8, 122.3,
+            -471.1, 101.6, -506.4, 95.16, -526.7, 103.3,
+            -547.2, 111.5, -554,   139.4, -559.3, 160.8,
+            -562.2, 172.5, -556.5, 185,   -558.2, 197,
+        };
+        const path3 = [_]f32{
+            -473.5, 310.3, -474,   334.6, -475.1, 358.4,
+            -476,   379.2, -476.4, 400.1, -473.9, 420.7,
+            -469.7, 455.7, -476.1, 499.4, -450.8, 524,
+            -435.6, 538.7, -400.9, 553,   -388.5, 535.9,
+            -369,   509,   -432.2, 481.5, -436.5, 448.6,
+            -440.4, 419.1, -437.7, 381.4, -415.2, 362,
+            -392.5, 342.4, -343.6, 377.7, -325.6, 353.7,
+            -315.8, 340.6, -321.2, 314.3, -335.1, 305.6,
+            -357.3, 291.7, -388.8, 339.7, -411,   325.8,
+            -425.7, 316.6, -421.5, 292.1, -421.1, 274.7,
+            -420.5, 250.2, -382.7, 216.7, -403.3, 203.5,
+            -418.7, 193.7, -434.9, 223.4, -446,   237.9,
+            -456.9, 252.1, -462.8, 269.9, -467.4, 287.2,
+        };
+
+        geo_sink.BeginFigure(.{ .x = -558.2, .y = 197.0 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path1), @sizeOf(@TypeOf(path1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        geo_sink.BeginFigure(.{ .x = -467.4, .y = 287.2 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path3), @sizeOf(@TypeOf(path3)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
         vhr(geo_sink.Close());
 
         const first_vertex = vertices.items.len;
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.path0] = .{
+        meshes.items[Mesh.level1] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
@@ -676,6 +590,16 @@ fn define_and_upload_meshes(
         offset,
         upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
     );
+
+    for (meshes.items) |mesh| {
+        var contains: w32.BOOL = .FALSE;
+        vhr(mesh.geometry.FillContainsPoint(
+            .{ .x = 0.0, .y = 0.0 },
+            &d2d1.MATRIX_3X2_F.translation(0.0, 0.0),
+            d2d1.DEFAULT_FLATTENING_TOLERANCE,
+            &contains,
+        ));
+    }
 
     return .{ meshes, vertex_buffer };
 }
