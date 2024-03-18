@@ -36,7 +36,13 @@ void s00_vertex(
     const Vertex vertex = vertex_buffer[vertex_id + first_vertex];
     const Object object = object_buffer[object_id];
 
-    out_position = mul(float4(vertex.x + object.x, vertex.y + object.y, 0.0, 1.0), frame_state.proj);
+    const float sin_r = sin(object.rotation);
+    const float cos_r = cos(object.rotation);
+
+    out_position = mul(
+        float4(vertex.x * cos_r - vertex.y * sin_r + object.x,
+               vertex.x * sin_r + vertex.y * cos_r + object.y, 0.0, 1.0),
+        frame_state.proj);
     out_color = unpack_color(object.color);
 }
 

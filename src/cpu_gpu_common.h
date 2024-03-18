@@ -16,8 +16,7 @@ struct Object {
     unsigned int mesh_index;
     float x, y;
     float rotation;
-    unsigned int orig_color;
-    float _padding[2];
+    float _padding[3];
 };
 
 struct FrameState {

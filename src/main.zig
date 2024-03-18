@@ -51,8 +51,9 @@ const Mesh = struct {
     geometry: *d2d1.IGeometry,
 
     const player = 0;
-    const level1 = 1;
-    const num_mesh_types = 2;
+    const food = 1;
+    const level1 = 2;
+    const num_mesh_types = 3;
 };
 
 const map_size_x = 1400.0;
@@ -183,6 +184,10 @@ const AppState = struct {
                 player.x = player_start_x;
                 player.y = player_start_y;
                 player.rotation = 0.0;
+
+                for (app.objects.items[1..]) |*object| {
+                    if (object.mesh_index == 0) object.mesh_index = Mesh.food;
+                }
             }
 
             return true;
@@ -200,7 +205,9 @@ const AppState = struct {
         player.x += @cos(player.rotation) * translation_speed * delta_time;
         player.y += @sin(player.rotation) * translation_speed * delta_time;
 
-        for (app.objects.items[1..]) |object| {
+        for (app.objects.items[1..]) |*object| {
+            if (object.mesh_index == 0) continue; // Already eaten food.
+
             var contains: w32.BOOL = .FALSE;
             vhr(app.meshes.items[object.mesh_index].geometry.FillContainsPoint(
                 .{ .x = player.x, .y = player.y },
@@ -210,9 +217,33 @@ const AppState = struct {
             ));
 
             if (contains == .TRUE) {
-                app.player_is_dead = 1.0;
+                if (object.mesh_index == Mesh.food) {
+                    object.mesh_index = 0; // Mark this food as eaten.
+                } else {
+                    app.player_is_dead = 1.0;
+                }
                 break;
             }
+        }
+
+        const window_width: f32 = @floatFromInt(app.gpu_context.window_width);
+        const window_height: f32 = @floatFromInt(app.gpu_context.window_height);
+        const window_aspect: f32 = window_width / window_height;
+
+        if (player.x < -0.5 * map_size_y * window_aspect) {
+            player.x = 0.5 * map_size_y * window_aspect;
+            player.rotation += std.math.tau;
+        } else if (player.x > 0.5 * map_size_y * window_aspect) {
+            player.x = -0.5 * map_size_y * window_aspect;
+            player.rotation += std.math.tau;
+        }
+
+        if (player.y < 0.0) {
+            player.y = map_size_y;
+            player.rotation += std.math.tau;
+        } else if (player.y > map_size_y) {
+            player.y = 0.0;
+            player.rotation += std.math.tau;
         }
 
         return true;
@@ -317,6 +348,8 @@ const AppState = struct {
 
         // Draw all objects except player
         for (app.objects.items[1..], 1..) |object, object_id| {
+            if (object.mesh_index == 0) continue; // Already eaten food.
+
             gc.command_list.SetGraphicsRoot32BitConstants(
                 0,
                 2,
@@ -333,7 +366,7 @@ const AppState = struct {
                 0,
             );
         }
-        // Draw player
+        // Draw player (always on top of other objects).
         gc.command_list.SetGraphicsRoot32BitConstants(
             0,
             2,
@@ -394,6 +427,11 @@ fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d1
     return .{ pipeline, root_signature };
 }
 
+fn add_food(objects: *std.ArrayList(cgc.Object), x: f32, y: f32) void {
+    const fc = 0xaa_0f_6c_0b;
+    objects.append(.{ .color = fc, .mesh_index = Mesh.food, .x = x, .y = y }) catch unreachable;
+}
+
 fn define_and_upload_objects(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
@@ -406,11 +444,29 @@ fn define_and_upload_objects(
         .x = player_start_x,
         .y = player_start_y,
     });
-    try objects.append(.{ .color = 0, .mesh_index = Mesh.level1, .x = 0.0, .y = 0.0 });
+    try objects.append(.{
+        .color = 0,
+        .mesh_index = Mesh.level1,
+        .x = 0.0,
+        .y = 0.0,
+    });
 
-    for (objects.items) |*object| {
-        object.orig_color = object.color;
-    }
+    var num_foods = objects.items.len;
+    add_food(&objects, -374.0, 427.5);
+    add_food(&objects, -541.0, 386.0);
+    add_food(&objects, -4.0, 498.0);
+    add_food(&objects, -341.0, 244.0);
+    add_food(&objects, 61.0, 580.0);
+    add_food(&objects, 167.0, 636.0);
+    add_food(&objects, -214.5, 192.6);
+    add_food(&objects, -439.0, 762.6);
+    add_food(&objects, -391.0, 850.0);
+    add_food(&objects, -621.0, 709.0);
+    add_food(&objects, 213.0, 385.0);
+    add_food(&objects, 628.0, 280.0);
+    add_food(&objects, 467.0, 82.0);
+    add_food(&objects, 213.0, 385.0);
+    num_foods = objects.items.len - num_foods;
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
@@ -476,7 +532,7 @@ fn define_and_upload_meshes(
         vhr(d2d_factory.CreateEllipseGeometry(
             &.{
                 .point = .{ .x = 0.0, .y = 0.0 },
-                .radiusX = 10.0,
+                .radiusX = 15.0,
                 .radiusY = 10.0,
             },
             @ptrCast(&geo),
@@ -487,6 +543,28 @@ fn define_and_upload_meshes(
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
         meshes.items[Mesh.player] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    {
+        var geo: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 15.0,
+                .radiusY = 15.0,
+            },
+            @ptrCast(&geo),
+        ));
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.food] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
@@ -528,12 +606,70 @@ fn define_and_upload_meshes(
             -418.7, 193.7, -434.9, 223.4, -446,   237.9,
             -456.9, 252.1, -462.8, 269.9, -467.4, 287.2,
         };
+        const path5 = [_]f32{
+            -100.4, 343.8, -121.5, 433.8, -127, 499,
+            -132.8, 567.9, -113,   647.2, -65,  697,
+            6.891,  771.6, 139,    854.2, 228,  801,
+            239.3,  794.3, 240.8,  773.3, 234,  762,
+            185.1,  681.2, 33.81,  735.8, -34,  670,
+            -75.96, 629.3, -98.81, 564.4, -96,  506,
+            -93.68, 457.8, -77.48, 392.3, -32,  376,
+            9.719,  361.1, 56.11,  401.3, 89,   431,
+            114.5,  454,   110.4,  504.4, 141,  520,
+            205.5,  552.8, 319.2,  559.7, 357,  498,
+            365.2,  484.6, 353.7,  461.8, 340,  454,
+            288.7,  424.7, 219.2,  506.6, 165,  483,
+            135.7,  470.2, 141.7,  424.5, 118,  403,
+            76.09,  365.1, 15.86,  306.9, -38,  324,
+        };
+        const path6 = [_]f32{
+            -518.2, 737.3, -611.7, 791.9, -594, 851,
+            -573.8, 918.3, -494.6, 967.4, -425, 977,
+            -411.2, 978.9, -388.5, 975.7, -386, 962,
+            -374.4, 898.4, -512.1, 894.9, -531, 833,
+            -542.1, 796.8, -533.2, 745.8, -503, 723,
+            -425.1, 664.1, -262.5, 813.4, -210, 731,
+            -197.6, 711.5, -221.4, 681.3, -241, 669,
+            -309.4, 626.2, -414.6, 708.8, -483, 666,
+            -517.7, 644.2, -500.6, 572.9, -538, 556,
+            -565.3, 543.6, -616.9, 550.1, -625, 579,
+            -637.2, 622.6, -540.4, 632.7, -531, 677,
+        };
+        const path7 = [_]f32{
+            285.9, 148.3, 351.2, 203.3, 388, 250,
+            423.4, 294.9, 485.4, 315.4, 517, 363,
+            548.1, 409.8, 575.4, 467.1, 570, 523,
+            565.7, 567.6, 522.2, 599.1, 504, 640,
+            483.1, 686.9, 449,   735,   455, 786,
+            460.8, 835.5, 484.7, 905.6, 534, 913,
+            550.6, 915.5, 568.6, 896.4, 572, 880,
+            580.5, 838.7, 518.5, 808.2, 517, 766,
+            515,   707.5, 551.8, 653.1, 582, 603,
+            595.5, 580.5, 629.5, 569,   633, 543,
+            638.5, 501.8, 592.6, 469.6, 580, 430,
+            570.3, 399.3, 576.8, 364,   563, 335,
+            550.7, 309.2, 509.3, 298.5, 507, 270,
+            504.1, 233.3, 572.9, 212,   565, 176,
+            560.4, 155.3, 533,   138.2, 512, 141,
+            479,   145.4, 479.3, 217.9, 446, 216,
+            387.9, 212.8, 402.2, 88.14, 346, 73,
+            331.5, 69.08, 309.8, 77.73, 305, 92,
+        };
 
         geo_sink.BeginFigure(.{ .x = -558.2, .y = 197.0 }, .FILLED);
         geo_sink.AddBeziers(@ptrCast(&path1), @sizeOf(@TypeOf(path1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
         geo_sink.EndFigure(.CLOSED);
         geo_sink.BeginFigure(.{ .x = -467.4, .y = 287.2 }, .FILLED);
         geo_sink.AddBeziers(@ptrCast(&path3), @sizeOf(@TypeOf(path3)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        geo_sink.BeginFigure(.{ .x = -38.0, .y = 324.0 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path5), @sizeOf(@TypeOf(path5)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        geo_sink.BeginFigure(.{ .x = -531.0, .y = 677.0 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path6), @sizeOf(@TypeOf(path6)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        geo_sink.BeginFigure(.{ .x = 305.0, .y = 92.0 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path7), @sizeOf(@TypeOf(path7)) / @sizeOf(d2d1.BEZIER_SEGMENT));
         geo_sink.EndFigure(.CLOSED);
         vhr(geo_sink.Close());
 
