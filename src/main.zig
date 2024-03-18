@@ -83,7 +83,12 @@ const AppState = struct {
     player_is_dead: f32 = 0.0,
 
     fn init(allocator: std.mem.Allocator) !AppState {
-        var gc = GpuContext.init(create_window(1600, 1200));
+        var gc = GpuContext.init(
+            create_window(
+                @divTrunc(w32.GetSystemMetrics(w32.SM_CXSCREEN), 2),
+                @divTrunc(w32.GetSystemMetrics(w32.SM_CYSCREEN), 2),
+            ),
+        );
 
         const pso, const pso_rs = create_pso(gc.device);
 
@@ -228,7 +233,7 @@ const AppState = struct {
 
         const window_width: f32 = @floatFromInt(app.gpu_context.window_width);
         const window_height: f32 = @floatFromInt(app.gpu_context.window_height);
-        const window_aspect: f32 = window_width / window_height;
+        const window_aspect = window_width / window_height;
 
         if (player.x < -0.5 * map_size_y * window_aspect) {
             player.x = 0.5 * map_size_y * window_aspect;
@@ -274,7 +279,10 @@ const AppState = struct {
 
         {
             const proj = proj: {
-                const aspect = @as(f32, @floatFromInt(gc.window_width)) / @as(f32, @floatFromInt(gc.window_height));
+                const width: f32 = @floatFromInt(gc.window_width);
+                const height: f32 = @floatFromInt(gc.window_height);
+                const aspect = width / height;
+
                 break :proj orthographic_off_center(
                     -0.5 * map_size_y * aspect,
                     0.5 * map_size_y * aspect,
@@ -768,7 +776,7 @@ fn process_window_message(
     return w32.DefWindowProcA(window, message, wparam, lparam);
 }
 
-fn create_window(width: u32, height: u32) w32.HWND {
+fn create_window(width: i32, height: i32) w32.HWND {
     const winclass = w32.WNDCLASSEXA{
         .style = 0,
         .lpfnWndProc = process_window_message,
@@ -784,24 +792,22 @@ fn create_window(width: u32, height: u32) w32.HWND {
     };
     _ = w32.RegisterClassExA(&winclass);
 
-    const style = w32.WS_OVERLAPPEDWINDOW;
-    var rect = w32.RECT{ .left = 0, .top = 0, .right = @intCast(width), .bottom = @intCast(height) };
-    _ = w32.AdjustWindowRectEx(&rect, style, .FALSE, 0);
-
     const window = w32.CreateWindowExA(
         0,
         window_name,
         window_name,
-        style + w32.WS_VISIBLE,
+        w32.WS_OVERLAPPEDWINDOW,
         w32.CW_USEDEFAULT,
         w32.CW_USEDEFAULT,
-        rect.right - rect.left,
-        rect.bottom - rect.top,
+        width,
+        height,
         null,
         null,
         winclass.hInstance,
         null,
     ).?;
+
+    _ = w32.ShowWindow(window, w32.SW_SHOWMAXIMIZED);
 
     return window;
 }
@@ -869,7 +875,11 @@ const TessellationSink = extern struct {
     pub const AddTriangles = d2d1.ITessellationSink(@This()).AddTriangles;
     pub const Close = d2d1.ITessellationSink(@This()).Close;
 
-    fn _query_interface(_: *w32.IUnknown, _: *const w32.GUID, _: ?*?*anyopaque) callconv(w32.WINAPI) w32.HRESULT {
+    fn _query_interface(
+        _: *w32.IUnknown,
+        _: *const w32.GUID,
+        _: ?*?*anyopaque,
+    ) callconv(w32.WINAPI) w32.HRESULT {
         return w32.S_OK;
     }
     fn _add_ref(_: *w32.IUnknown) callconv(w32.WINAPI) w32.ULONG {

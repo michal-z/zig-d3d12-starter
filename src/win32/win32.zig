@@ -128,6 +128,11 @@ pub const MINMAXINFO = extern struct {
     ptMaxTrackSize: POINT,
 };
 
+pub const SM_CXSCREEN = 0;
+pub const SM_CYSCREEN = 1;
+
+pub const SW_SHOWMAXIMIZED = 3;
+
 pub extern "user32" fn SetProcessDPIAware() callconv(WINAPI) BOOL;
 
 pub extern "user32" fn GetClientRect(HWND, *RECT) callconv(WINAPI) BOOL;
@@ -139,6 +144,10 @@ pub extern "user32" fn GetAsyncKeyState(vKey: c_int) callconv(WINAPI) SHORT;
 pub extern "user32" fn GetKeyState(vKey: c_int) callconv(WINAPI) SHORT;
 
 pub extern "user32" fn LoadCursorA(hInstance: ?HINSTANCE, lpCursorName: LPCSTR) callconv(WINAPI) ?HCURSOR;
+
+pub extern "user32" fn GetSystemMetrics(nIndex: c_int) callconv(WINAPI) c_int;
+
+pub extern "user32" fn ShowWindow(hWnd: HWND, nCmdShow: c_int) callconv(WINAPI) BOOL;
 
 pub const TME_LEAVE = 0x00000002;
 
