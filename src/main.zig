@@ -52,20 +52,24 @@ const Mesh = struct {
 
     const player = 0;
     const food = 1;
-    const level1 = 2;
-    const num_mesh_types = 3;
+    const level1 = 2; // Mesh levels need to be defined last in ascending order.
+    const level2 = 3;
+    const num_mesh_types = 4;
 };
 
 const map_size_x = 1400.0;
 const map_size_y = 1050.0;
 const player_start_x = -600.0;
 const player_start_y = 50.0;
+const num_levels = 2;
 
 fn is_key_down(vkey: c_int) bool {
     return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
 }
 
 const AppState = struct {
+    allocator: std.mem.Allocator,
+
     gpu_context: GpuContext,
 
     vertex_buffer: *d3d12.IResource,
@@ -81,6 +85,9 @@ const AppState = struct {
     d2d_factory: *d2d1.IFactory,
 
     player_is_dead: f32 = 0.0,
+    player_to_next_level: f32 = 0.0,
+    num_food_objects: u32,
+    current_level: u32,
 
     fn init(allocator: std.mem.Allocator) !AppState {
         var gc = GpuContext.init(
@@ -109,6 +116,7 @@ const AppState = struct {
             &d3d12.IResource.IID,
             @ptrCast(&frame_state_buffer),
         ));
+
         gc.device.CreateConstantBufferView(
             &.{
                 .BufferLocation = frame_state_buffer.GetGPUVirtualAddress(),
@@ -127,17 +135,14 @@ const AppState = struct {
             @ptrCast(&d2d_factory),
         ));
 
-        vhr(gc.command_allocators[0].Reset());
-        vhr(gc.command_list.Reset(gc.command_allocators[0], null));
-
         const meshes, const vertex_buffer = try define_and_upload_meshes(allocator, &gc, d2d_factory);
-        const objects, const object_buffer = try define_and_upload_objects(allocator, &gc);
 
-        vhr(gc.command_list.Close());
-        gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
-        gc.finish_gpu_commands();
+        const current_level = 1;
+
+        const objects, const num_food_objects, const object_buffer = try define_and_upload_objects(allocator, &gc, current_level);
 
         return AppState{
+            .allocator = allocator,
             .gpu_context = gc,
             .vertex_buffer = vertex_buffer,
             .object_buffer = object_buffer,
@@ -147,6 +152,8 @@ const AppState = struct {
             .meshes = meshes,
             .objects = objects,
             .d2d_factory = d2d_factory,
+            .num_food_objects = num_food_objects,
+            .current_level = current_level,
         };
     }
 
@@ -186,15 +193,52 @@ const AppState = struct {
 
             if (app.player_is_dead <= 0.0) {
                 app.player_is_dead = 0.0;
+
                 player.x = player_start_x;
                 player.y = player_start_y;
                 player.rotation = 0.0;
 
+                // Re-spawn food objects.
                 for (app.objects.items[1..]) |*object| {
-                    if (object.mesh_index == 0) object.mesh_index = Mesh.food;
+                    if (object.mesh_index == 0) {
+                        object.mesh_index = Mesh.food;
+                        app.num_food_objects += 1;
+                    }
                 }
             }
+            return true;
+        }
 
+        if (app.player_to_next_level > 0.0) {
+            app.player_to_next_level -= delta_time;
+
+            if (app.player_to_next_level <= 0.0) {
+                app.player_to_next_level = 0.0;
+
+                // Advance to the next level.
+                app.current_level += 1;
+                if (app.current_level > num_levels) {
+                    _ = w32.MessageBoxA(
+                        app.gpu_context.window,
+                        "CONGRATULATIONS!!! YOU'VE COMPLETED THE GAME!!!",
+                        "YOU ARE AWESOME",
+                        w32.MB_OK,
+                    );
+                    w32.PostQuitMessage(0);
+                    return true;
+                }
+
+                app.objects.deinit();
+
+                app.gpu_context.finish_gpu_commands();
+                _ = app.object_buffer.Release();
+
+                app.objects, app.num_food_objects, app.object_buffer = define_and_upload_objects(
+                    app.allocator,
+                    &app.gpu_context,
+                    app.current_level,
+                ) catch unreachable;
+            }
             return true;
         }
 
@@ -224,8 +268,14 @@ const AppState = struct {
             if (contains == .TRUE) {
                 if (object.mesh_index == Mesh.food) {
                     object.mesh_index = 0; // Mark this food as eaten.
+                    app.num_food_objects -= 1;
+                    if (app.num_food_objects == 0) {
+                        app.player_to_next_level = 1.0;
+                        return true;
+                    }
                 } else {
                     app.player_is_dead = 1.0;
+                    return true;
                 }
                 break;
             }
@@ -443,7 +493,8 @@ fn add_food(objects: *std.ArrayList(cgc.Object), x: f32, y: f32) void {
 fn define_and_upload_objects(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
-) !struct { std.ArrayList(cgc.Object), *d3d12.IResource } {
+    current_level: u32,
+) !struct { std.ArrayList(cgc.Object), u32, *d3d12.IResource } {
     var objects = std.ArrayList(cgc.Object).init(allocator);
 
     try objects.append(.{
@@ -454,27 +505,36 @@ fn define_and_upload_objects(
     });
     try objects.append(.{
         .color = 0,
-        .mesh_index = Mesh.level1,
+        .mesh_index = Mesh.level1 + current_level - 1,
         .x = 0.0,
         .y = 0.0,
     });
 
-    var num_foods = objects.items.len;
-    add_food(&objects, -374.0, 427.5);
-    add_food(&objects, -541.0, 386.0);
-    add_food(&objects, -4.0, 498.0);
-    add_food(&objects, -341.0, 244.0);
-    add_food(&objects, 61.0, 580.0);
-    add_food(&objects, 167.0, 636.0);
-    add_food(&objects, -214.5, 192.6);
-    add_food(&objects, -439.0, 762.6);
-    add_food(&objects, -391.0, 850.0);
-    add_food(&objects, -621.0, 709.0);
-    add_food(&objects, 213.0, 385.0);
-    add_food(&objects, 628.0, 280.0);
-    add_food(&objects, 467.0, 82.0);
-    add_food(&objects, 213.0, 385.0);
-    num_foods = objects.items.len - num_foods;
+    var num_food_objects = objects.items.len;
+    if (current_level == 1) {
+        add_food(&objects, -197.0, 352.0);
+        add_food(&objects, 232.0, 364.0);
+        add_food(&objects, 100.0, 802.0);
+        add_food(&objects, -160.0, 800.0);
+    } else if (current_level == 2) {
+        add_food(&objects, -374.0, 427.5);
+        add_food(&objects, -541.0, 386.0);
+        add_food(&objects, -4.0, 498.0);
+        add_food(&objects, -341.0, 244.0);
+        add_food(&objects, 61.0, 580.0);
+        add_food(&objects, 167.0, 636.0);
+        add_food(&objects, -214.5, 192.6);
+        add_food(&objects, -439.0, 762.6);
+        add_food(&objects, -391.0, 850.0);
+        add_food(&objects, -621.0, 709.0);
+        add_food(&objects, 213.0, 385.0);
+        add_food(&objects, 628.0, 280.0);
+        add_food(&objects, 467.0, 82.0);
+        add_food(&objects, 213.0, 385.0);
+    } else {
+        unreachable;
+    }
+    num_food_objects = objects.items.len - num_food_objects;
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
@@ -506,6 +566,9 @@ fn define_and_upload_objects(
             gc.shader_dheap_descriptor_size },
     );
 
+    vhr(gc.command_allocators[0].Reset());
+    vhr(gc.command_list.Reset(gc.command_allocators[0], null));
+
     const upload_mem, const buffer, const offset =
         gc.allocate_upload_buffer_region(cgc.Object, @intCast(objects.items.len));
 
@@ -519,7 +582,11 @@ fn define_and_upload_objects(
         upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
     );
 
-    return .{ objects, object_buffer };
+    vhr(gc.command_list.Close());
+    gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+    gc.finish_gpu_commands();
+
+    return .{ objects, @intCast(num_food_objects), object_buffer };
 }
 
 fn define_and_upload_meshes(
@@ -579,6 +646,50 @@ fn define_and_upload_meshes(
         };
     }
 
+    // Level 1
+    {
+        var geo: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo.Open(@ptrCast(&geo_sink)));
+        defer _ = geo_sink.Release();
+
+        const path9 = [_]f32{
+            -89.49, 177.3, -90.59, 177.6, -91.69, 178.2,
+            -128.5, 197.2, -69.09, 391.6, -92.09, 429.5,
+            -115,   467.4, -386.5, 426.9, -394.2, 468.3,
+            -401.9, 509.7, -189.6, 539.3, -186.8, 582.3,
+            -183.9, 625.3, -316.2, 737.7, -298.6, 773.2,
+            -280.9, 808.7, -152.9, 635.5, -112.6, 652.8,
+            -72.19, 670.1, -72.09, 879,   -32.59, 872.7,
+            7.012,  866.4, -6.488, 699.7, 34.61,  687.2,
+            75.61,  674.6, 279.5,  764.6, 306.2,  730.1,
+            332.8,  695.6, 103.4,  641.3, 118.5,  602.1,
+            133.5,  563,   404.3,  480.4, 394.1,  442.3,
+            383.8,  404.2, 161.9,  482.9, 130.3,  450.9,
+            98.81,  418.9, 193.4,  224.4, 161.9,  201.7,
+            130.5,  179,   0.5118, 408.2, -41.59, 397.8,
+            -82.39, 387.7, -56.59, 173.3, -88.39, 177.2,
+        };
+
+        geo_sink.BeginFigure(.{ .x = -88.39, .y = 177.2 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        vhr(geo_sink.Close());
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.level1] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    // Level 2
     {
         var geo: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
@@ -685,7 +796,7 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level1] = .{
+        meshes.items[Mesh.level2] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
@@ -722,6 +833,9 @@ fn define_and_upload_meshes(
             gc.shader_dheap_descriptor_size },
     );
 
+    vhr(gc.command_allocators[0].Reset());
+    vhr(gc.command_list.Reset(gc.command_allocators[0], null));
+
     const upload_mem, const buffer, const offset =
         gc.allocate_upload_buffer_region(cgc.Vertex, @intCast(vertices.items.len));
 
@@ -734,6 +848,10 @@ fn define_and_upload_meshes(
         offset,
         upload_mem.len * @sizeOf(@TypeOf(upload_mem[0])),
     );
+
+    vhr(gc.command_list.Close());
+    gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+    gc.finish_gpu_commands();
 
     for (meshes.items) |mesh| {
         var contains: w32.BOOL = .FALSE;
