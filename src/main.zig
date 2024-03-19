@@ -53,8 +53,9 @@ const Mesh = struct {
     const player = 0;
     const food = 1;
     const level1 = 2; // Mesh levels need to be defined last in ascending order.
-    const level2 = 3;
-    const num_mesh_types = 4;
+    const level2 = level1 + 1;
+
+    const num_mesh_types = level2 + 1;
 };
 
 const map_size_x = 1400.0;
