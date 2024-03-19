@@ -55,14 +55,16 @@ const Mesh = struct {
     const level1 = 2; // Mesh levels need to be defined last in ascending order.
     const level2 = level1 + 1;
 
-    const num_mesh_types = level2 + 1;
+    const last_level = level2;
+
+    const num_mesh_types = last_level + 1;
 };
 
 const map_size_x = 1400.0;
 const map_size_y = 1050.0;
 const player_start_x = -600.0;
 const player_start_y = 50.0;
-const num_levels = 2;
+const num_levels = Mesh.last_level - Mesh.level1 + 1;
 
 fn is_key_down(vkey: c_int) bool {
     return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
