@@ -399,7 +399,7 @@ const AppState = struct {
             .TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 1, 1, 1, 0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 1.0, 1.0, 1.0, 0.0 }, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(app.pso);
@@ -604,15 +604,39 @@ fn define_and_upload_meshes(
     var tessellation_sink: TessellationSink = .{ .vertices = &vertices };
 
     {
-        var geo: *d2d1.IEllipseGeometry = undefined;
-        vhr(d2d_factory.CreateEllipseGeometry(
-            &.{
-                .point = .{ .x = 0.0, .y = 0.0 },
-                .radiusX = 15.0,
-                .radiusY = 10.0,
-            },
-            @ptrCast(&geo),
-        ));
+        //var geo: *d2d1.IEllipseGeometry = undefined;
+        //vhr(d2d_factory.CreateEllipseGeometry(
+        //    &.{
+        //        .point = .{ .x = 0.0, .y = 0.0 },
+        //        .radiusX = 15.0,
+        //        .radiusY = 10.0,
+        //    },
+        //    @ptrCast(&geo),
+        //));
+
+        var geo: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo.Open(@ptrCast(&geo_sink)));
+        defer _ = geo_sink.Release();
+
+        const path11 = [_]f32{
+            10.5,   -9, 8.901,  -7, 9.701, -5,
+            2.101,  -8, -7.999, -8, -14.4, -2,
+            -17.2,  1,  -14.2,  5,  -11.1, 6,
+            -4.699, 9,  3.101,  9,  9.601, 6,
+            8.601,  9,  12.6,   11, 14.6,  9,
+            16.5,   8,  15.2,   4,  12.8,  4,
+            15.1,   2,  14.9,   -1, 12.6,  -3,
+            15.4,   -3, 16.6,   -7, 14.1,  -8,
+            13.6,   -9, 13.1,   -9, 12.5,  -9,
+        };
+
+        geo_sink.BeginFigure(.{ .x = 12.5, .y = -9.0 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path11), @sizeOf(@TypeOf(path11)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        vhr(geo_sink.Close());
 
         const first_vertex = vertices.items.len;
 
