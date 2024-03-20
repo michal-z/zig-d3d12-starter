@@ -57,8 +57,9 @@ const Mesh = struct {
     const level2 = level1 + 1;
     const level3 = level2 + 1;
     const level4 = level3 + 1;
+    const level5 = level4 + 1;
 
-    const last_level = level4;
+    const last_level = level5;
 
     const num_mesh_types = last_level + 1;
 };
@@ -564,6 +565,22 @@ fn define_and_upload_objects(
         add_food(&objects, 252.0, 581.0);
         add_food(&objects, 100.0, 802.0);
         add_food(&objects, -160.0, 800.0);
+    } else if (current_level == 5) {
+        add_food(&objects, -17.0, 533.0);
+        add_food(&objects, 313.0, 544.0);
+        add_food(&objects, -106.0, 530.0);
+        add_food(&objects, 261.0, 380.0);
+        add_food(&objects, 295.0, 456.0);
+        add_food(&objects, 67.0, 778.0);
+        add_food(&objects, -133.0, 719.0);
+        add_food(&objects, 398.0, 596.0);
+        add_food(&objects, 412.0, 477.0);
+        add_food(&objects, -415.0, 442.0);
+        add_food(&objects, -424.0, 562.0);
+        add_food(&objects, -396.0, 680.0);
+        add_food(&objects, -327.0, 643.0);
+        add_food(&objects, -39.0, 215.0);
+        add_food(&objects, -72.0, 333.0);
     } else {
         unreachable;
     }
@@ -965,6 +982,73 @@ fn define_and_upload_meshes(
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
         meshes.items[Mesh.level4] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    // Level 5
+    {
+        var geo: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo.Open(@ptrCast(&geo_sink)));
+        defer _ = geo_sink.Release();
+
+        const path2 = [_]f32{
+            -182.8, 68.69, -347.7, 168.3, -425.2, 318.3,
+            -505.7, 464.6, -497,   656.4, -396.2, 790.9,
+            -289.2, 940.6, -81.88, 1012,  92.79,  949.3,
+            278.6,  888.3, 402.2,  682.6, 365.8,  490,
+            337.6,  312.5, 171.9,  171.4, -7.317, 168.7,
+            -162.7, 161.9, -312.8, 266.8, -362.3, 413.7,
+            -414.3, 551.5, -366.5, 719.7, -246.3, 806.1,
+            -132.7, 894.7, 40.5,   899.1, 153.3,  806.9,
+            268.3,  718.8, 311,    545.9, 238.8,  418,
+            172.9,  292.6, 7.661,  228.6, -123.5, 286.9,
+            -248.9, 337.4, -321.4, 492.2, -272,   619.7,
+            -230.2, 740.6, -83.33, 813.6, 37.09,  766,
+            148.2,  727,   214,    589.7, 166,    480.3,
+            125.7,  374.9, -14.83, 321.1, -111.8, 383.5,
+            -194.6, 431.3, -225.3, 553.6, -163.5, 629.9,
+            -114.2, 698.3, -2.291, 712.3, 55.56,  647.3,
+            106.9,  597.1, 104.5,  503.7, 52.34,  515.2,
+            0.17,   526.7, 100,    524.4, 60.43,  608.7,
+            28.96,  675.8, -65.56, 691.3, -122,   646.7,
+            -193.9, 598.2, -197.9, 487,   -139.4, 426.3,
+            -76.15, 351.3, 48.14,  356.3, 113.6,  425.8,
+            191.8,  500.2, 183.5,  635.8, 106.2,  707.8,
+            29.2,   787.9, -106.3, 787,   -189.2, 716.9,
+            -280.1, 647,   -302.6, 510,   -246,   411.7,
+            -191.7, 306.1, -60.13, 251.2, 53.49,  284.7,
+            176.8,  315.6, 269.1,  437.2, 263.6,  564.6,
+            262.4,  710.5, 143.2,  844.4, -2.296, 860.2,
+            -162.4, 883.1, -326.8, 767.7, -360.7, 609.7,
+            -402.4, 442.4, -296.7, 256.9, -133.8, 203.3,
+            32.92,  142.8, 232.3,  227.4, 312.3,  383.9,
+            396,    537.1, 351.2,  740.6, 221.1,  853.7,
+            99.22,  966.2, -93.38, 984.2, -237.3, 904.3,
+            -385.4, 828.6, -477.1, 658.7, -458.8, 493.5,
+            -443.1, 311.6, -304.5, 147.3, -126.3, 105,
+            70.46,  53.34, 291.6,  152.9, 389.2,  330.1,
+            484.9,  495.8, 462,    715.2, 345.4,  864.6,
+            315.4,  903.7, 280.5,  939.2, 241.3,  969.2,
+            439,    850.3, 518.8,  578.8, 427.5,  368.9,
+            355.5,  194.3, 175.1,  74,    -13.55, 72.85,
+        };
+
+        geo_sink.BeginFigure(.{ .x = -13.55, .y = 72.85 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path2), @sizeOf(@TypeOf(path2)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        vhr(geo_sink.Close());
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.level5] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
