@@ -52,10 +52,13 @@ const Mesh = struct {
 
     const player = 0;
     const food = 1;
+
     const level1 = 2; // Mesh levels need to be defined last in ascending order.
     const level2 = level1 + 1;
+    const level3 = level2 + 1;
+    const level4 = level3 + 1;
 
-    const last_level = level2;
+    const last_level = level4;
 
     const num_mesh_types = last_level + 1;
 };
@@ -223,8 +226,8 @@ const AppState = struct {
                 if (app.current_level > num_levels) {
                     _ = w32.MessageBoxA(
                         app.gpu_context.window,
-                        "CONGRATULATIONS!!! YOU'VE COMPLETED THE GAME!!!",
-                        "YOU ARE AWESOME",
+                        "Y O U  H A V E  C O M P L E T E D  T H E  G A M E !!!",
+                        "CONGRATULATIONS",
                         w32.MB_OK,
                     );
                     w32.PostQuitMessage(0);
@@ -241,6 +244,17 @@ const AppState = struct {
                     &app.gpu_context,
                     app.current_level,
                 ) catch unreachable;
+
+                if (false) {
+                    _ = w32.MessageBoxA(
+                        app.gpu_context.window,
+                        "--------   L E V E L  C O M P L E T E D !!!   --------",
+                        "GREAT WORK",
+                        w32.MB_OK,
+                    );
+
+                    _, _ = update_frame_stats(app.gpu_context.window, window_name);
+                }
             }
             return true;
         }
@@ -520,6 +534,14 @@ fn define_and_upload_objects(
         add_food(&objects, 100.0, 802.0);
         add_food(&objects, -160.0, 800.0);
     } else if (current_level == 2) {
+        add_food(&objects, 252.0, 418.5);
+        add_food(&objects, -231.2, 818.8);
+        add_food(&objects, -41.37, 134.4);
+        add_food(&objects, 499.2, 158.1);
+        add_food(&objects, -631.7, 605.0);
+        add_food(&objects, 49.85, 644.6);
+        add_food(&objects, 384.9, 552.8);
+    } else if (current_level == 3) {
         add_food(&objects, -374.0, 427.5);
         add_food(&objects, -541.0, 386.0);
         add_food(&objects, -4.0, 498.0);
@@ -534,6 +556,14 @@ fn define_and_upload_objects(
         add_food(&objects, 628.0, 280.0);
         add_food(&objects, 467.0, 82.0);
         add_food(&objects, 213.0, 385.0);
+    } else if (current_level == 4) {
+        add_food(&objects, -197.0, 352.0);
+        add_food(&objects, -5.0, 274.0);
+        add_food(&objects, -296.0, 605.0);
+        add_food(&objects, 232.0, 364.0);
+        add_food(&objects, 252.0, 581.0);
+        add_food(&objects, 100.0, 802.0);
+        add_food(&objects, -160.0, 800.0);
     } else {
         unreachable;
     }
@@ -606,39 +636,15 @@ fn define_and_upload_meshes(
     var tessellation_sink: TessellationSink = .{ .vertices = &vertices };
 
     {
-        //var geo: *d2d1.IEllipseGeometry = undefined;
-        //vhr(d2d_factory.CreateEllipseGeometry(
-        //    &.{
-        //        .point = .{ .x = 0.0, .y = 0.0 },
-        //        .radiusX = 15.0,
-        //        .radiusY = 10.0,
-        //    },
-        //    @ptrCast(&geo),
-        //));
-
-        var geo: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
-
-        var geo_sink: *d2d1.IGeometrySink = undefined;
-        vhr(geo.Open(@ptrCast(&geo_sink)));
-        defer _ = geo_sink.Release();
-
-        const path11 = [_]f32{
-            10.5,   -9, 8.901,  -7, 9.701, -5,
-            2.101,  -8, -7.999, -8, -14.4, -2,
-            -17.2,  1,  -14.2,  5,  -11.1, 6,
-            -4.699, 9,  3.101,  9,  9.601, 6,
-            8.601,  9,  12.6,   11, 14.6,  9,
-            16.5,   8,  15.2,   4,  12.8,  4,
-            15.1,   2,  14.9,   -1, 12.6,  -3,
-            15.4,   -3, 16.6,   -7, 14.1,  -8,
-            13.6,   -9, 13.1,   -9, 12.5,  -9,
-        };
-
-        geo_sink.BeginFigure(.{ .x = 12.5, .y = -9.0 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path11), @sizeOf(@TypeOf(path11)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        vhr(geo_sink.Close());
+        var geo: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 15.0,
+                .radiusY = 10.0,
+            },
+            @ptrCast(&geo),
+        ));
 
         const first_vertex = vertices.items.len;
 
@@ -717,6 +723,65 @@ fn define_and_upload_meshes(
     }
 
     // Level 2
+    {
+        var geo: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo.Open(@ptrCast(&geo_sink)));
+        defer _ = geo_sink.Release();
+
+        const path4 = [_]f32{
+            -520.3, 201.3, -572.5, 219.2, -598.2, 244.7,
+            -642.4, 288.6, -583.9, 368.6, -572.7, 429.9,
+            -563.2, 481.8, -538.7, 531.4, -537.4, 584.1,
+            -534.3, 706.6, -659,   838.2, -601,   946.1,
+            -578.1, 988.7, -515.6, 995.3, -468.1, 1004,
+            -267.1, 1041,  -60.07, 975.5, 144.3,  974.4,
+            294.3,  973.6, 479.3,  1088,  594,    991.4,
+            666,    930.7, 627.6,  805.5, 631,    711.4,
+            635.8,  576.9, 682.7,  419.6, 607,    308.3,
+            575.6,  262.1, 509.3,  250.6, 455,    237.6,
+            396.2,  223.5, 335.6,  218.6, 274.7,  218.1,
+            213.8,  217.5, 152.4,  221.4, 92,     224.9,
+            -33.67, 232.1, -197.3, 177.1, -246,   251.7,
+            -294.8, 326.3, -190.7, 383.9, -203.6, 452.6,
+            -216.5, 521.2, -252.6, 680.8, -79.99, 642.7,
+            -22.73, 625.8, 75.09,  602,   114.6,  421.4,
+            146.8,  274.3, 261.1,  290,   373,    347.9,
+            433.3,  379.1, 485.6,  437.4, 506,    502.1,
+            524.8,  561.7, 484.3,  579.4, 502.6,  639.2,
+            519.5,  694.3, 468.5,  773.9, 373,    676,
+            293.2,  594.2, 239.7,  651.8, 144.3,  690.1,
+            38.58,  732.6, -49.61, 680.9, -12.43, 781,
+            18.59,  864.4, -67.47, 830.1, -52.26, 912.2,
+            -39.54, 980.8, -135.7, 965.2, -205,   973,
+            -284.9, 982,   -395.1, 984.6, -439.8, 917.8,
+            -468,   875.8, -436.2, 814.2, -415.7, 767.9,
+            -392.2, 714.9, -328.2, 686.1, -306.8, 632.2,
+            -296.1, 605.4, -295.3, 574.4, -299.8, 545.9,
+            -310.5, 477.4, -363.7, 421.2, -379,   353.6,
+            -384.8, 328.2, -381.1, 314.3, -383.3, 275.6,
+            -386.2, 224.3, -427.1, 203.8, -473.7, 202.6,
+        };
+
+        geo_sink.BeginFigure(.{ .x = -473.7, .y = 202.6 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path4), @sizeOf(@TypeOf(path4)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        vhr(geo_sink.Close());
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.level2] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    // Level 3
     {
         var geo: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
@@ -823,7 +888,83 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level2] = .{
+        meshes.items[Mesh.level3] = .{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = @ptrCast(geo),
+        };
+    }
+
+    // Level 4
+    {
+        var geo: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo.Open(@ptrCast(&geo_sink)));
+        defer _ = geo_sink.Release();
+
+        const path1_0 = [_]f32{
+            -244.8, 95.16, -257.1, 97.17, -271,   101,
+            -403,   137.3, -514.8, 49.98, -588,   130,
+            -786.9, 347.5, -651.3, 767.5, -443,   976,
+            -310.6, 1109,  156.2,  908.5, 319.1,  949,
+            544.6,  1005,  744,    946.9, 576,    878,
+            516.2,  853.5, 514.7,  812.2, 522.6,  789.5,
+            543.4,  730,   425.4,  797.4, 464,    816,
+            617.3,  889.9, 258.7,  915.4, 95.2,   940,
+            -68.33, 965,   -315.8, 1045,  -412,   892,
+            -473.3, 794.5, -739.7, 696.8, -560.3, 343.9,
+            -509.4, 243.8, -662.5, 253.7, -556,   171,
+            -430.8, 73.79, -365.3, 182.7, -271,   171,
+            -169.1, 158.3, -160.1, 90.76, -234.2, 94.61,
+        };
+        const path1_1 = [_]f32{
+            -99.43, 153.6, -125,   172.4, -130.5, 183.2,
+            -161.3, 243.5, -70.71, 323.9, -69.09, 391.6,
+            -67.48, 458.7, -126.2, 417.7, -128,   465.4,
+            -131.4, 556.8, -304.4, 386.5, -386.5, 426.9,
+            -446.1, 456.2, -454.7, 541.4, -401.9, 509.7,
+            -340.6, 472.9, -260.1, 527.8, -189.6, 539.3,
+            -138.7, 547.6, -140.9, 595.9, -183.9, 625.3,
+            -231.7, 658,   -260.1, 723.4, -316.2, 737.7,
+            -385.8, 755.4, -358.8, 809,   -280.9, 808.7,
+            -209.1, 808.4, -146.4, 707,   -152.9, 635.5,
+            -156.8, 592.6, -104,   625.8, -72.19, 670.1,
+            -31.56, 726.6, -80.45, 819.6, -69.24, 888.4,
+            -61.4,  936.5, -15.7,  907.4, 13.16,  853,
+            39.29,  803.8, -38.5,  745.3, -6.488, 699.7,
+            34.9,   640.7, 15.68,  714,   75.61,  674.6,
+            165.5,  615.5, 247.1,  697.8, 279.5,  764.6,
+            306.2,  819.6, 363.9,  718.5, 287.4,  702.8,
+            224.8,  689.9, 179.9,  621.8, 103.4,  641.3,
+            44.89,  656.2, 57.85,  537.3, 133.5,  563,
+            219,    592.1, 235.3,  484.4, 329.3,  493.4,
+            406.9,  500.8, 413.3,  378.1, 348.8,  445.2,
+            294.4,  501.8, 142.4,  380,   161.9,  482.9,
+            169,    520.1, 117.3,  500.3, 98.81,  418.9,
+            75.74,  317,   264.9,  233.9, 193.4,  224.4,
+            138.3,  217.1, 53.9,   201.6, 82.5,   266,
+            118.1,  346.3, -34.06, 345.2, 0.5117, 408.2,
+            20.82,  445.2, 8.578,  466.9, -41.59, 397.8,
+            -78.23, 347.3, -21.43, 345.2, -41.39, 290.7,
+            -66.14, 223.1, -7.633, 241.1, -37.59, 178.3,
+            -46.57, 159.5, -60.64, 153,   -75.19, 153.2,
+        };
+
+        geo_sink.BeginFigure(.{ .x = -234.2, .y = 94.61 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path1_0), @sizeOf(@TypeOf(path1_0)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        geo_sink.BeginFigure(.{ .x = -75.19, .y = 153.2 }, .FILLED);
+        geo_sink.AddBeziers(@ptrCast(&path1_1), @sizeOf(@TypeOf(path1_1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+        geo_sink.EndFigure(.CLOSED);
+        vhr(geo_sink.Close());
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        meshes.items[Mesh.level4] = .{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
