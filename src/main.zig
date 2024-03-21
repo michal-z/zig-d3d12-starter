@@ -4,6 +4,7 @@ const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
+const xa2 = @import("win32/xaudio2.zig");
 const cgc = @cImport(@cInclude("cpu_gpu_common.h"));
 
 pub const std_options = .{
@@ -103,6 +104,10 @@ const AppState = struct {
                 @divTrunc(w32.GetSystemMetrics(w32.SM_CYSCREEN), 2),
             ),
         );
+
+        //var audio: *xa2.IXAudio2 = undefined;
+        //_ = xa2.create(@ptrCast(&audio), .{}, 0);
+        //defer _ = audio.Release();
 
         const pso, const pso_rs = create_pso(gc.device);
 

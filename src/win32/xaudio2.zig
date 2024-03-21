@@ -1,5 +1,5 @@
 const std = @import("std");
-const w32 = @import("w32.zig");
+const w32 = @import("win32.zig");
 const IUnknown = w32.IUnknown;
 const BYTE = w32.BYTE;
 const UINT = w32.UINT;
@@ -9,9 +9,20 @@ const WINAPI = w32.WINAPI;
 const LPCWSTR = w32.LPCWSTR;
 const BOOL = w32.BOOL;
 const DWORD = w32.DWORD;
+const WORD = w32.WORD;
 const GUID = w32.GUID;
 const HRESULT = w32.HRESULT;
-const WAVEFORMATEX = @import("wasapi.zig").WAVEFORMATEX;
+//const WAVEFORMATEX = @import("wasapi.zig").WAVEFORMATEX;
+
+pub const WAVEFORMATEX = extern struct {
+    wFormatTag: WORD,
+    nChannels: WORD,
+    nSamplesPerSec: DWORD,
+    nAvgBytesPerSec: DWORD,
+    nBlockAlign: WORD,
+    wBitsPerSample: WORD,
+    cbSize: WORD,
+};
 
 // NOTE(mziulek):
 // xaudio2redist.h uses tight field packing so we need align each field with `align(1)`
