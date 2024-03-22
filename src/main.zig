@@ -51,25 +51,22 @@ const Mesh = struct {
 
     geometry: *d2d1.IGeometry,
 
-    const player = 0;
-    const food = 1;
+    var player: u32 = undefined;
+    var food: u32 = undefined;
 
-    const level1 = 2; // Mesh levels need to be defined last in ascending order.
-    const level2 = level1 + 1;
-    const level3 = level2 + 1;
-    const level4 = level3 + 1;
-    const level5 = level4 + 1;
+    var level1: u32 = undefined;
+    var level2: u32 = undefined;
+    var level3: u32 = undefined;
+    var level4: u32 = undefined;
+    var level5: u32 = undefined;
 
-    const last_level = level5;
-
-    const num_mesh_types = last_level + 1;
+    const num_levels = 5;
 };
 
 const map_size_x = 1400.0;
 const map_size_y = 1050.0;
 const player_start_x = -600.0;
 const player_start_y = 50.0;
-const num_levels = Mesh.last_level - Mesh.level1 + 1;
 
 fn is_key_down(vkey: c_int) bool {
     return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
@@ -229,7 +226,7 @@ const AppState = struct {
 
                 // Advance to the next level.
                 app.current_level += 1;
-                if (app.current_level > num_levels) {
+                if (app.current_level > Mesh.num_levels) {
                     _ = w32.MessageBoxA(
                         app.gpu_context.window,
                         "Y O U  H A V E  C O M P L E T E D  T H E  G A M E !!!",
@@ -508,9 +505,10 @@ fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d1
     return .{ pipeline, root_signature };
 }
 
-fn add_food(objects: *std.ArrayList(cgc.Object), x: f32, y: f32) void {
+fn add_food(objects: *std.ArrayList(cgc.Object), num_food_objects: *u32, x: f32, y: f32) void {
     const fc = 0xaa_0f_6c_0b;
     objects.append(.{ .color = fc, .mesh_index = Mesh.food, .x = x, .y = y }) catch unreachable;
+    num_food_objects.* += 1;
 }
 
 fn define_and_upload_objects(
@@ -519,6 +517,7 @@ fn define_and_upload_objects(
     current_level: u32,
 ) !struct { std.ArrayList(cgc.Object), u32, *d3d12.IResource } {
     var objects = std.ArrayList(cgc.Object).init(allocator);
+    var num_food_objects: u32 = 0;
 
     try objects.append(.{
         .color = 0xaa_bb_00_00,
@@ -526,70 +525,92 @@ fn define_and_upload_objects(
         .x = player_start_x,
         .y = player_start_y,
     });
-    try objects.append(.{
-        .color = 0,
-        .mesh_index = Mesh.level1 + current_level - 1,
-        .x = 0.0,
-        .y = 0.0,
-    });
 
-    var num_food_objects = objects.items.len;
     if (current_level == 1) {
-        add_food(&objects, -197.0, 352.0);
-        add_food(&objects, 232.0, 364.0);
-        add_food(&objects, 100.0, 802.0);
-        add_food(&objects, -160.0, 800.0);
+        try objects.append(.{
+            .color = 0,
+            .mesh_index = Mesh.level1,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        add_food(&objects, &num_food_objects, -197.0, 352.0);
+        add_food(&objects, &num_food_objects, 232.0, 364.0);
+        add_food(&objects, &num_food_objects, 100.0, 802.0);
+        add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 2) {
-        add_food(&objects, 252.0, 418.5);
-        add_food(&objects, -231.2, 818.8);
-        add_food(&objects, -41.37, 134.4);
-        add_food(&objects, 499.2, 158.1);
-        add_food(&objects, -631.7, 605.0);
-        add_food(&objects, 49.85, 644.6);
-        add_food(&objects, 384.9, 552.8);
+        try objects.append(.{
+            .color = 0,
+            .mesh_index = Mesh.level2,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        add_food(&objects, &num_food_objects, 252.0, 418.5);
+        add_food(&objects, &num_food_objects, -231.2, 818.8);
+        add_food(&objects, &num_food_objects, -41.37, 134.4);
+        add_food(&objects, &num_food_objects, 499.2, 158.1);
+        add_food(&objects, &num_food_objects, -631.7, 605.0);
+        add_food(&objects, &num_food_objects, 49.85, 644.6);
+        add_food(&objects, &num_food_objects, 384.9, 552.8);
     } else if (current_level == 3) {
-        add_food(&objects, -374.0, 427.5);
-        add_food(&objects, -541.0, 386.0);
-        add_food(&objects, -4.0, 498.0);
-        add_food(&objects, -341.0, 244.0);
-        add_food(&objects, 61.0, 580.0);
-        add_food(&objects, 167.0, 636.0);
-        add_food(&objects, -214.5, 192.6);
-        add_food(&objects, -439.0, 762.6);
-        add_food(&objects, -391.0, 850.0);
-        add_food(&objects, -621.0, 709.0);
-        add_food(&objects, 213.0, 385.0);
-        add_food(&objects, 628.0, 280.0);
-        add_food(&objects, 467.0, 82.0);
-        add_food(&objects, 213.0, 385.0);
+        try objects.append(.{
+            .color = 0,
+            .mesh_index = Mesh.level3,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        add_food(&objects, &num_food_objects, -374.0, 427.5);
+        add_food(&objects, &num_food_objects, -541.0, 386.0);
+        add_food(&objects, &num_food_objects, -4.0, 498.0);
+        add_food(&objects, &num_food_objects, -341.0, 244.0);
+        add_food(&objects, &num_food_objects, 61.0, 580.0);
+        add_food(&objects, &num_food_objects, 167.0, 636.0);
+        add_food(&objects, &num_food_objects, -214.5, 192.6);
+        add_food(&objects, &num_food_objects, -439.0, 762.6);
+        add_food(&objects, &num_food_objects, -391.0, 850.0);
+        add_food(&objects, &num_food_objects, -621.0, 709.0);
+        add_food(&objects, &num_food_objects, 213.0, 385.0);
+        add_food(&objects, &num_food_objects, 628.0, 280.0);
+        add_food(&objects, &num_food_objects, 467.0, 82.0);
+        add_food(&objects, &num_food_objects, 213.0, 385.0);
     } else if (current_level == 4) {
-        add_food(&objects, -197.0, 352.0);
-        add_food(&objects, -5.0, 274.0);
-        add_food(&objects, -296.0, 605.0);
-        add_food(&objects, 232.0, 364.0);
-        add_food(&objects, 252.0, 581.0);
-        add_food(&objects, 100.0, 802.0);
-        add_food(&objects, -160.0, 800.0);
+        try objects.append(.{
+            .color = 0,
+            .mesh_index = Mesh.level4,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        add_food(&objects, &num_food_objects, -197.0, 352.0);
+        add_food(&objects, &num_food_objects, -5.0, 274.0);
+        add_food(&objects, &num_food_objects, -296.0, 605.0);
+        add_food(&objects, &num_food_objects, 232.0, 364.0);
+        add_food(&objects, &num_food_objects, 252.0, 581.0);
+        add_food(&objects, &num_food_objects, 100.0, 802.0);
+        add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 5) {
-        add_food(&objects, -17.0, 533.0);
-        add_food(&objects, 313.0, 544.0);
-        add_food(&objects, -106.0, 530.0);
-        add_food(&objects, 261.0, 380.0);
-        add_food(&objects, 295.0, 456.0);
-        add_food(&objects, 67.0, 778.0);
-        add_food(&objects, -133.0, 719.0);
-        add_food(&objects, 398.0, 596.0);
-        add_food(&objects, 412.0, 477.0);
-        add_food(&objects, -415.0, 442.0);
-        add_food(&objects, -424.0, 562.0);
-        add_food(&objects, -396.0, 680.0);
-        add_food(&objects, -327.0, 643.0);
-        add_food(&objects, -39.0, 215.0);
-        add_food(&objects, -72.0, 333.0);
+        try objects.append(.{
+            .color = 0,
+            .mesh_index = Mesh.level5,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        add_food(&objects, &num_food_objects, -17.0, 533.0);
+        add_food(&objects, &num_food_objects, 313.0, 544.0);
+        add_food(&objects, &num_food_objects, -106.0, 530.0);
+        add_food(&objects, &num_food_objects, 261.0, 380.0);
+        add_food(&objects, &num_food_objects, 295.0, 456.0);
+        add_food(&objects, &num_food_objects, 67.0, 778.0);
+        add_food(&objects, &num_food_objects, -133.0, 719.0);
+        add_food(&objects, &num_food_objects, 398.0, 596.0);
+        add_food(&objects, &num_food_objects, 412.0, 477.0);
+        add_food(&objects, &num_food_objects, -415.0, 442.0);
+        add_food(&objects, &num_food_objects, -424.0, 562.0);
+        add_food(&objects, &num_food_objects, -396.0, 680.0);
+        add_food(&objects, &num_food_objects, -327.0, 643.0);
+        add_food(&objects, &num_food_objects, -39.0, 215.0);
+        add_food(&objects, &num_food_objects, -72.0, 333.0);
     } else {
         unreachable;
     }
-    num_food_objects = objects.items.len - num_food_objects;
 
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
@@ -649,13 +670,12 @@ fn define_and_upload_meshes(
     gc: *GpuContext,
     d2d_factory: *d2d1.IFactory,
 ) !struct { std.ArrayList(Mesh), *d3d12.IResource } {
-    var meshes = std.ArrayList(Mesh).init(allocator);
-    try meshes.resize(Mesh.num_mesh_types);
-
     var vertices = std.ArrayList(cgc.Vertex).init(allocator);
     defer vertices.deinit();
 
     var tessellation_sink: TessellationSink = .{ .vertices = &vertices };
+
+    var meshes = std.ArrayList(Mesh).init(allocator);
 
     {
         var geo: *d2d1.IEllipseGeometry = undefined;
@@ -672,11 +692,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.player] = .{
+        Mesh.player = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     {
@@ -694,11 +715,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.food] = .{
+        Mesh.food = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     // Level 1
@@ -737,11 +759,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level1] = .{
+        Mesh.level1 = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     // Level 2
@@ -796,11 +819,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level2] = .{
+        Mesh.level2 = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     // Level 3
@@ -910,11 +934,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level3] = .{
+        Mesh.level3 = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     // Level 4
@@ -986,11 +1011,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level4] = .{
+        Mesh.level4 = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     // Level 5
@@ -1053,11 +1079,12 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        meshes.items[Mesh.level5] = .{
+        Mesh.level5 = @intCast(meshes.items.len);
+        try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
-        };
+        });
     }
 
     var vertex_buffer: *d3d12.IResource = undefined;
@@ -1109,16 +1136,6 @@ fn define_and_upload_meshes(
     vhr(gc.command_list.Close());
     gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
     gc.finish_gpu_commands();
-
-    for (meshes.items) |mesh| {
-        var contains: w32.BOOL = .FALSE;
-        vhr(mesh.geometry.FillContainsPoint(
-            .{ .x = 0.0, .y = 0.0 },
-            &d2d1.MATRIX_3X2_F.translation(0.0, 0.0),
-            d2d1.DEFAULT_FLATTENING_TOLERANCE,
-            &contains,
-        ));
-    }
 
     return .{ meshes, vertex_buffer };
 }
