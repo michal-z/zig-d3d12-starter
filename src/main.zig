@@ -53,12 +53,17 @@ const Mesh = struct {
 
     var player: u32 = undefined;
     var food: u32 = undefined;
+    var fullscreen_rect: u32 = undefined;
 
     var level1: u32 = undefined;
     var level1_stroke: u32 = undefined;
 
     var level2: u32 = undefined;
+    var level2_stroke: u32 = undefined;
+
     var level3: u32 = undefined;
+    var level3_stroke: u32 = undefined;
+
     var level4: u32 = undefined;
     var level5: u32 = undefined;
 
@@ -534,13 +539,19 @@ fn define_and_upload_objects(
 
     if (current_level == 1) {
         try objects.append(.{
+            .color = 0xaa_00_00_22,
+            .mesh_index = Mesh.fullscreen_rect,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        try objects.append(.{
             .color = 0,
             .mesh_index = Mesh.level1,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_00_22_cc,
+            .color = 0xaa_11_33_cc,
             .mesh_index = Mesh.level1_stroke,
             .x = 0.0,
             .y = 0.0,
@@ -556,6 +567,12 @@ fn define_and_upload_objects(
             .x = 0.0,
             .y = 0.0,
         });
+        try objects.append(.{
+            .color = 0xaa_11_33_cc,
+            .mesh_index = Mesh.level2_stroke,
+            .x = 0.0,
+            .y = 0.0,
+        });
         add_food(&objects, &num_food_objects, 252.0, 418.5);
         add_food(&objects, &num_food_objects, -231.2, 818.8);
         add_food(&objects, &num_food_objects, -41.37, 134.4);
@@ -567,6 +584,12 @@ fn define_and_upload_objects(
         try objects.append(.{
             .color = 0,
             .mesh_index = Mesh.level3,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        try objects.append(.{
+            .color = 0xaa_11_33_cc,
+            .mesh_index = Mesh.level3_stroke,
             .x = 0.0,
             .y = 0.0,
         });
@@ -737,6 +760,31 @@ fn define_and_upload_meshes(
         });
     }
 
+    {
+        var geo: *d2d1.IRectangleGeometry = undefined;
+        vhr(d2d_factory.CreateRectangleGeometry(
+            &.{
+                .left = -map_size_x,
+                .top = 0.0,
+                .right = map_size_x,
+                .bottom = map_size_y,
+            },
+            @ptrCast(&geo),
+        ));
+        defer _ = geo.Release();
+
+        const first_vertex = vertices.items.len;
+
+        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+        Mesh.fullscreen_rect = @intCast(meshes.items.len);
+        try meshes.append(.{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = null,
+        });
+    }
+
     // Level 1
     {
         // We *won't* need it for collision detection.
@@ -821,12 +869,12 @@ fn define_and_upload_meshes(
 
     // Level 2
     {
-        var geo: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+        var geo_fill: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
+        defer _ = geo_fill.Release();
 
-        var geo_sink: *d2d1.IGeometrySink = undefined;
-        vhr(geo.Open(@ptrCast(&geo_sink)));
-        defer _ = geo_sink.Release();
+        var geo_stroke: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
 
         const path4 = [_]f32{
             -520.3, 201.3, -572.5, 219.2, -598.2, 244.7,
@@ -862,31 +910,63 @@ fn define_and_upload_meshes(
             -386.2, 224.3, -427.1, 203.8, -473.7, 202.6,
         };
 
-        geo_sink.BeginFigure(.{ .x = -473.7, .y = 202.6 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path4), @sizeOf(@TypeOf(path4)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        vhr(geo_sink.Close());
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_fill.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            geo_sink.BeginFigure(.{ .x = -473.7, .y = 202.6 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path4), @sizeOf(@TypeOf(path4)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+        }
 
-        const first_vertex = vertices.items.len;
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            vhr(geo_fill.Widen(7.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+        }
 
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+        {
+            const first_vertex = vertices.items.len;
 
-        Mesh.level2 = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        });
+            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level2 = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = null,
+            });
+        }
+
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level2_stroke = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = @ptrCast(geo_stroke),
+            });
+        }
     }
 
     // Level 3
     {
-        var geo: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+        var geo_fill: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
+        defer _ = geo_fill.Release();
 
-        var geo_sink: *d2d1.IGeometrySink = undefined;
-        vhr(geo.Open(@ptrCast(&geo_sink)));
-        defer _ = geo_sink.Release();
+        var geo_stroke: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
 
         const path1 = [_]f32{
             -567.1, 259,   -616.3, 313.1, -616.3, 375.7,
@@ -965,33 +1045,65 @@ fn define_and_upload_meshes(
             331.5, 69.08, 309.8, 77.73, 305, 92,
         };
 
-        geo_sink.BeginFigure(.{ .x = -558.2, .y = 197.0 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path1), @sizeOf(@TypeOf(path1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        geo_sink.BeginFigure(.{ .x = -467.4, .y = 287.2 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path3), @sizeOf(@TypeOf(path3)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        geo_sink.BeginFigure(.{ .x = -38.0, .y = 324.0 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path5), @sizeOf(@TypeOf(path5)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        geo_sink.BeginFigure(.{ .x = -531.0, .y = 677.0 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path6), @sizeOf(@TypeOf(path6)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        geo_sink.BeginFigure(.{ .x = 305.0, .y = 92.0 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path7), @sizeOf(@TypeOf(path7)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        vhr(geo_sink.Close());
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_fill.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            geo_sink.BeginFigure(.{ .x = -558.2, .y = 197.0 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path1), @sizeOf(@TypeOf(path1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+            geo_sink.BeginFigure(.{ .x = -467.4, .y = 287.2 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path3), @sizeOf(@TypeOf(path3)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+            geo_sink.BeginFigure(.{ .x = -38.0, .y = 324.0 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path5), @sizeOf(@TypeOf(path5)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+            geo_sink.BeginFigure(.{ .x = -531.0, .y = 677.0 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path6), @sizeOf(@TypeOf(path6)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+            geo_sink.BeginFigure(.{ .x = 305.0, .y = 92.0 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path7), @sizeOf(@TypeOf(path7)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+        }
 
-        const first_vertex = vertices.items.len;
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            vhr(geo_fill.Widen(7.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+        }
 
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+        {
+            const first_vertex = vertices.items.len;
 
-        Mesh.level3 = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        });
+            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level3 = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = null,
+            });
+        }
+
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level3_stroke = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = @ptrCast(geo_stroke),
+            });
+        }
     }
 
     // Level 4
