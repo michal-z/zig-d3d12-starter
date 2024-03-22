@@ -692,7 +692,9 @@ fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
+        // Player mesh needs to have index 0 so it needs to be defined first in the code.
         Mesh.player = @intCast(meshes.items.len);
+        std.debug.assert(Mesh.player == 0);
         try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
