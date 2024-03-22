@@ -540,7 +540,7 @@ fn define_and_upload_objects(
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_cc_00_11,
+            .color = 0xaa_00_22_cc,
             .mesh_index = Mesh.level1_stroke,
             .x = 0.0,
             .y = 0.0,
@@ -739,12 +739,14 @@ fn define_and_upload_meshes(
 
     // Level 1
     {
-        var geo: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
-        defer _ = geo.Release();
+        // We *won't* need it for collision detection.
+        var geo_fill: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
+        defer _ = geo_fill.Release();
 
-        var geo_sink: *d2d1.IGeometrySink = undefined;
-        vhr(geo.Open(@ptrCast(&geo_sink)));
+        // We *will* need it for collision detection.
+        var geo_stroke: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
 
         const path9 = [_]f32{
             -89.49, 177.3, -90.59, 177.6, -91.69, 178.2,
@@ -764,24 +766,35 @@ fn define_and_upload_meshes(
             -82.39, 387.7, -56.59, 173.3, -88.39, 177.2,
         };
 
-        geo_sink.BeginFigure(.{ .x = -88.39, .y = 177.2 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        vhr(geo_sink.Close());
-        _ = geo_sink.Release();
+        // Fill shape
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_fill.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            geo_sink.BeginFigure(.{ .x = -88.39, .y = 177.2 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+        }
 
-        var geo_widen: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_widen)));
+        // Stroke shape
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            vhr(geo_fill.Widen(15.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+        }
 
-        vhr(geo_widen.Open(@ptrCast(&geo_sink)));
-        vhr(geo.Widen(15.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
-        vhr(geo_sink.Close());
-        _ = geo_sink.Release();
-
+        // Tessellate fill shape
         {
             const first_vertex = vertices.items.len;
 
-            vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
             Mesh.level1 = @intCast(meshes.items.len);
             try meshes.append(.{
@@ -791,16 +804,17 @@ fn define_and_upload_meshes(
             });
         }
 
+        // Tessellate stroke shape
         {
             const first_vertex = vertices.items.len;
 
-            vhr(geo_widen.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
             Mesh.level1_stroke = @intCast(meshes.items.len);
             try meshes.append(.{
                 .first_vertex = @intCast(first_vertex),
                 .num_vertices = @intCast(vertices.items.len - first_vertex),
-                .geometry = @ptrCast(geo_widen),
+                .geometry = @ptrCast(geo_stroke),
             });
         }
     }
