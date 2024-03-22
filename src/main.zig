@@ -49,12 +49,14 @@ const Mesh = struct {
     first_vertex: u32,
     num_vertices: u32,
 
-    geometry: *d2d1.IGeometry,
+    geometry: ?*d2d1.IGeometry,
 
     var player: u32 = undefined;
     var food: u32 = undefined;
 
     var level1: u32 = undefined;
+    var level1_stroke: u32 = undefined;
+
     var level2: u32 = undefined;
     var level3: u32 = undefined;
     var level4: u32 = undefined;
@@ -167,7 +169,9 @@ const AppState = struct {
     }
 
     fn deinit(app: *AppState) void {
-        for (app.meshes.items) |mesh| _ = mesh.geometry.Release();
+        for (app.meshes.items) |mesh| {
+            if (mesh.geometry) |geometry| _ = geometry.Release();
+        }
         app.meshes.deinit();
         app.objects.deinit();
 
@@ -277,27 +281,29 @@ const AppState = struct {
         for (app.objects.items[1..]) |*object| {
             if (object.mesh_index == 0) continue; // Already eaten food.
 
-            var contains: w32.BOOL = .FALSE;
-            vhr(app.meshes.items[object.mesh_index].geometry.FillContainsPoint(
-                .{ .x = player.x, .y = player.y },
-                &d2d1.MATRIX_3X2_F.translation(object.x, object.y),
-                d2d1.DEFAULT_FLATTENING_TOLERANCE,
-                &contains,
-            ));
+            if (app.meshes.items[object.mesh_index].geometry) |geometry| {
+                var contains: w32.BOOL = .FALSE;
+                vhr(geometry.FillContainsPoint(
+                    .{ .x = player.x, .y = player.y },
+                    &d2d1.MATRIX_3X2_F.translation(object.x, object.y),
+                    d2d1.DEFAULT_FLATTENING_TOLERANCE,
+                    &contains,
+                ));
 
-            if (contains == .TRUE) {
-                if (object.mesh_index == Mesh.food) {
-                    object.mesh_index = 0; // Mark this food as eaten.
-                    app.num_food_objects -= 1;
-                    if (app.num_food_objects == 0) {
-                        app.player_to_next_level = 1.0;
+                if (contains == .TRUE) {
+                    if (object.mesh_index == Mesh.food) {
+                        object.mesh_index = 0; // Mark this food as eaten.
+                        app.num_food_objects -= 1;
+                        if (app.num_food_objects == 0) {
+                            app.player_to_next_level = 1.0;
+                            return true;
+                        }
+                    } else {
+                        app.player_is_dead = 1.0;
                         return true;
                     }
-                } else {
-                    app.player_is_dead = 1.0;
-                    return true;
+                    break;
                 }
-                break;
             }
         }
 
@@ -533,6 +539,12 @@ fn define_and_upload_objects(
             .x = 0.0,
             .y = 0.0,
         });
+        try objects.append(.{
+            .color = 0xaa_cc_00_11,
+            .mesh_index = Mesh.level1_stroke,
+            .x = 0.0,
+            .y = 0.0,
+        });
         add_food(&objects, &num_food_objects, -197.0, 352.0);
         add_food(&objects, &num_food_objects, 232.0, 364.0);
         add_food(&objects, &num_food_objects, 100.0, 802.0);
@@ -729,10 +741,10 @@ fn define_and_upload_meshes(
     {
         var geo: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+        defer _ = geo.Release();
 
         var geo_sink: *d2d1.IGeometrySink = undefined;
         vhr(geo.Open(@ptrCast(&geo_sink)));
-        defer _ = geo_sink.Release();
 
         const path9 = [_]f32{
             -89.49, 177.3, -90.59, 177.6, -91.69, 178.2,
@@ -756,17 +768,41 @@ fn define_and_upload_meshes(
         geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
         geo_sink.EndFigure(.CLOSED);
         vhr(geo_sink.Close());
+        _ = geo_sink.Release();
 
-        const first_vertex = vertices.items.len;
+        var geo_widen: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_widen)));
 
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+        vhr(geo_widen.Open(@ptrCast(&geo_sink)));
+        vhr(geo.Widen(15.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+        vhr(geo_sink.Close());
+        _ = geo_sink.Release();
 
-        Mesh.level1 = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        });
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level1 = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = null,
+            });
+        }
+
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo_widen.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level1_stroke = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = @ptrCast(geo_widen),
+            });
+        }
     }
 
     // Level 2

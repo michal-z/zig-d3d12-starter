@@ -201,6 +201,7 @@ pub const IGeometry = extern struct {
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
     pub const FillContainsPoint = IGeometry.Methods(@This()).FillContainsPoint;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -226,6 +227,17 @@ pub const IGeometry = extern struct {
             ) HRESULT {
                 return @as(*const IGeometry.VTable, @ptrCast(self.__v))
                     .FillContainsPoint(@ptrCast(self), point, world_transform, flattening_tolerance, contains);
+            }
+            pub inline fn Widen(
+                self: *T,
+                stroke_width: FLOAT,
+                stroke_style: ?*IStrokeStyle,
+                world_transform: ?*const MATRIX_3X2_F,
+                flattening_tolerance: FLOAT,
+                geo_sink: *ISimplifiedGeometrySink,
+            ) HRESULT {
+                return @as(*const IGeometry.VTable, @ptrCast(self.__v))
+                    .Widen(@ptrCast(self), stroke_width, stroke_style, world_transform, flattening_tolerance, geo_sink);
             }
         };
     }
@@ -255,7 +267,14 @@ pub const IGeometry = extern struct {
         ComputeArea: *anyopaque,
         ComputeLength: *anyopaque,
         ComputePointAtLength: *anyopaque,
-        Widen: *anyopaque,
+        Widen: *const fn (
+            *IGeometry,
+            FLOAT,
+            ?*IStrokeStyle,
+            ?*const MATRIX_3X2_F,
+            FLOAT,
+            *ISimplifiedGeometrySink,
+        ) callconv(WINAPI) HRESULT,
     };
 };
 
@@ -268,6 +287,7 @@ pub const IRectangleGeometry = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub const VTable = extern struct {
         base: IGeometry.VTable,
@@ -284,6 +304,7 @@ pub const IRoundedRectangleGeometry = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub const VTable = extern struct {
         base: IGeometry.VTable,
@@ -300,6 +321,7 @@ pub const IEllipseGeometry = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub const VTable = extern struct {
         base: IGeometry.VTable,
@@ -316,6 +338,7 @@ pub const IGeometryGroup = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub const VTable = extern struct {
         base: IGeometry.VTable,
@@ -334,6 +357,7 @@ pub const ITransformedGeometry = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub const VTable = extern struct {
         base: IGeometry.VTable,
@@ -351,6 +375,7 @@ pub const IPathGeometry = extern struct {
 
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
+    pub const Widen = IGeometry.Methods(@This()).Widen;
 
     pub const Open = IPathGeometry.Methods(@This()).Open;
     pub const GetSegmentCount = IPathGeometry.Methods(@This()).GetSegmentCount;
