@@ -539,13 +539,13 @@ fn define_and_upload_objects(
 
     if (current_level == 1) {
         try objects.append(.{
-            .color = 0xaa_00_00_22,
+            .color = 0xaa_00_00_33,
             .mesh_index = Mesh.fullscreen_rect,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0,
+            .color = 0xaa_00_00_00,
             .mesh_index = Mesh.level1,
             .x = 0.0,
             .y = 0.0,
@@ -562,7 +562,13 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 2) {
         try objects.append(.{
-            .color = 0,
+            .color = 0xaa_00_00_33,
+            .mesh_index = Mesh.fullscreen_rect,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        try objects.append(.{
+            .color = 0xaa_00_00_00,
             .mesh_index = Mesh.level2,
             .x = 0.0,
             .y = 0.0,
