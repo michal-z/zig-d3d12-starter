@@ -46,10 +46,6 @@ pub fn main() !void {
     }
 }
 
-fn is_key_down(vkey: c_int) bool {
-    return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
-}
-
 const AppState = struct {
     allocator: std.mem.Allocator,
 
@@ -224,17 +220,6 @@ const AppState = struct {
                     &app.gpu_context,
                     app.current_level,
                 ) catch unreachable;
-
-                if (false) {
-                    _ = w32.MessageBoxA(
-                        app.gpu_context.window,
-                        "--------   L E V E L  C O M P L E T E D !!!   --------",
-                        "GREAT WORK",
-                        w32.MB_OK,
-                    );
-
-                    _, _ = update_frame_stats(app.gpu_context.window, window_name);
-                }
             }
             return true;
         }
@@ -610,4 +595,8 @@ fn transpose(m: [16]f32) [16]f32 {
         m[2], m[6], m[10], m[14],
         m[3], m[7], m[11], m[15],
     };
+}
+
+fn is_key_down(vkey: c_int) bool {
+    return (@as(w32.USHORT, @bitCast(w32.GetAsyncKeyState(vkey))) & 0x8000) != 0;
 }
