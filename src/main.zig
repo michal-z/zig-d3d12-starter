@@ -108,10 +108,6 @@ const AppState = struct {
             create_window(w32.GetSystemMetrics(w32.SM_CXSCREEN), w32.GetSystemMetrics(w32.SM_CYSCREEN)),
         );
 
-        //var audio: *xa2.IXAudio2 = undefined;
-        //_ = xa2.create(@ptrCast(&audio), .{}, 0);
-        //defer _ = audio.Release();
-
         const pso, const pso_rs = create_pso(gc.device);
 
         var frame_state_buffer: *d3d12.IResource = undefined;
@@ -521,7 +517,6 @@ fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d1
 
 fn add_food(objects: *std.ArrayList(cgc.Object), num_food_objects: *u32, x: f32, y: f32) void {
     const fc = 0xaa_0f_6c_0b;
-    //const fc = 0xaa_66_00_00;
     objects.append(.{ .color = fc, .mesh_index = Mesh.food, .x = x, .y = y }) catch unreachable;
     num_food_objects.* += 1;
 }
