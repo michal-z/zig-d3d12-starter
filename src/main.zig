@@ -536,21 +536,20 @@ fn define_and_upload_objects(
 
     try objects.append(.{
         .color = 0xaa_bb_00_00,
-        //.color = 0xaa_11_11_55,
         .mesh_index = Mesh.player,
         .x = player_start_x,
         .y = player_start_y,
     });
 
     if (current_level == 1) {
-        if (false) try objects.append(.{
-            .color = 0xaa_cc_cc_cc,
+        try objects.append(.{
+            .color = 0xaa_fd_f6_e3,
             .mesh_index = Mesh.fullscreen_rect,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_88,
+            .color = 0xaa_22_44_99,
             .mesh_index = Mesh.level1,
             .x = 0.0,
             .y = 0.0,
@@ -566,14 +565,14 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 100.0, 802.0);
         add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 2) {
-        if (false) try objects.append(.{
-            .color = 0xaa_00_00_33,
+        try objects.append(.{
+            .color = 0xaa_fd_f6_e3,
             .mesh_index = Mesh.fullscreen_rect,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_88,
+            .color = 0xaa_22_44_99,
             .mesh_index = Mesh.level2,
             .x = 0.0,
             .y = 0.0,
@@ -593,7 +592,13 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 384.9, 552.8);
     } else if (current_level == 3) {
         try objects.append(.{
-            .color = 0xaa_22_44_88,
+            .color = 0xaa_fd_f6_e3,
+            .mesh_index = Mesh.fullscreen_rect,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        try objects.append(.{
+            .color = 0xaa_22_44_99,
             .mesh_index = Mesh.level3,
             .x = 0.0,
             .y = 0.0,
@@ -619,14 +624,14 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 467.0, 82.0);
         add_food(&objects, &num_food_objects, 213.0, 385.0);
     } else if (current_level == 4) {
-        if (false) try objects.append(.{
-            .color = 0xaa_dd_dd_dd,
+        try objects.append(.{
+            .color = 0xaa_fd_f6_e3,
             .mesh_index = Mesh.fullscreen_rect,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_88,
+            .color = 0xaa_22_44_99,
             .mesh_index = Mesh.level4,
             .x = 0.0,
             .y = 0.0,
@@ -788,9 +793,9 @@ fn define_and_upload_meshes(
         vhr(d2d_factory.CreateRectangleGeometry(
             &.{
                 .left = -map_size_x / 2,
-                .top = 50.0,
+                .top = 0.0,
                 .right = map_size_x / 2,
-                .bottom = map_size_y - 50.0,
+                .bottom = map_size_y,
             },
             @ptrCast(&geo),
         ));
