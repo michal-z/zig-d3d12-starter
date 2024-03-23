@@ -646,6 +646,12 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 5) {
         try objects.append(.{
+            .color = 0xaa_fd_f6_e3,
+            .mesh_index = Mesh.fullscreen_rect,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        try objects.append(.{
             .color = 0,
             .mesh_index = Mesh.level5,
             .x = 0.0,
