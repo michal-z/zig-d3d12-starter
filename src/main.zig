@@ -65,6 +65,8 @@ const Mesh = struct {
     var level3_stroke: u32 = undefined;
 
     var level4: u32 = undefined;
+    var level4_stroke: u32 = undefined;
+
     var level5: u32 = undefined;
 
     const num_levels = 5;
@@ -103,10 +105,7 @@ const AppState = struct {
 
     fn init(allocator: std.mem.Allocator) !AppState {
         var gc = GpuContext.init(
-            create_window(
-                @divTrunc(w32.GetSystemMetrics(w32.SM_CXSCREEN), 2),
-                @divTrunc(w32.GetSystemMetrics(w32.SM_CYSCREEN), 2),
-            ),
+            create_window(w32.GetSystemMetrics(w32.SM_CXSCREEN), w32.GetSystemMetrics(w32.SM_CYSCREEN)),
         );
 
         //var audio: *xa2.IXAudio2 = undefined;
@@ -155,7 +154,11 @@ const AppState = struct {
 
         const current_level = 1;
 
-        const objects, const num_food_objects, const object_buffer = try define_and_upload_objects(allocator, &gc, current_level);
+        const objects, const num_food_objects, const object_buffer = try define_and_upload_objects(
+            allocator,
+            &gc,
+            current_level,
+        );
 
         return AppState{
             .allocator = allocator,
@@ -518,6 +521,7 @@ fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d1
 
 fn add_food(objects: *std.ArrayList(cgc.Object), num_food_objects: *u32, x: f32, y: f32) void {
     const fc = 0xaa_0f_6c_0b;
+    //const fc = 0xaa_66_00_00;
     objects.append(.{ .color = fc, .mesh_index = Mesh.food, .x = x, .y = y }) catch unreachable;
     num_food_objects.* += 1;
 }
@@ -532,26 +536,27 @@ fn define_and_upload_objects(
 
     try objects.append(.{
         .color = 0xaa_bb_00_00,
+        //.color = 0xaa_11_11_55,
         .mesh_index = Mesh.player,
         .x = player_start_x,
         .y = player_start_y,
     });
 
     if (current_level == 1) {
-        try objects.append(.{
-            .color = 0xaa_00_00_33,
+        if (false) try objects.append(.{
+            .color = 0xaa_cc_cc_cc,
             .mesh_index = Mesh.fullscreen_rect,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_00_00_00,
+            .color = 0xaa_22_44_88,
             .mesh_index = Mesh.level1,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_11_33_cc,
+            .color = 0xaa_00_00_00,
             .mesh_index = Mesh.level1_stroke,
             .x = 0.0,
             .y = 0.0,
@@ -561,20 +566,20 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 100.0, 802.0);
         add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 2) {
-        try objects.append(.{
+        if (false) try objects.append(.{
             .color = 0xaa_00_00_33,
             .mesh_index = Mesh.fullscreen_rect,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_00_00_00,
+            .color = 0xaa_22_44_88,
             .mesh_index = Mesh.level2,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_11_33_cc,
+            .color = 0xaa_00_00_00,
             .mesh_index = Mesh.level2_stroke,
             .x = 0.0,
             .y = 0.0,
@@ -588,13 +593,13 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 384.9, 552.8);
     } else if (current_level == 3) {
         try objects.append(.{
-            .color = 0,
+            .color = 0xaa_22_44_88,
             .mesh_index = Mesh.level3,
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_11_33_cc,
+            .color = 0xaa_00_00_00,
             .mesh_index = Mesh.level3_stroke,
             .x = 0.0,
             .y = 0.0,
@@ -614,9 +619,21 @@ fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 467.0, 82.0);
         add_food(&objects, &num_food_objects, 213.0, 385.0);
     } else if (current_level == 4) {
+        if (false) try objects.append(.{
+            .color = 0xaa_dd_dd_dd,
+            .mesh_index = Mesh.fullscreen_rect,
+            .x = 0.0,
+            .y = 0.0,
+        });
+        try objects.append(.{
+            .color = 0xaa_22_44_88,
+            .mesh_index = Mesh.level4,
+            .x = 0.0,
+            .y = 0.0,
+        });
         try objects.append(.{
             .color = 0,
-            .mesh_index = Mesh.level4,
+            .mesh_index = Mesh.level4_stroke,
             .x = 0.0,
             .y = 0.0,
         });
@@ -770,10 +787,10 @@ fn define_and_upload_meshes(
         var geo: *d2d1.IRectangleGeometry = undefined;
         vhr(d2d_factory.CreateRectangleGeometry(
             &.{
-                .left = -map_size_x,
-                .top = 0.0,
-                .right = map_size_x,
-                .bottom = map_size_y,
+                .left = -map_size_x / 2,
+                .top = 50.0,
+                .right = map_size_x / 2,
+                .bottom = map_size_y - 50.0,
             },
             @ptrCast(&geo),
         ));
@@ -841,7 +858,7 @@ fn define_and_upload_meshes(
                 vhr(geo_sink.Close());
                 _ = geo_sink.Release();
             }
-            vhr(geo_fill.Widen(15.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
         }
 
         // Tessellate fill shape
@@ -935,7 +952,7 @@ fn define_and_upload_meshes(
                 vhr(geo_sink.Close());
                 _ = geo_sink.Release();
             }
-            vhr(geo_fill.Widen(7.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
         }
 
         {
@@ -1082,7 +1099,7 @@ fn define_and_upload_meshes(
                 vhr(geo_sink.Close());
                 _ = geo_sink.Release();
             }
-            vhr(geo_fill.Widen(7.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
         }
 
         {
@@ -1114,12 +1131,12 @@ fn define_and_upload_meshes(
 
     // Level 4
     {
-        var geo: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo)));
+        var geo_fill: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
+        defer _ = geo_fill.Release();
 
-        var geo_sink: *d2d1.IGeometrySink = undefined;
-        vhr(geo.Open(@ptrCast(&geo_sink)));
-        defer _ = geo_sink.Release();
+        var geo_stroke: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
 
         const path1_0 = [_]f32{
             -244.8, 95.16, -257.1, 97.17, -271,   101,
@@ -1169,24 +1186,56 @@ fn define_and_upload_meshes(
             -46.57, 159.5, -60.64, 153,   -75.19, 153.2,
         };
 
-        geo_sink.BeginFigure(.{ .x = -234.2, .y = 94.61 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path1_0), @sizeOf(@TypeOf(path1_0)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        geo_sink.BeginFigure(.{ .x = -75.19, .y = 153.2 }, .FILLED);
-        geo_sink.AddBeziers(@ptrCast(&path1_1), @sizeOf(@TypeOf(path1_1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
-        geo_sink.EndFigure(.CLOSED);
-        vhr(geo_sink.Close());
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_fill.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            geo_sink.BeginFigure(.{ .x = -234.2, .y = 94.61 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path1_0), @sizeOf(@TypeOf(path1_0)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+            geo_sink.BeginFigure(.{ .x = -75.19, .y = 153.2 }, .FILLED);
+            geo_sink.AddBeziers(@ptrCast(&path1_1), @sizeOf(@TypeOf(path1_1)) / @sizeOf(d2d1.BEZIER_SEGMENT));
+            geo_sink.EndFigure(.CLOSED);
+        }
 
-        const first_vertex = vertices.items.len;
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+        }
 
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+        {
+            const first_vertex = vertices.items.len;
 
-        Mesh.level4 = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        });
+            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level4 = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = null,
+            });
+        }
+
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.level4_stroke = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = @ptrCast(geo_stroke),
+            });
+        }
     }
 
     // Level 5
@@ -1355,10 +1404,10 @@ fn create_window(width: i32, height: i32) w32.HWND {
     _ = w32.RegisterClassExA(&winclass);
 
     const window = w32.CreateWindowExA(
-        0,
+        w32.WS_EX_TOPMOST,
         window_name,
         window_name,
-        w32.WS_OVERLAPPEDWINDOW,
+        w32.WS_POPUP | w32.WS_VISIBLE,
         w32.CW_USEDEFAULT,
         w32.CW_USEDEFAULT,
         width,
@@ -1369,7 +1418,7 @@ fn create_window(width: i32, height: i32) w32.HWND {
         null,
     ).?;
 
-    _ = w32.ShowWindow(window, w32.SW_SHOWMAXIMIZED);
+    _ = w32.ShowCursor(.FALSE);
 
     return window;
 }

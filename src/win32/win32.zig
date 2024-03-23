@@ -149,6 +149,8 @@ pub extern "user32" fn GetSystemMetrics(nIndex: c_int) callconv(WINAPI) c_int;
 
 pub extern "user32" fn ShowWindow(hWnd: HWND, nCmdShow: c_int) callconv(WINAPI) BOOL;
 
+pub extern "user32" fn ShowCursor(bShow: BOOL) callconv(WINAPI) c_int;
+
 pub const TME_LEAVE = 0x00000002;
 
 pub const TRACKMOUSEEVENT = extern struct {
@@ -274,6 +276,9 @@ pub const WS_THICKFRAME = 0x00040000;
 pub const WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME |
     WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 pub const WS_VISIBLE = 0x10000000;
+pub const WS_POPUP = 0x80000000;
+
+pub const WS_EX_TOPMOST = 0x00000008;
 
 pub const WM_MOUSEMOVE = 0x0200;
 pub const WM_LBUTTONDOWN = 0x0201;
