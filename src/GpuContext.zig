@@ -68,6 +68,7 @@ frame_index: u32,
 upload_heaps: [max_buffered_frames]UploadMemoryHeap,
 
 msaa_target: if (msaa_target_num_samples > 1) *d3d12.IResource else void,
+msaa_target_clear_color: [4]f32,
 
 debug: if (d3d12_debug) *d3d12d.IDebug5 else void,
 debug_device: if (d3d12_debug) *d3d12.IDebugDevice else void,
@@ -327,7 +328,12 @@ pub fn handle_window_resize(gc: *GpuContext) enum { minimized, resized, unchange
 
         if (msaa_target_num_samples > 1) {
             _ = gc.msaa_target.Release();
-            gc.msaa_target = create_msaa_srgb_target(gc.device, gc.window_width, gc.window_height);
+            gc.msaa_target = create_msaa_srgb_target(
+                gc.device,
+                gc.window_width,
+                gc.window_height,
+                gc.msaa_target_clear_color,
+            );
             gc.device.CreateRenderTargetView(
                 gc.msaa_target,
                 null,
@@ -340,7 +346,9 @@ pub fn handle_window_resize(gc: *GpuContext) enum { minimized, resized, unchange
     return .unchanged;
 }
 
-pub fn init(window: w32.HWND) GpuContext {
+pub fn init(window: w32.HWND, args: struct {
+    clear_color: [4]f32 = .{ 0, 0, 0, 0 },
+}) GpuContext {
     //
     // Factory, adapater, device
     //
@@ -624,7 +632,7 @@ pub fn init(window: w32.HWND) GpuContext {
     // MSAA render target
     //
     const msaa_target = if (msaa_target_num_samples > 1) blk: {
-        const msaa_target = create_msaa_srgb_target(device, window_width, window_height);
+        const msaa_target = create_msaa_srgb_target(device, window_width, window_height, args.clear_color);
         device.CreateRenderTargetView(
             msaa_target,
             null,
@@ -665,6 +673,7 @@ pub fn init(window: w32.HWND) GpuContext {
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
         .upload_heaps = upload_heaps,
         .msaa_target = msaa_target,
+        .msaa_target_clear_color = args.clear_color,
         .debug = debug,
         .debug_device = debug_device,
         .debug_info_queue = debug_info_queue,
@@ -706,7 +715,12 @@ pub fn vhr(hr: w32.HRESULT) void {
     if (hr != 0) @panic("HRESULT error!");
 }
 
-fn create_msaa_srgb_target(device: *IDevice, width: u32, height: u32) *d3d12.IResource {
+fn create_msaa_srgb_target(
+    device: *IDevice,
+    width: u32,
+    height: u32,
+    clear_color: [4]f32,
+) *d3d12.IResource {
     var texture: *d3d12.IResource = undefined;
     vhr(device.CreateCommittedResource3(
         &.{ .Type = .DEFAULT },
@@ -720,7 +734,7 @@ fn create_msaa_srgb_target(device: *IDevice, width: u32, height: u32) *d3d12.IRe
             .Flags = .{ .ALLOW_RENDER_TARGET = true },
         },
         .RENDER_TARGET,
-        &.{ .Format = msaa_target_format, .u = .{ .Color = [_]f32{ 0, 0, 0, 0 } } },
+        &.{ .Format = msaa_target_format, .u = .{ .Color = clear_color } },
         null,
         0,
         null,

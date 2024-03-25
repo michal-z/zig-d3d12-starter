@@ -20,6 +20,7 @@ const window_name = "zig-d3d12-starter";
 const GpuContext = @import("GpuContext.zig");
 const AudioContext = @import("AudioContext.zig");
 const vhr = GpuContext.vhr;
+const window_clear_color: [4]f32 = .{ 1, 1, 1, 0 };
 
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
@@ -72,7 +73,11 @@ const GameState = struct {
 
     fn init(allocator: std.mem.Allocator) !GameState {
         var gpu_context = GpuContext.init(
-            create_window(w32.GetSystemMetrics(w32.SM_CXSCREEN), w32.GetSystemMetrics(w32.SM_CYSCREEN)),
+            create_window(
+                w32.GetSystemMetrics(w32.SM_CXSCREEN),
+                w32.GetSystemMetrics(w32.SM_CYSCREEN),
+            ),
+            .{ .clear_color = window_clear_color },
         );
 
         // If `AudioContext` initialization fails we will use "empty" context that does nothing (game will still run but without sound).
@@ -390,7 +395,7 @@ const GameState = struct {
             .TRUE,
             null,
         );
-        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 1.0, 1.0, 1.0, 0.0 }, 0, null);
+        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &window_clear_color, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetPipelineState(game.pso);

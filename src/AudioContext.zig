@@ -35,6 +35,17 @@ pub fn init(_: std.mem.Allocator) !AudioContext {
 
     log.info("Windows Media Foundation startup went fine.", .{});
 
+    if (xaudio2_debug) {
+        xaudio2.SetDebugConfiguration(&.{
+            .TraceMask = .{ .ERRORS = true, .WARNINGS = true, .INFO = true },
+            .BreakMask = .{},
+            .LogThreadID = .TRUE,
+            .LogFileline = .FALSE,
+            .LogFunctionName = .FALSE,
+            .LogTiming = .FALSE,
+        }, null);
+    }
+
     return AudioContext{
         .xaudio2 = xaudio2,
     };
