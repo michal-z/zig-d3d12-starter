@@ -903,13 +903,6 @@ const TessellationSink = extern struct {
 
     vertices: *std.ArrayList(cgc.Vertex),
 
-    pub const QueryInterface = w32.IUnknown.Methods(@This()).QueryInterface;
-    pub const AddRef = w32.IUnknown.Methods(@This()).AddRef;
-    pub const Release = w32.IUnknown.Methods(@This()).Release;
-
-    pub const AddTriangles = d2d1.ITessellationSink(@This()).AddTriangles;
-    pub const Close = d2d1.ITessellationSink(@This()).Close;
-
     fn _query_interface(
         _: *w32.IUnknown,
         _: *const w32.GUID,
