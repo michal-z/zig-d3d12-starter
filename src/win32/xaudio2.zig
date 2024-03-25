@@ -768,10 +768,13 @@ pub fn create(
     var xaudio2_dll = w32.GetModuleHandleA("xaudio2_9redist.dll");
     if (xaudio2_dll == null) {
         xaudio2_dll = w32.LoadLibraryA("xaudio2_9redist.dll");
+        if (xaudio2_dll == null) return w32.E_FAIL;
     }
 
-    const xaudio2_create: *const fn (*?*IXAudio2, FLAGS, UINT32) callconv(WINAPI) HRESULT =
-        @ptrCast(w32.GetProcAddress(xaudio2_dll.?, "XAudio2Create").?);
+    const xaudio2_create: ?*const fn (*?*IXAudio2, FLAGS, UINT32) callconv(WINAPI) HRESULT =
+        @ptrCast(w32.GetProcAddress(xaudio2_dll.?, "XAudio2Create"));
 
-    return xaudio2_create(ppv, flags, processor);
+    if (xaudio2_create == null) return w32.E_FAIL;
+
+    return xaudio2_create.?(ppv, flags, processor);
 }
