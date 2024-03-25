@@ -30,7 +30,7 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var app = try AppState.init(allocator);
+    var app = try GameState.init(allocator);
     defer app.deinit();
 
     while (true) {
@@ -46,7 +46,7 @@ pub fn main() !void {
     }
 }
 
-const AppState = struct {
+const GameState = struct {
     allocator: std.mem.Allocator,
 
     gpu_context: GpuContext,
@@ -68,7 +68,7 @@ const AppState = struct {
     num_food_objects: u32,
     current_level: u32,
 
-    fn init(allocator: std.mem.Allocator) !AppState {
+    fn init(allocator: std.mem.Allocator) !GameState {
         var gc = GpuContext.init(
             create_window(w32.GetSystemMetrics(w32.SM_CXSCREEN), w32.GetSystemMetrics(w32.SM_CYSCREEN)),
         );
@@ -121,7 +121,7 @@ const AppState = struct {
             current_level,
         );
 
-        return AppState{
+        return GameState{
             .allocator = allocator,
             .gpu_context = gc,
             .vertex_buffer = vertex_buffer,
@@ -137,7 +137,7 @@ const AppState = struct {
         };
     }
 
-    fn deinit(app: *AppState) void {
+    fn deinit(app: *GameState) void {
         for (app.meshes.items) |mesh| {
             if (mesh.geometry) |geometry| _ = geometry.Release();
         }
@@ -159,7 +159,7 @@ const AppState = struct {
         app.* = undefined;
     }
 
-    fn update(app: *AppState) bool {
+    fn update(app: *GameState) bool {
         const status = app.gpu_context.handle_window_resize();
         if (status == .minimized) {
             w32.Sleep(10);
@@ -288,7 +288,7 @@ const AppState = struct {
         return true;
     }
 
-    fn draw(app: *AppState) void {
+    fn draw(app: *GameState) void {
         const gc = &app.gpu_context;
 
         gc.begin_command_list();
