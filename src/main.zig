@@ -18,6 +18,7 @@ export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
 const window_name = "zig-d3d12-starter";
 
 const GpuContext = @import("GpuContext.zig");
+const AudioContext = @import("AudioContext.zig");
 const vhr = GpuContext.vhr;
 
 pub fn main() !void {
@@ -30,8 +31,8 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var app = try GameState.init(allocator);
-    defer app.deinit();
+    var game = try GameState.init(allocator);
+    defer game.deinit();
 
     while (true) {
         var message = std.mem.zeroes(w32.MSG);
@@ -41,8 +42,8 @@ pub fn main() !void {
             if (message.message == w32.WM_QUIT) break;
         }
 
-        if (app.update())
-            app.draw();
+        if (game.update())
+            game.draw();
     }
 }
 
@@ -50,6 +51,7 @@ const GameState = struct {
     allocator: std.mem.Allocator,
 
     gpu_context: GpuContext,
+    audio_context: AudioContext,
 
     vertex_buffer: *d3d12.IResource,
     object_buffer: *d3d12.IResource,
@@ -58,10 +60,10 @@ const GameState = struct {
     pso: *d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
 
+    d2d_factory: *d2d1.IFactory,
+
     meshes: std.ArrayList(cgen.Mesh),
     objects: std.ArrayList(cgc.Object),
-
-    d2d_factory: *d2d1.IFactory,
 
     player_is_dead: f32 = 0.0,
     player_to_next_level: f32 = 0.0,
@@ -72,6 +74,8 @@ const GameState = struct {
         var gc = GpuContext.init(
             create_window(w32.GetSystemMetrics(w32.SM_CXSCREEN), w32.GetSystemMetrics(w32.SM_CYSCREEN)),
         );
+
+        const audio_context = AudioContext.init(allocator) catch AudioContext{};
 
         const pso, const pso_rs = create_pso(gc.device);
 
@@ -124,6 +128,7 @@ const GameState = struct {
         return GameState{
             .allocator = allocator,
             .gpu_context = gc,
+            .audio_context = audio_context,
             .vertex_buffer = vertex_buffer,
             .object_buffer = object_buffer,
             .frame_state_buffer = frame_state_buffer,
@@ -137,71 +142,73 @@ const GameState = struct {
         };
     }
 
-    fn deinit(app: *GameState) void {
-        for (app.meshes.items) |mesh| {
+    fn deinit(game: *GameState) void {
+        game.audio_context.deinit();
+
+        for (game.meshes.items) |mesh| {
             if (mesh.geometry) |geometry| _ = geometry.Release();
         }
-        app.meshes.deinit();
-        app.objects.deinit();
+        game.meshes.deinit();
+        game.objects.deinit();
 
-        _ = app.d2d_factory.Release();
+        _ = game.d2d_factory.Release();
 
-        app.gpu_context.finish_gpu_commands();
+        game.gpu_context.finish_gpu_commands();
 
-        _ = app.pso.Release();
-        _ = app.pso_rs.Release();
-        _ = app.vertex_buffer.Release();
-        _ = app.object_buffer.Release();
-        _ = app.frame_state_buffer.Release();
+        _ = game.pso.Release();
+        _ = game.pso_rs.Release();
+        _ = game.vertex_buffer.Release();
+        _ = game.object_buffer.Release();
+        _ = game.frame_state_buffer.Release();
 
-        app.gpu_context.deinit();
+        game.gpu_context.deinit();
 
-        app.* = undefined;
+        game.* = undefined;
     }
 
-    fn update(app: *GameState) bool {
-        const status = app.gpu_context.handle_window_resize();
+    fn update(game: *GameState) bool {
+        const status = game.gpu_context.handle_window_resize();
         if (status == .minimized) {
             w32.Sleep(10);
             return false;
         }
 
-        _, const delta_time = update_frame_stats(app.gpu_context.window, window_name);
+        _, const delta_time = update_frame_stats(game.gpu_context.window, window_name);
 
-        var player = &app.objects.items[0];
+        var player = &game.objects.items[0];
 
-        if (app.player_is_dead > 0.0) {
-            app.player_is_dead -= delta_time;
+        if (game.player_is_dead > 0.0) {
+            game.player_is_dead -= delta_time;
 
-            if (app.player_is_dead <= 0.0) {
-                app.player_is_dead = 0.0;
+            if (game.player_is_dead <= 0.0) {
+                game.player_is_dead = 0.0;
 
                 player.x = cgen.player_start_x;
                 player.y = cgen.player_start_y;
                 player.rotation = 0.0;
 
                 // Re-spawn food objects.
-                for (app.objects.items[1..]) |*object| {
+                for (game.objects.items[1..]) |*object| {
                     if (object.mesh_index == 0) {
                         object.mesh_index = cgen.Mesh.food;
-                        app.num_food_objects += 1;
+                        game.num_food_objects += 1;
                     }
                 }
             }
             return true;
         }
 
-        if (app.player_to_next_level > 0.0) {
-            app.player_to_next_level -= delta_time;
+        if (game.player_to_next_level > 0.0) {
+            game.player_to_next_level -= delta_time;
 
-            if (app.player_to_next_level <= 0.0) {
-                app.player_to_next_level = 0.0;
+            if (game.player_to_next_level <= 0.0) {
+                game.player_to_next_level = 0.0;
 
                 // Advance to the next level.
-                app.current_level += 1;
-                if (app.current_level > cgen.Mesh.num_levels) {
+                game.current_level += 1;
+                if (game.current_level > cgen.Mesh.num_levels) {
                     _ = w32.MessageBoxA(
-                        app.gpu_context.window,
+                        game.gpu_context.window,
                         "Y O U  H A V E  C O M P L E T E D  T H E  G A M E !!!",
                         "CONGRATULATIONS",
                         w32.MB_OK,
@@ -210,15 +217,15 @@ const GameState = struct {
                     return true;
                 }
 
-                app.objects.deinit();
+                game.objects.deinit();
 
-                app.gpu_context.finish_gpu_commands();
-                _ = app.object_buffer.Release();
+                game.gpu_context.finish_gpu_commands();
+                _ = game.object_buffer.Release();
 
-                app.objects, app.num_food_objects, app.object_buffer = cgen.define_and_upload_objects(
-                    app.allocator,
-                    &app.gpu_context,
-                    app.current_level,
+                game.objects, game.num_food_objects, game.object_buffer = cgen.define_and_upload_objects(
+                    game.allocator,
+                    &game.gpu_context,
+                    game.current_level,
                 ) catch unreachable;
             }
             return true;
@@ -236,10 +243,10 @@ const GameState = struct {
         player.x += @cos(player.rotation) * translation_speed * delta_time;
         player.y += @sin(player.rotation) * translation_speed * delta_time;
 
-        for (app.objects.items[1..]) |*object| {
+        for (game.objects.items[1..]) |*object| {
             if (object.mesh_index == 0) continue; // Already eaten food.
 
-            if (app.meshes.items[object.mesh_index].geometry) |geometry| {
+            if (game.meshes.items[object.mesh_index].geometry) |geometry| {
                 var contains: w32.BOOL = .FALSE;
                 vhr(geometry.FillContainsPoint(
                     .{ .x = player.x, .y = player.y },
@@ -251,13 +258,13 @@ const GameState = struct {
                 if (contains == .TRUE) {
                     if (object.mesh_index == cgen.Mesh.food) {
                         object.mesh_index = 0; // Mark this food as eaten.
-                        app.num_food_objects -= 1;
-                        if (app.num_food_objects == 0) {
-                            app.player_to_next_level = 1.0;
+                        game.num_food_objects -= 1;
+                        if (game.num_food_objects == 0) {
+                            game.player_to_next_level = 1.0;
                             return true;
                         }
                     } else {
-                        app.player_is_dead = 1.0;
+                        game.player_is_dead = 1.0;
                         return true;
                     }
                     break;
@@ -265,8 +272,8 @@ const GameState = struct {
             }
         }
 
-        const window_width: f32 = @floatFromInt(app.gpu_context.window_width);
-        const window_height: f32 = @floatFromInt(app.gpu_context.window_height);
+        const window_width: f32 = @floatFromInt(game.gpu_context.window_width);
+        const window_height: f32 = @floatFromInt(game.gpu_context.window_height);
         const window_aspect = window_width / window_height;
 
         if (player.x < -0.5 * cgen.map_size_y * window_aspect) {
@@ -288,8 +295,8 @@ const GameState = struct {
         return true;
     }
 
-    fn draw(app: *GameState) void {
-        const gc = &app.gpu_context;
+    fn draw(game: *GameState) void {
+        const gc = &game.gpu_context;
 
         gc.begin_command_list();
 
@@ -301,13 +308,13 @@ const GameState = struct {
                 .SyncAfter = .{ .COPY = true },
                 .AccessBefore = .{ .NO_ACCESS = true },
                 .AccessAfter = .{ .COPY_DEST = true },
-                .pResource = app.frame_state_buffer,
+                .pResource = game.frame_state_buffer,
             }, .{
                 .SyncBefore = .{},
                 .SyncAfter = .{ .COPY = true },
                 .AccessBefore = .{ .NO_ACCESS = true },
                 .AccessAfter = .{ .COPY_DEST = true },
-                .pResource = app.object_buffer,
+                .pResource = game.object_buffer,
             } } },
         }});
 
@@ -335,7 +342,7 @@ const GameState = struct {
             };
 
             gc.command_list.CopyBufferRegion(
-                app.frame_state_buffer,
+                game.frame_state_buffer,
                 0,
                 buffer,
                 offset,
@@ -345,12 +352,12 @@ const GameState = struct {
 
         {
             const upload_mem, const buffer, const offset =
-                gc.allocate_upload_buffer_region(cgc.Object, @intCast(app.objects.items.len));
+                gc.allocate_upload_buffer_region(cgc.Object, @intCast(game.objects.items.len));
 
-            for (app.objects.items, 0..) |object, i| upload_mem[i] = object;
+            for (game.objects.items, 0..) |object, i| upload_mem[i] = object;
 
             gc.command_list.CopyBufferRegion(
-                app.object_buffer,
+                game.object_buffer,
                 0,
                 buffer,
                 offset,
@@ -366,13 +373,13 @@ const GameState = struct {
                 .SyncAfter = .{ .DRAW = true },
                 .AccessBefore = .{ .COPY_DEST = true },
                 .AccessAfter = .{ .CONSTANT_BUFFER = true },
-                .pResource = app.frame_state_buffer,
+                .pResource = game.frame_state_buffer,
             }, .{
                 .SyncBefore = .{ .COPY = true },
                 .SyncAfter = .{ .DRAW = true },
                 .AccessBefore = .{ .COPY_DEST = true },
                 .AccessAfter = .{ .SHADER_RESOURCE = true },
-                .pResource = app.object_buffer,
+                .pResource = game.object_buffer,
             } } },
         }});
 
@@ -385,24 +392,24 @@ const GameState = struct {
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ 1.0, 1.0, 1.0, 0.0 }, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
-        gc.command_list.SetPipelineState(app.pso);
-        gc.command_list.SetGraphicsRootSignature(app.pso_rs);
+        gc.command_list.SetPipelineState(game.pso);
+        gc.command_list.SetGraphicsRootSignature(game.pso_rs);
 
         // Draw all objects except player
-        for (app.objects.items[1..], 1..) |object, object_id| {
+        for (game.objects.items[1..], 1..) |object, object_id| {
             if (object.mesh_index == 0) continue; // Already eaten food.
 
             gc.command_list.SetGraphicsRoot32BitConstants(
                 0,
                 2,
                 &[_]u32{
-                    app.meshes.items[object.mesh_index].first_vertex,
+                    game.meshes.items[object.mesh_index].first_vertex,
                     @intCast(object_id),
                 },
                 0,
             );
             gc.command_list.DrawInstanced(
-                app.meshes.items[object.mesh_index].num_vertices,
+                game.meshes.items[object.mesh_index].num_vertices,
                 1,
                 0,
                 0,
@@ -412,11 +419,11 @@ const GameState = struct {
         gc.command_list.SetGraphicsRoot32BitConstants(
             0,
             2,
-            &[_]u32{ app.meshes.items[cgen.Mesh.player].first_vertex, 0 },
+            &[_]u32{ game.meshes.items[cgen.Mesh.player].first_vertex, 0 },
             0,
         );
         gc.command_list.DrawInstanced(
-            app.meshes.items[cgen.Mesh.player].num_vertices,
+            game.meshes.items[cgen.Mesh.player].num_vertices,
             1,
             0,
             0,

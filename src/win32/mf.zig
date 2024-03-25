@@ -43,8 +43,11 @@ pub const SOURCE_READER_CONTROL_FLAG = packed struct(UINT32) {
     __unused: u31 = 0,
 };
 
-pub extern "mfplat" fn MFStartup(version: ULONG, flags: DWORD) callconv(WINAPI) HRESULT;
-pub extern "mfplat" fn MFShutdown() callconv(WINAPI) HRESULT;
+pub const Startup = MFStartup;
+pub const Shutdown = MFShutdown;
+
+extern "mfplat" fn MFStartup(version: ULONG, flags: DWORD) callconv(WINAPI) HRESULT;
+extern "mfplat" fn MFShutdown() callconv(WINAPI) HRESULT;
 pub extern "mfplat" fn MFCreateAttributes(attribs: **IAttributes, init_size: UINT32) callconv(WINAPI) HRESULT;
 
 pub extern "mfreadwrite" fn MFCreateSourceReaderFromURL(
