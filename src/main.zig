@@ -6,7 +6,7 @@ const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const xa2 = @import("win32/xaudio2.zig");
 const cgen = @import("content_generation.zig");
-const cgc = @cImport(@cInclude("cpu_gpu_common.h"));
+const cpu_gpu = @cImport(@cInclude("cpu_gpu_common.h"));
 
 pub const std_options = .{
     .log_level = .info,
@@ -63,7 +63,7 @@ const GameState = struct {
     d2d_factory: *d2d1.IFactory,
 
     meshes: std.ArrayList(cgen.Mesh),
-    objects: std.ArrayList(cgc.Object),
+    objects: std.ArrayList(cpu_gpu.Object),
 
     player_is_dead: f32 = 0.0,
     player_to_next_level: f32 = 0.0,
@@ -71,21 +71,22 @@ const GameState = struct {
     current_level: u32,
 
     fn init(allocator: std.mem.Allocator) !GameState {
-        var gc = GpuContext.init(
+        var gpu_context = GpuContext.init(
             create_window(w32.GetSystemMetrics(w32.SM_CXSCREEN), w32.GetSystemMetrics(w32.SM_CYSCREEN)),
         );
 
+        // If `AudioContext` initialization fails we will use "empty" context that does nothing (game will still run but without sound).
         const audio_context = AudioContext.init(allocator) catch AudioContext{};
 
-        const pso, const pso_rs = create_pso(gc.device);
+        const pso, const pso_rs = create_pso(gpu_context.device);
 
         var frame_state_buffer: *d3d12.IResource = undefined;
-        vhr(gc.device.CreateCommittedResource3(
+        vhr(gpu_context.device.CreateCommittedResource3(
             &.{ .Type = .DEFAULT },
             d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
             &.{
                 .Dimension = .BUFFER,
-                .Width = @sizeOf(cgc.FrameState),
+                .Width = @sizeOf(cpu_gpu.FrameState),
                 .Layout = .ROW_MAJOR,
             },
             .UNDEFINED,
@@ -97,14 +98,14 @@ const GameState = struct {
             @ptrCast(&frame_state_buffer),
         ));
 
-        gc.device.CreateConstantBufferView(
+        gpu_context.device.CreateConstantBufferView(
             &.{
                 .BufferLocation = frame_state_buffer.GetGPUVirtualAddress(),
-                .SizeInBytes = @sizeOf(cgc.FrameState),
+                .SizeInBytes = @sizeOf(cpu_gpu.FrameState),
             },
-            .{ .ptr = gc.shader_dheap_start_cpu.ptr +
-                @as(u32, @intCast(cgc.rdh_frame_state_buffer)) *
-                gc.shader_dheap_descriptor_size },
+            .{ .ptr = gpu_context.shader_dheap_start_cpu.ptr +
+                @as(u32, @intCast(cpu_gpu.rdh_frame_state_buffer)) *
+                gpu_context.shader_dheap_descriptor_size },
         );
 
         var d2d_factory: *d2d1.IFactory = undefined;
@@ -115,19 +116,19 @@ const GameState = struct {
             @ptrCast(&d2d_factory),
         ));
 
-        const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gc, d2d_factory);
+        const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
         const current_level = 1;
 
         const objects, const num_food_objects, const object_buffer = try cgen.define_and_upload_objects(
             allocator,
-            &gc,
+            &gpu_context,
             current_level,
         );
 
         return GameState{
             .allocator = allocator,
-            .gpu_context = gc,
+            .gpu_context = gpu_context,
             .audio_context = audio_context,
             .vertex_buffer = vertex_buffer,
             .object_buffer = object_buffer,
@@ -335,7 +336,7 @@ const GameState = struct {
             };
 
             const upload_mem, const buffer, const offset =
-                gc.allocate_upload_buffer_region(cgc.FrameState, 1);
+                gc.allocate_upload_buffer_region(cpu_gpu.FrameState, 1);
 
             upload_mem[0] = .{
                 .proj = transpose(proj),
@@ -352,7 +353,7 @@ const GameState = struct {
 
         {
             const upload_mem, const buffer, const offset =
-                gc.allocate_upload_buffer_region(cgc.Object, @intCast(game.objects.items.len));
+                gc.allocate_upload_buffer_region(cpu_gpu.Object, @intCast(game.objects.items.len));
 
             for (game.objects.items, 0..) |object, i| upload_mem[i] = object;
 
