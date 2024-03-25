@@ -49,10 +49,7 @@ pub fn build(b: *std.Build) void {
 
     exe.step.dependOn(
         &b.addInstallBinFile(
-            .{ .path = if (d3d12_debug or d3d12_debug_gpu)
-                "bin/xaudio2_9redist_debug.dll"
-            else
-                "bin/xaudio2_9redist.dll" },
+            .{ .path = if (audio_debug) "bin/xaudio2_9redist_debug.dll" else "bin/xaudio2_9redist.dll" },
             "xaudio2_9redist.dll",
         ).step,
     );

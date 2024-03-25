@@ -46,8 +46,26 @@ pub fn init(_: std.mem.Allocator) !AudioContext {
         }, null);
     }
 
+    var mastering_voice: *xa2.IMasteringVoice = undefined;
+    if (xaudio2.CreateMasteringVoice(
+        @ptrCast(&mastering_voice),
+        xa2.DEFAULT_CHANNELS,
+        xa2.DEFAULT_SAMPLERATE,
+        .{},
+        null,
+        null,
+        .GameEffects,
+    ) != w32.S_OK) {
+        log.info("Failed to create mastering voice.", .{});
+        return error.XAudio2Error;
+    }
+    errdefer mastering_voice.DestroyVoice();
+
+    log.info("Mastering voice created.", .{});
+
     return AudioContext{
         .xaudio2 = xaudio2,
+        .mastering_voice = mastering_voice,
     };
 }
 
@@ -55,6 +73,7 @@ pub fn deinit(audctx: *AudioContext) void {
     if (audctx.xaudio2) |xaudio2| {
         xaudio2.StopEngine();
         _ = mf.Shutdown();
+        audctx.mastering_voice.DestroyVoice();
         audctx.* = AudioContext{};
     }
 }
