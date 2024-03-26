@@ -71,6 +71,8 @@ const GameState = struct {
     num_food_objects: u32,
     current_level: u32,
 
+    eat_sound: AudioContext.SoundHandle,
+
     fn init(allocator: std.mem.Allocator) !GameState {
         var gpu_context = GpuContext.init(
             create_window(
@@ -81,7 +83,9 @@ const GameState = struct {
         );
 
         // If `AudioContext` initialization fails we will use "empty" context that does nothing (game will still run but without sound).
-        const audio_context = AudioContext.init(allocator) catch AudioContext{};
+        var audio_context = AudioContext.init(allocator) catch AudioContext{};
+
+        const eat_sound = audio_context.load_sound("data/sounds/tabla_tas1.flac") catch unreachable;
 
         const pso, const pso_rs = create_pso(gpu_context.device);
 
@@ -145,6 +149,7 @@ const GameState = struct {
             .d2d_factory = d2d_factory,
             .num_food_objects = num_food_objects,
             .current_level = current_level,
+            .eat_sound = eat_sound,
         };
     }
 
@@ -263,6 +268,7 @@ const GameState = struct {
 
                 if (contains == .TRUE) {
                     if (object.mesh_index == cgen.Mesh.food) {
+                        game.audio_context.play_sound(game.eat_sound, .{});
                         object.mesh_index = 0; // Mark this food as eaten.
                         game.num_food_objects -= 1;
                         if (game.num_food_objects == 0) {

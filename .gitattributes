@@ -10,3 +10,4 @@
 *.pdb binary
 *.dll binary
 *.png binary
+*.flac binary

@@ -16,10 +16,85 @@ const AudioContext = @This();
 
 const log = std.log.scoped(.audio_context);
 
-//allocator: std.mem.Allocator,
 xaudio2: ?*xa2.IXAudio2 = null,
+allocator: std.mem.Allocator = undefined,
 mastering_voice: *xa2.IMasteringVoice = undefined,
 source_voices: std.ArrayList(*xa2.ISourceVoice) = undefined,
+sound_pool: SoundPool = undefined,
+
+pub fn play_sound(
+    audctx: *AudioContext,
+    handle: SoundHandle,
+    args: struct {
+        play_begin: u32 = 0,
+        play_length: u32 = 0,
+        loop_begin: u32 = 0,
+        loop_length: u32 = 0,
+        loop_count: u32 = 0,
+    },
+) void {
+    if (audctx.xaudio2 == null) return;
+    if (audctx.sound_pool.lookup_sound(handle)) |sound| {
+        const voice = audctx.get_idle_source_voice().?;
+
+        vhr(voice.SubmitSourceBuffer(&.{
+            .Flags = .{ .END_OF_STREAM = true },
+            .AudioBytes = @intCast(sound.data.?.len),
+            .pAudioData = sound.data.?.ptr,
+            .PlayBegin = args.play_begin,
+            .PlayLength = args.play_length,
+            .LoopBegin = args.loop_begin,
+            .LoopLength = args.loop_length,
+            .LoopCount = args.loop_count,
+            .pContext = voice,
+        }, null));
+
+        vhr(voice.Start(.{}, xa2.COMMIT_NOW));
+    }
+}
+
+pub fn load_sound(audctx: *AudioContext, filename: []const u8) !SoundHandle {
+    if (audctx.xaudio2) |_| {
+        const data = try load_buffer_data(audctx.allocator, filename);
+        return audctx.sound_pool.add_sound(data);
+    }
+    return .{};
+}
+
+pub fn get_idle_source_voice(audctx: *AudioContext) ?*xa2.ISourceVoice {
+    if (audctx.xaudio2 == null) return null;
+    const idle_voice = blk: {
+        for (audctx.source_voices.items) |voice| {
+            var state: xa2.VOICE_STATE = undefined;
+            voice.GetState(&state, .{ .VOICE_NOSAMPLESPLAYED = true });
+            if (state.BuffersQueued == 0) {
+                break :blk voice;
+            }
+        }
+
+        var voice: ?*xa2.ISourceVoice = null;
+        vhr(audctx.xaudio2.?.CreateSourceVoice(
+            &voice,
+            &optimal_format,
+            .{},
+            xa2.DEFAULT_FREQ_RATIO,
+            @as(*xa2.IVoiceCallback, @ptrCast(&stop_on_buffer_end_cb)),
+            null,
+            null,
+        ));
+        audctx.source_voices.append(voice.?) catch return null;
+        break :blk voice.?;
+    };
+
+    // Reset voice state.
+    vhr(idle_voice.SetEffectChain(null));
+    vhr(idle_voice.SetVolume(1.0));
+    vhr(idle_voice.SetSourceSampleRate(optimal_format.nSamplesPerSec));
+    vhr(idle_voice.SetChannelVolumes(1, &[1]f32{1.0}, xa2.COMMIT_NOW));
+    vhr(idle_voice.SetFrequencyRatio(1.0, xa2.COMMIT_NOW));
+
+    return idle_voice;
+}
 
 pub fn init(allocator: std.mem.Allocator) !AudioContext {
     var xaudio2: *xa2.IXAudio2 = undefined;
@@ -86,10 +161,12 @@ pub fn init(allocator: std.mem.Allocator) !AudioContext {
         log.info("Source voices created.", .{});
     }
 
-    return AudioContext{
+    return .{
+        .allocator = allocator,
         .xaudio2 = xaudio2,
         .mastering_voice = mastering_voice,
         .source_voices = source_voices,
+        .sound_pool = SoundPool.init(allocator),
     };
 }
 
@@ -97,6 +174,7 @@ pub fn deinit(audctx: *AudioContext) void {
     if (audctx.xaudio2) |xaudio2| {
         xaudio2.StopEngine();
         _ = mf.Shutdown();
+        audctx.sound_pool.deinit(audctx.allocator);
         for (audctx.source_voices.items) |voice| voice.DestroyVoice();
         audctx.source_voices.deinit();
         audctx.mastering_voice.DestroyVoice();
@@ -225,3 +303,63 @@ const optimal_format = WAVEFORMATEX{
     .wBitsPerSample = 16,
     .cbSize = @sizeOf(WAVEFORMATEX),
 };
+
+fn load_buffer_data(allocator: std.mem.Allocator, filename: []const u8) ![]const u8 {
+    const filename_w = try std.unicode.utf8ToUtf16LeWithNull(allocator, filename);
+    defer allocator.free(filename_w);
+
+    var source_reader: *mf.ISourceReader = undefined;
+    if (mf.CreateSourceReaderFromURL(filename_w, null, &source_reader) != w32.S_OK) {
+        log.info("Failed to read audio file ({s}).", .{filename});
+        return error.FileNotFound;
+    }
+    defer _ = source_reader.Release();
+
+    var media_type: *mf.IMediaType = undefined;
+    vhr(source_reader.GetNativeMediaType(mf.SOURCE_READER_FIRST_AUDIO_STREAM, 0, &media_type));
+    defer _ = media_type.Release();
+
+    vhr(media_type.SetGUID(&mf.MT_MAJOR_TYPE, &mf.MediaType_Audio));
+    vhr(media_type.SetGUID(&mf.MT_SUBTYPE, &mf.AudioFormat_PCM));
+    vhr(media_type.SetUINT32(&mf.MT_AUDIO_NUM_CHANNELS, optimal_format.nChannels));
+    vhr(media_type.SetUINT32(&mf.MT_AUDIO_SAMPLES_PER_SECOND, optimal_format.nSamplesPerSec));
+    vhr(media_type.SetUINT32(&mf.MT_AUDIO_BITS_PER_SAMPLE, optimal_format.wBitsPerSample));
+    vhr(media_type.SetUINT32(&mf.MT_AUDIO_BLOCK_ALIGNMENT, optimal_format.nBlockAlign));
+    vhr(media_type.SetUINT32(
+        &mf.MT_AUDIO_AVG_BYTES_PER_SECOND,
+        optimal_format.nBlockAlign * optimal_format.nSamplesPerSec,
+    ));
+    vhr(media_type.SetUINT32(&mf.MT_ALL_SAMPLES_INDEPENDENT, w32.TRUE));
+    vhr(source_reader.SetCurrentMediaType(mf.SOURCE_READER_FIRST_AUDIO_STREAM, null, media_type));
+
+    var data = std.ArrayList(u8).init(allocator);
+    while (true) {
+        var flags: mf.SOURCE_READER_FLAG = .{};
+        var sample: ?*mf.ISample = null;
+        vhr(source_reader.ReadSample(
+            mf.SOURCE_READER_FIRST_AUDIO_STREAM,
+            .{},
+            null,
+            &flags,
+            null,
+            &sample,
+        ));
+        defer {
+            if (sample) |s| _ = s.Release();
+        }
+        if (flags.END_OF_STREAM or sample == null) {
+            break;
+        }
+
+        var buffer: *mf.IMediaBuffer = undefined;
+        vhr(sample.?.ConvertToContiguousBuffer(&buffer));
+        defer _ = buffer.Release();
+
+        var data_ptr: [*]u8 = undefined;
+        var data_len: u32 = 0;
+        vhr(buffer.Lock(&data_ptr, null, &data_len));
+        try data.appendSlice(data_ptr[0..data_len]);
+        vhr(buffer.Unlock());
+    }
+    return try data.toOwnedSlice();
+}

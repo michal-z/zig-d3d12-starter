@@ -35,24 +35,31 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
+    run_cmd.setCwd(.{ .cwd_relative = b.exe_dir });
     run_cmd.step.dependOn(b.getInstallStep());
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const install_d3d12_step = b.addInstallDirectory(.{
+    exe.step.dependOn(&b.addInstallDirectory(.{
         .source_dir = .{ .path = "bin/d3d12" },
         .install_dir = .bin,
         .install_subdir = "d3d12",
-    });
-    exe.step.dependOn(&install_d3d12_step.step);
+    }).step);
 
-    exe.step.dependOn(
-        &b.addInstallBinFile(
-            .{ .path = if (audio_debug) "bin/xaudio2_9redist_debug.dll" else "bin/xaudio2_9redist.dll" },
-            "xaudio2_9redist.dll",
-        ).step,
-    );
+    exe.step.dependOn(&b.addInstallDirectory(.{
+        .source_dir = .{ .path = "bin/data" },
+        .install_dir = .bin,
+        .install_subdir = "data",
+    }).step);
+
+    exe.step.dependOn(&b.addInstallBinFile(
+        .{ .path = if (audio_debug)
+            "bin/xaudio2_9redist_debug.dll"
+        else
+            "bin/xaudio2_9redist.dll" },
+        "xaudio2_9redist.dll",
+    ).step);
 
     const dxc_step = build_shaders(b, optimize);
     exe.step.dependOn(dxc_step);
