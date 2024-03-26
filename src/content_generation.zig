@@ -2,7 +2,7 @@ const std = @import("std");
 const w32 = @import("win32/win32.zig");
 const d3d12 = @import("win32/d3d12.zig");
 const d2d1 = @import("win32/d2d1.zig");
-const cgc = @cImport(@cInclude("cpu_gpu_common.h"));
+const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
 
 const GpuContext = @import("GpuContext.zig");
 const vhr = GpuContext.vhr;
@@ -40,7 +40,7 @@ pub const map_size_y = 1050.0;
 pub const player_start_x = -600.0;
 pub const player_start_y = 50.0;
 
-fn add_food(objects: *std.ArrayList(cgc.Object), num_food_objects: *u32, x: f32, y: f32) void {
+fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: f32, y: f32) void {
     const fc = 0xaa_0f_6c_0b;
     objects.append(.{ .color = fc, .mesh_index = Mesh.food, .x = x, .y = y }) catch unreachable;
     num_food_objects.* += 1;
@@ -50,8 +50,8 @@ pub fn define_and_upload_objects(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
     current_level: u32,
-) !struct { std.ArrayList(cgc.Object), u32, *d3d12.IResource } {
-    var objects = std.ArrayList(cgc.Object).init(allocator);
+) !struct { std.ArrayList(cpu_gpu.Object), u32, *d3d12.IResource } {
+    var objects = std.ArrayList(cpu_gpu.Object).init(allocator);
     var num_food_objects: u32 = 0;
 
     try objects.append(.{
@@ -207,7 +207,7 @@ pub fn define_and_upload_objects(
         d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
         &.{
             .Dimension = .BUFFER,
-            .Width = objects.items.len * @sizeOf(cgc.Object),
+            .Width = objects.items.len * @sizeOf(cpu_gpu.Object),
             .Layout = .ROW_MAJOR,
         },
         .UNDEFINED,
@@ -224,10 +224,10 @@ pub fn define_and_upload_objects(
         &d3d12.SHADER_RESOURCE_VIEW_DESC.init_structured_buffer(
             0,
             @intCast(objects.items.len),
-            @sizeOf(cgc.Object),
+            @sizeOf(cpu_gpu.Object),
         ),
         .{ .ptr = gc.shader_dheap_start_cpu.ptr +
-            @as(u32, @intCast(cgc.rdh_object_buffer)) *
+            @as(u32, @intCast(cpu_gpu.rdh_object_buffer)) *
             gc.shader_dheap_descriptor_size },
     );
 
@@ -235,7 +235,7 @@ pub fn define_and_upload_objects(
     vhr(gc.command_list.Reset(gc.command_allocators[0], null));
 
     const upload_mem, const buffer, const offset =
-        gc.allocate_upload_buffer_region(cgc.Object, @intCast(objects.items.len));
+        gc.allocate_upload_buffer_region(cpu_gpu.Object, @intCast(objects.items.len));
 
     for (objects.items, 0..) |object, i| upload_mem[i] = object;
 
@@ -259,7 +259,7 @@ pub fn define_and_upload_meshes(
     gc: *GpuContext,
     d2d_factory: *d2d1.IFactory,
 ) !struct { std.ArrayList(Mesh), *d3d12.IResource } {
-    var vertices = std.ArrayList(cgc.Vertex).init(allocator);
+    var vertices = std.ArrayList(cpu_gpu.Vertex).init(allocator);
     defer vertices.deinit();
 
     var tessellation_sink: TessellationSink = .{ .vertices = &vertices };
@@ -843,7 +843,7 @@ pub fn define_and_upload_meshes(
         d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
         &.{
             .Dimension = .BUFFER,
-            .Width = vertices.items.len * @sizeOf(cgc.Vertex),
+            .Width = vertices.items.len * @sizeOf(cpu_gpu.Vertex),
             .Layout = .ROW_MAJOR,
         },
         .UNDEFINED,
@@ -860,10 +860,10 @@ pub fn define_and_upload_meshes(
         &d3d12.SHADER_RESOURCE_VIEW_DESC.init_structured_buffer(
             0,
             @intCast(vertices.items.len),
-            @sizeOf(cgc.Vertex),
+            @sizeOf(cpu_gpu.Vertex),
         ),
         .{ .ptr = gc.shader_dheap_start_cpu.ptr +
-            @as(u32, @intCast(cgc.rdh_vertex_buffer)) *
+            @as(u32, @intCast(cpu_gpu.rdh_vertex_buffer)) *
             gc.shader_dheap_descriptor_size },
     );
 
@@ -871,7 +871,7 @@ pub fn define_and_upload_meshes(
     vhr(gc.command_list.Reset(gc.command_allocators[0], null));
 
     const upload_mem, const buffer, const offset =
-        gc.allocate_upload_buffer_region(cgc.Vertex, @intCast(vertices.items.len));
+        gc.allocate_upload_buffer_region(cpu_gpu.Vertex, @intCast(vertices.items.len));
 
     for (vertices.items, 0..) |vert, i| upload_mem[i] = vert;
 
@@ -901,7 +901,7 @@ const TessellationSink = extern struct {
         .Close = _close,
     },
 
-    vertices: *std.ArrayList(cgc.Vertex),
+    vertices: *std.ArrayList(cpu_gpu.Vertex),
 
     fn _query_interface(
         _: *w32.IUnknown,

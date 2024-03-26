@@ -6,7 +6,7 @@ const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const xa2 = @import("win32/xaudio2.zig");
 const cgen = @import("content_generation.zig");
-const cpu_gpu = @cImport(@cInclude("cpu_gpu_common.h"));
+const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
 
 pub const std_options = .{
     .log_level = .info,
