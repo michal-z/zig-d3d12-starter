@@ -1,4 +1,4 @@
-#include "cpu_gpu_common.h"
+#include "cpu_gpu_shared.h"
 
 #ifdef _S00
 
