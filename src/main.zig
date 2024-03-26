@@ -21,6 +21,8 @@ const GpuContext = @import("GpuContext.zig");
 const AudioContext = @import("AudioContext.zig");
 const vhr = GpuContext.vhr;
 const window_clear_color: [4]f32 = .{ 1, 1, 1, 0 };
+var random_state = std.Random.DefaultPrng.init(0);
+const random = random_state.random();
 
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
@@ -71,7 +73,7 @@ const GameState = struct {
     num_food_objects: u32,
     current_level: u32,
 
-    eat_sound: AudioContext.SoundHandle,
+    eat_sounds: [2]AudioContext.SoundHandle,
 
     fn init(allocator: std.mem.Allocator) !GameState {
         var gpu_context = GpuContext.init(
@@ -85,7 +87,10 @@ const GameState = struct {
         // If `AudioContext` initialization fails we will use "empty" context that does nothing (game will still run but without sound).
         var audio_context = AudioContext.init(allocator) catch AudioContext{};
 
-        const eat_sound = audio_context.load_sound("data/sounds/tabla_tas1.flac") catch unreachable;
+        const eat_sounds = .{
+            audio_context.load_sound("data/sounds/tabla_tas1.flac") catch unreachable,
+            audio_context.load_sound("data/sounds/drum_bass_hard.flac") catch unreachable,
+        };
 
         const pso, const pso_rs = create_pso(gpu_context.device);
 
@@ -149,7 +154,7 @@ const GameState = struct {
             .d2d_factory = d2d_factory,
             .num_food_objects = num_food_objects,
             .current_level = current_level,
-            .eat_sound = eat_sound,
+            .eat_sounds = eat_sounds,
         };
     }
 
@@ -268,7 +273,9 @@ const GameState = struct {
 
                 if (contains == .TRUE) {
                     if (object.mesh_index == cgen.Mesh.food) {
-                        game.audio_context.play_sound(game.eat_sound, .{});
+                        const idx = random.uintLessThan(u32, game.eat_sounds.len);
+                        game.audio_context.play_sound(game.eat_sounds[idx], .{});
+
                         object.mesh_index = 0; // Mark this food as eaten.
                         game.num_food_objects -= 1;
                         if (game.num_food_objects == 0) {
