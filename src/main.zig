@@ -191,7 +191,7 @@ const GameState = struct {
 
         _, const delta_time = update_frame_stats(game.gpu_context.window, window_name);
 
-        var player = &game.objects.items[0];
+        var player = &game.objects.items[game.objects.items.len - 1];
 
         if (game.player_is_dead > 0.0) {
             game.player_is_dead -= delta_time;
@@ -199,17 +199,16 @@ const GameState = struct {
             if (game.player_is_dead <= 0.0) {
                 game.player_is_dead = 0.0;
 
-                player.x = cgen.player_start_x;
-                player.y = cgen.player_start_y;
-                player.rotation = 0.0;
+                game.objects.deinit();
 
-                // Re-spawn food objects.
-                for (game.objects.items[1..]) |*object| {
-                    if (object.mesh_index == 0) {
-                        object.mesh_index = cgen.Mesh.food;
-                        game.num_food_objects += 1;
-                    }
-                }
+                game.gpu_context.finish_gpu_commands();
+                _ = game.object_buffer.Release();
+
+                game.objects, game.num_food_objects, game.object_buffer = cgen.define_and_upload_objects(
+                    game.allocator,
+                    &game.gpu_context,
+                    game.current_level,
+                ) catch unreachable;
             }
             return true;
         }
@@ -247,20 +246,37 @@ const GameState = struct {
             return true;
         }
 
-        const translation_speed = 250.0;
-        const rotation_speed = 5.0;
+        const window_width: f32 = @floatFromInt(game.gpu_context.window_width);
+        const window_height: f32 = @floatFromInt(game.gpu_context.window_height);
+        const window_aspect = window_width / window_height;
 
         if (is_key_down(w32.VK_RIGHT) or is_key_down('D')) {
-            player.rotation += rotation_speed * delta_time;
+            player.rotation += player.rotation_speed * delta_time;
         } else if (is_key_down(w32.VK_LEFT) or is_key_down('A')) {
-            player.rotation -= rotation_speed * delta_time;
+            player.rotation -= player.rotation_speed * delta_time;
         }
 
-        player.x += @cos(player.rotation) * translation_speed * delta_time;
-        player.y += @sin(player.rotation) * translation_speed * delta_time;
+        player.x += @cos(player.rotation) * player.move_speed * delta_time;
+        player.y += @sin(player.rotation) * player.move_speed * delta_time;
 
-        for (game.objects.items[1..]) |*object| {
-            if (object.mesh_index == 0) continue; // Already eaten food.
+        for (game.objects.items[0..]) |*object| {
+            if (object == player) continue;
+            if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
+
+            object.rotation += object.rotation_speed;
+
+            if (object.move_speed != 0.0) {
+                object.x += @cos(object.move_direction) * object.move_speed * delta_time;
+                object.y += @sin(object.move_direction) * object.move_speed * delta_time;
+
+                if (object.x < -0.5 * cgen.map_size_y * window_aspect or
+                    object.x > 0.5 * cgen.map_size_y * window_aspect or
+                    object.y < 0.0 or
+                    object.y > cgen.map_size_y)
+                {
+                    object.move_direction += std.math.pi;
+                }
+            }
 
             if (game.meshes.items[object.mesh_index].geometry) |geometry| {
                 var contains: w32.BOOL = .FALSE;
@@ -272,11 +288,13 @@ const GameState = struct {
                 ));
 
                 if (contains == .TRUE) {
-                    if (object.mesh_index == cgen.Mesh.food) {
+                    if (object.flags & cpu_gpu.obj_flag_is_food != 0) {
+                        object.flags |= cpu_gpu.obj_flag_is_dead;
+                        object.flags &= @bitCast(~cpu_gpu.obj_flag_is_food);
+
                         const idx = random.uintLessThan(u32, game.eat_sounds.len);
                         game.audio_context.play_sound(game.eat_sounds[idx], .{});
 
-                        object.mesh_index = 0; // Mark this food as eaten.
                         game.num_food_objects -= 1;
                         if (game.num_food_objects == 0) {
                             game.player_to_next_level = 1.0;
@@ -291,24 +309,16 @@ const GameState = struct {
             }
         }
 
-        const window_width: f32 = @floatFromInt(game.gpu_context.window_width);
-        const window_height: f32 = @floatFromInt(game.gpu_context.window_height);
-        const window_aspect = window_width / window_height;
-
         if (player.x < -0.5 * cgen.map_size_y * window_aspect) {
             player.x = 0.5 * cgen.map_size_y * window_aspect;
-            player.rotation += std.math.tau;
         } else if (player.x > 0.5 * cgen.map_size_y * window_aspect) {
             player.x = -0.5 * cgen.map_size_y * window_aspect;
-            player.rotation += std.math.tau;
         }
 
         if (player.y < 0.0) {
             player.y = cgen.map_size_y;
-            player.rotation += std.math.tau;
         } else if (player.y > cgen.map_size_y) {
             player.y = 0.0;
-            player.rotation += std.math.tau;
         }
 
         return true;
@@ -414,9 +424,8 @@ const GameState = struct {
         gc.command_list.SetPipelineState(game.pso);
         gc.command_list.SetGraphicsRootSignature(game.pso_rs);
 
-        // Draw all objects except player
-        for (game.objects.items[1..], 1..) |object, object_id| {
-            if (object.mesh_index == 0) continue; // Already eaten food.
+        for (game.objects.items[0..], 0..) |object, object_id| {
+            if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
             gc.command_list.SetGraphicsRoot32BitConstants(
                 0,
@@ -434,19 +443,6 @@ const GameState = struct {
                 0,
             );
         }
-        // Draw player (always on top of other objects).
-        gc.command_list.SetGraphicsRoot32BitConstants(
-            0,
-            2,
-            &[_]u32{ game.meshes.items[cgen.Mesh.player].first_vertex, 0 },
-            0,
-        );
-        gc.command_list.DrawInstanced(
-            game.meshes.items[cgen.Mesh.player].num_vertices,
-            1,
-            0,
-            0,
-        );
 
         gc.end_command_list();
 

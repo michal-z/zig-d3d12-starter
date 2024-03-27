@@ -33,16 +33,25 @@ pub const Mesh = struct {
     var level4_stroke: u32 = undefined;
 
     var level5: u32 = undefined;
+
+    var circle_50: u32 = undefined;
+    var circle_50_stroke: u32 = undefined;
 };
 
 pub const map_size_x = 1400.0;
 pub const map_size_y = 1050.0;
 pub const player_start_x = -600.0;
-pub const player_start_y = 50.0;
+pub const player_start_y = 20.0;
 
 fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: f32, y: f32) void {
     const fc = 0xaa_0f_6c_0b;
-    objects.append(.{ .color = fc, .mesh_index = Mesh.food, .x = x, .y = y }) catch unreachable;
+    objects.append(.{
+        .flags = cpu_gpu.obj_flag_is_food,
+        .color = fc,
+        .mesh_index = Mesh.food,
+        .x = x,
+        .y = y,
+    }) catch unreachable;
     num_food_objects.* += 1;
 }
 
@@ -53,13 +62,6 @@ pub fn define_and_upload_objects(
 ) !struct { std.ArrayList(cpu_gpu.Object), u32, *d3d12.IResource } {
     var objects = std.ArrayList(cpu_gpu.Object).init(allocator);
     var num_food_objects: u32 = 0;
-
-    try objects.append(.{
-        .color = 0xaa_bb_00_00,
-        .mesh_index = Mesh.player,
-        .x = player_start_x,
-        .y = player_start_y,
-    });
 
     if (current_level == 1) {
         try objects.append(.{
@@ -84,6 +86,44 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 232.0, 364.0);
         add_food(&objects, &num_food_objects, 100.0, 802.0);
         add_food(&objects, &num_food_objects, -160.0, 800.0);
+
+        try objects.append(.{
+            .color = 0xaa_22_44_99,
+            .mesh_index = Mesh.circle_50,
+            .x = -map_size_x / 2,
+            .y = 100.0,
+            .move_direction = 0.0,
+            .move_speed = 125.0,
+            .rotation_speed = 0.025,
+        });
+        try objects.append(.{
+            .color = 0xaa_00_00_00,
+            .mesh_index = Mesh.circle_50_stroke,
+            .x = map_size_x / 2,
+            .y = 100.0,
+            .move_direction = std.math.pi,
+            .move_speed = 125.0,
+            .rotation_speed = -0.025,
+        });
+
+        try objects.append(.{
+            .color = 0xaa_00_00_00,
+            .mesh_index = Mesh.circle_50_stroke,
+            .x = -map_size_x / 2,
+            .y = map_size_y - 100.0,
+            .move_direction = 0.0,
+            .move_speed = 125.0,
+            .rotation_speed = -0.025,
+        });
+        try objects.append(.{
+            .color = 0xaa_22_44_99,
+            .mesh_index = Mesh.circle_50,
+            .x = map_size_x / 2,
+            .y = map_size_y - 100.0,
+            .move_direction = std.math.pi,
+            .move_speed = 125.0,
+            .rotation_speed = 0.025,
+        });
     } else if (current_level == 2) {
         try objects.append(.{
             .color = 0xaa_fd_f6_e3,
@@ -201,6 +241,16 @@ pub fn define_and_upload_objects(
         unreachable;
     }
 
+    // Player must be last object
+    try objects.append(.{
+        .color = 0xaa_bb_00_00,
+        .mesh_index = Mesh.player,
+        .x = player_start_x,
+        .y = player_start_y,
+        .move_speed = 250.0,
+        .rotation_speed = 5.0,
+    });
+
     var object_buffer: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
         &.{ .Type = .DEFAULT },
@@ -312,6 +362,57 @@ pub fn define_and_upload_meshes(
             .num_vertices = @intCast(vertices.items.len - first_vertex),
             .geometry = @ptrCast(geo),
         });
+    }
+
+    {
+        var geo_fill: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 50.0,
+                .radiusY = 35.0,
+            },
+            @ptrCast(&geo_fill),
+        ));
+
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.circle_50 = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = @ptrCast(geo_fill),
+            });
+        }
+
+        var geo_stroke: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
+
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+        }
+
+        {
+            const first_vertex = vertices.items.len;
+
+            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+
+            Mesh.circle_50_stroke = @intCast(meshes.items.len);
+            try meshes.append(.{
+                .first_vertex = @intCast(first_vertex),
+                .num_vertices = @intCast(vertices.items.len - first_vertex),
+                .geometry = @ptrCast(geo_stroke),
+            });
+        }
     }
 
     {

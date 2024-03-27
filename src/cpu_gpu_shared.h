@@ -3,6 +3,9 @@
 #define rdh_object_buffer 2
 #define rdh_frame_state_buffer 3
 
+#define obj_flag_is_food 1
+#define obj_flag_is_dead 2
+
 #ifndef HLSL
 typedef float float4x4[16];
 #endif
@@ -12,10 +15,14 @@ struct Vertex {
 };
 
 struct Object {
+    unsigned int flags;
     unsigned int color;
     unsigned int mesh_index;
     float x, y;
     float rotation;
+    float rotation_speed;
+    float move_direction;
+    float move_speed;
     float _padding[3];
 };
 
