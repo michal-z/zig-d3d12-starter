@@ -316,6 +316,13 @@ pub fn define_and_upload_meshes(
 
     var meshes = std.ArrayList(Mesh).init(allocator);
 
+    // Index 0 is invalid mesh.
+    try meshes.append(.{
+        .first_vertex = 0,
+        .num_vertices = 0,
+        .geometry = null,
+    });
+
     {
         var geo: *d2d1.IEllipseGeometry = undefined;
         vhr(d2d_factory.CreateEllipseGeometry(
@@ -331,9 +338,7 @@ pub fn define_and_upload_meshes(
 
         vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-        // Player mesh needs to have index 0 so it needs to be defined first in the code.
         Mesh.player = @intCast(meshes.items.len);
-        std.debug.assert(Mesh.player == 0);
         try meshes.append(.{
             .first_vertex = @intCast(first_vertex),
             .num_vertices = @intCast(vertices.items.len - first_vertex),
