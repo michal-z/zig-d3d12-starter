@@ -15,27 +15,22 @@ pub const Mesh = struct {
 
     pub const num_levels = 5;
 
+    pub const invalid: u32 = 0;
     pub var player: u32 = undefined;
     pub var food: u32 = undefined;
 
+    var ellipse_50_35: u32 = undefined;
+    var ellipse_50_35_stroke: u32 = undefined;
     var fullscreen_rect: u32 = undefined;
-
     var level1: u32 = undefined;
     var level1_stroke: u32 = undefined;
-
     var level2: u32 = undefined;
     var level2_stroke: u32 = undefined;
-
     var level3: u32 = undefined;
     var level3_stroke: u32 = undefined;
-
     var level4: u32 = undefined;
     var level4_stroke: u32 = undefined;
-
     var level5: u32 = undefined;
-
-    var circle_50: u32 = undefined;
-    var circle_50_stroke: u32 = undefined;
 };
 
 pub const map_size_x = 1400.0;
@@ -47,8 +42,8 @@ fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: 
     const fc = 0xaa_0f_6c_0b;
     objects.append(.{
         .flags = cpu_gpu.obj_flag_is_food,
-        .color = fc,
-        .mesh_index = Mesh.food,
+        .color = .{ fc, 0 },
+        .mesh_index = .{ Mesh.food, Mesh.invalid },
         .x = x,
         .y = y,
     }) catch unreachable;
@@ -65,20 +60,14 @@ pub fn define_and_upload_objects(
 
     if (current_level == 1) {
         try objects.append(.{
-            .color = 0xaa_fd_f6_e3,
-            .mesh_index = Mesh.fullscreen_rect,
+            .color = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_99,
-            .mesh_index = Mesh.level1,
-            .x = 0.0,
-            .y = 0.0,
-        });
-        try objects.append(.{
-            .color = 0xaa_00_00_00,
-            .mesh_index = Mesh.level1_stroke,
+            .color = .{ 0xaa_22_44_99, 0 },
+            .mesh_index = .{ Mesh.level1, Mesh.level1_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -86,10 +75,9 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 232.0, 364.0);
         add_food(&objects, &num_food_objects, 100.0, 802.0);
         add_food(&objects, &num_food_objects, -160.0, 800.0);
-
         try objects.append(.{
-            .color = 0xaa_22_44_99,
-            .mesh_index = Mesh.circle_50,
+            .color = .{ 0xaa_22_44_99, 0 },
+            .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
             .x = -map_size_x / 2,
             .y = 100.0,
             .move_direction = 0.0,
@@ -97,49 +85,24 @@ pub fn define_and_upload_objects(
             .rotation_speed = 0.025,
         });
         try objects.append(.{
-            .color = 0xaa_00_00_00,
-            .mesh_index = Mesh.circle_50_stroke,
+            .color = .{ 0xaa_22_44_99, 0 },
+            .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
             .x = map_size_x / 2,
             .y = 100.0,
             .move_direction = std.math.pi,
             .move_speed = 125.0,
             .rotation_speed = -0.025,
-        });
-
-        try objects.append(.{
-            .color = 0xaa_00_00_00,
-            .mesh_index = Mesh.circle_50_stroke,
-            .x = -map_size_x / 2,
-            .y = map_size_y - 100.0,
-            .move_direction = 0.0,
-            .move_speed = 125.0,
-            .rotation_speed = -0.025,
-        });
-        try objects.append(.{
-            .color = 0xaa_22_44_99,
-            .mesh_index = Mesh.circle_50,
-            .x = map_size_x / 2,
-            .y = map_size_y - 100.0,
-            .move_direction = std.math.pi,
-            .move_speed = 125.0,
-            .rotation_speed = 0.025,
         });
     } else if (current_level == 2) {
         try objects.append(.{
-            .color = 0xaa_fd_f6_e3,
-            .mesh_index = Mesh.fullscreen_rect,
+            .color = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_99,
-            .mesh_index = Mesh.level2,
-            .x = 0.0,
-            .y = 0.0,
-        });
-        try objects.append(.{
-            .color = 0xaa_00_00_00,
-            .mesh_index = Mesh.level2_stroke,
+            .color = .{ 0xaa_22_44_99, 0 },
+            .mesh_index = .{ Mesh.level2, Mesh.level2_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -152,20 +115,14 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 384.9, 552.8);
     } else if (current_level == 3) {
         try objects.append(.{
-            .color = 0xaa_fd_f6_e3,
-            .mesh_index = Mesh.fullscreen_rect,
+            .color = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_99,
-            .mesh_index = Mesh.level3,
-            .x = 0.0,
-            .y = 0.0,
-        });
-        try objects.append(.{
-            .color = 0xaa_00_00_00,
-            .mesh_index = Mesh.level3_stroke,
+            .color = .{ 0xaa_22_44_99, 0 },
+            .mesh_index = .{ Mesh.level3, Mesh.level3_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -185,20 +142,14 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 213.0, 385.0);
     } else if (current_level == 4) {
         try objects.append(.{
-            .color = 0xaa_fd_f6_e3,
-            .mesh_index = Mesh.fullscreen_rect,
+            .color = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0xaa_22_44_99,
-            .mesh_index = Mesh.level4,
-            .x = 0.0,
-            .y = 0.0,
-        });
-        try objects.append(.{
-            .color = 0,
-            .mesh_index = Mesh.level4_stroke,
+            .color = .{ 0xaa_22_44_99, 0 },
+            .mesh_index = .{ Mesh.level4, Mesh.level4_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -211,14 +162,14 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 5) {
         try objects.append(.{
-            .color = 0xaa_fd_f6_e3,
-            .mesh_index = Mesh.fullscreen_rect,
+            .color = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = 0,
-            .mesh_index = Mesh.level5,
+            .color = .{ 0, 0 },
+            .mesh_index = .{ Mesh.level5, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
@@ -241,10 +192,10 @@ pub fn define_and_upload_objects(
         unreachable;
     }
 
-    // Player must be last object
+    // Player must be last object (for correct drawing order).
     try objects.append(.{
-        .color = 0xaa_bb_00_00,
-        .mesh_index = Mesh.player,
+        .color = .{ 0xaa_bb_00_00, 0 },
+        .mesh_index = .{ Mesh.player, Mesh.invalid },
         .x = player_start_x,
         .y = player_start_y,
         .move_speed = 250.0,
@@ -385,7 +336,7 @@ pub fn define_and_upload_meshes(
 
             vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-            Mesh.circle_50 = @intCast(meshes.items.len);
+            Mesh.ellipse_50_35 = @intCast(meshes.items.len);
             try meshes.append(.{
                 .first_vertex = @intCast(first_vertex),
                 .num_vertices = @intCast(vertices.items.len - first_vertex),
@@ -411,7 +362,7 @@ pub fn define_and_upload_meshes(
 
             vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
 
-            Mesh.circle_50_stroke = @intCast(meshes.items.len);
+            Mesh.ellipse_50_35_stroke = @intCast(meshes.items.len);
             try meshes.append(.{
                 .first_vertex = @intCast(first_vertex),
                 .num_vertices = @intCast(vertices.items.len - first_vertex),

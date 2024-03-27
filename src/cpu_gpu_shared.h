@@ -16,14 +16,14 @@ struct Vertex {
 
 struct Object {
     unsigned int flags;
-    unsigned int color;
-    unsigned int mesh_index;
+    unsigned int color[2];
+    unsigned int mesh_index[2];
     float x, y;
     float rotation;
     float rotation_speed;
     float move_direction;
     float move_speed;
-    float _padding[3];
+    float _padding[1];
 };
 
 struct FrameState {

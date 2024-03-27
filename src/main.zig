@@ -278,33 +278,37 @@ const GameState = struct {
                 }
             }
 
-            if (game.meshes.items[object.mesh_index].geometry) |geometry| {
-                var contains: w32.BOOL = .FALSE;
-                vhr(geometry.FillContainsPoint(
-                    .{ .x = player.x, .y = player.y },
-                    &d2d1.MATRIX_3X2_F.translation(object.x, object.y),
-                    d2d1.DEFAULT_FLATTENING_TOLERANCE,
-                    &contains,
-                ));
+            for (0..2) |mindex| {
+                if (object.mesh_index[mindex] == cgen.Mesh.invalid) continue;
 
-                if (contains == .TRUE) {
-                    if (object.flags & cpu_gpu.obj_flag_is_food != 0) {
-                        object.flags |= cpu_gpu.obj_flag_is_dead;
-                        object.flags &= @bitCast(~cpu_gpu.obj_flag_is_food);
+                if (game.meshes.items[object.mesh_index[mindex]].geometry) |geometry| {
+                    var contains: w32.BOOL = .FALSE;
+                    vhr(geometry.FillContainsPoint(
+                        .{ .x = player.x, .y = player.y },
+                        &d2d1.MATRIX_3X2_F.translation(object.x, object.y),
+                        d2d1.DEFAULT_FLATTENING_TOLERANCE,
+                        &contains,
+                    ));
 
-                        const idx = random.uintLessThan(u32, game.eat_sounds.len);
-                        game.audio_context.play_sound(game.eat_sounds[idx], .{});
+                    if (contains == .TRUE) {
+                        if (object.flags & cpu_gpu.obj_flag_is_food != 0) {
+                            object.flags |= cpu_gpu.obj_flag_is_dead;
+                            object.flags &= @bitCast(~cpu_gpu.obj_flag_is_food);
 
-                        game.num_food_objects -= 1;
-                        if (game.num_food_objects == 0) {
-                            game.player_to_next_level = 1.0;
+                            const idx = random.uintLessThan(u32, game.eat_sounds.len);
+                            game.audio_context.play_sound(game.eat_sounds[idx], .{});
+
+                            game.num_food_objects -= 1;
+                            if (game.num_food_objects == 0) {
+                                game.player_to_next_level = 1.0;
+                                return true;
+                            }
+                        } else {
+                            game.player_is_dead = 1.0;
                             return true;
                         }
-                    } else {
-                        game.player_is_dead = 1.0;
-                        return true;
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -427,21 +431,26 @@ const GameState = struct {
         for (game.objects.items[0..], 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
-            gc.command_list.SetGraphicsRoot32BitConstants(
-                0,
-                2,
-                &[_]u32{
-                    game.meshes.items[object.mesh_index].first_vertex,
-                    @intCast(object_id),
-                },
-                0,
-            );
-            gc.command_list.DrawInstanced(
-                game.meshes.items[object.mesh_index].num_vertices,
-                1,
-                0,
-                0,
-            );
+            for (0..2) |mindex| {
+                if (object.mesh_index[mindex] == cgen.Mesh.invalid) continue;
+
+                gc.command_list.SetGraphicsRoot32BitConstants(
+                    0,
+                    3,
+                    &[_]u32{
+                        game.meshes.items[object.mesh_index[mindex]].first_vertex,
+                        @intCast(object_id),
+                        @intCast(mindex),
+                    },
+                    0,
+                );
+                gc.command_list.DrawInstanced(
+                    game.meshes.items[object.mesh_index[mindex]].num_vertices,
+                    1,
+                    0,
+                    0,
+                );
+            }
         }
 
         gc.end_command_list();

@@ -3,11 +3,12 @@
 #ifdef _S00
 
 #define root_signature "RootFlags(CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED), " \
-    "RootConstants(b0, num32BitConstants = 2)"
+    "RootConstants(b0, num32BitConstants = 3)"
 
 struct RootConst {
     uint first_vertex;
     uint object_id;
+    uint submesh_index;
 };
 ConstantBuffer<RootConst> root_const : register(b0);
 
@@ -43,7 +44,7 @@ void s00_vertex(
         float4(vertex.x * cos_r - vertex.y * sin_r + object.x,
                vertex.x * sin_r + vertex.y * cos_r + object.y, 0.0, 1.0),
         frame_state.proj);
-    out_color = unpack_color(object.color);
+    out_color = unpack_color(object.color[root_const.submesh_index]);
 }
 
 [RootSignature(root_signature)]
