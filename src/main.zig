@@ -259,7 +259,7 @@ const GameState = struct {
         player.x += @cos(player.rotation) * player.move_speed * delta_time;
         player.y += @sin(player.rotation) * player.move_speed * delta_time;
 
-        for (game.objects.items[0..]) |*object| {
+        for (game.objects.items) |*object| {
             if (object == player) continue;
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
@@ -278,10 +278,10 @@ const GameState = struct {
                 }
             }
 
-            for (0..2) |mindex| {
-                if (object.mesh_index[mindex] == cgen.Mesh.invalid) continue;
+            for (0..2) |submesh| {
+                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
 
-                if (game.meshes.items[object.mesh_index[mindex]].geometry) |geometry| {
+                if (game.meshes.items[object.mesh_indices[submesh]].geometry) |geometry| {
                     var contains: w32.BOOL = .FALSE;
                     vhr(geometry.FillContainsPoint(
                         .{ .x = player.x, .y = player.y },
@@ -432,24 +432,24 @@ const GameState = struct {
         gc.command_list.SetPipelineState(game.pso);
         gc.command_list.SetGraphicsRootSignature(game.pso_rs);
 
-        for (game.objects.items[0..], 0..) |object, object_id| {
+        for (game.objects.items, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
-            for (0..2) |mindex| {
-                if (object.mesh_index[mindex] == cgen.Mesh.invalid) continue;
+            for (0..2) |submesh| {
+                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
 
                 gc.command_list.SetGraphicsRoot32BitConstants(
                     0,
                     3,
                     &[_]u32{
-                        game.meshes.items[object.mesh_index[mindex]].first_vertex,
+                        game.meshes.items[object.mesh_indices[submesh]].first_vertex,
                         @intCast(object_id),
-                        @intCast(mindex),
+                        @intCast(submesh),
                     },
                     0,
                 );
                 gc.command_list.DrawInstanced(
-                    game.meshes.items[object.mesh_index[mindex]].num_vertices,
+                    game.meshes.items[object.mesh_indices[submesh]].num_vertices,
                     1,
                     0,
                     0,

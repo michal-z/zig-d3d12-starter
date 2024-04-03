@@ -44,8 +44,8 @@ fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: 
     const fc = 0xaa_0f_6c_0b;
     objects.append(.{
         .flags = cpu_gpu.obj_flag_is_food,
-        .color = .{ fc, 0 },
-        .mesh_index = .{ Mesh.food, Mesh.invalid },
+        .colors = .{ fc, 0 },
+        .mesh_indices = .{ Mesh.food, Mesh.invalid },
         .x = x,
         .y = y,
     }) catch unreachable;
@@ -62,15 +62,15 @@ pub fn define_and_upload_objects(
 
     if (current_level == 1) {
         try objects.append(.{
-            .color = .{ 0xaa_fd_f6_e3, 0 },
-            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
+            .colors = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         if (false) {
             try objects.append(.{
-                .color = .{ 0xaa_22_44_99, 0 },
-                .mesh_index = .{ Mesh.level1, Mesh.level1_stroke },
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.level1, Mesh.level1_stroke },
                 .x = 0.0,
                 .y = 0.0,
             });
@@ -80,16 +80,16 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 100.0, 802.0);
         add_food(&objects, &num_food_objects, -160.0, 800.0);
         try objects.append(.{
-            .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.round_rect_900_50, Mesh.round_rect_900_50_stroke },
+            .colors = .{ 0xaa_22_44_99, 0 },
+            .mesh_indices = .{ Mesh.round_rect_900_50, Mesh.round_rect_900_50_stroke },
             .x = 0.0,
             .y = map_size_y / 2,
             .rotation_speed = 0.01,
         });
         if (false) {
             try objects.append(.{
-                .color = .{ 0xaa_22_44_99, 0 },
-                .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
                 .x = -map_size_x / 2,
                 .y = 100.0,
                 .move_direction = 0.0,
@@ -97,8 +97,8 @@ pub fn define_and_upload_objects(
                 .rotation_speed = 0.025,
             });
             try objects.append(.{
-                .color = .{ 0xaa_22_44_99, 0 },
-                .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
                 .x = map_size_x / 2,
                 .y = 100.0,
                 .move_direction = std.math.pi,
@@ -108,14 +108,14 @@ pub fn define_and_upload_objects(
         }
     } else if (current_level == 2) {
         try objects.append(.{
-            .color = .{ 0xaa_fd_f6_e3, 0 },
-            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
+            .colors = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.level2, Mesh.level2_stroke },
+            .colors = .{ 0xaa_22_44_99, 0 },
+            .mesh_indices = .{ Mesh.level2, Mesh.level2_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -128,14 +128,14 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 384.9, 552.8);
     } else if (current_level == 3) {
         try objects.append(.{
-            .color = .{ 0xaa_fd_f6_e3, 0 },
-            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
+            .colors = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.level3, Mesh.level3_stroke },
+            .colors = .{ 0xaa_22_44_99, 0 },
+            .mesh_indices = .{ Mesh.level3, Mesh.level3_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -155,14 +155,14 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, 213.0, 385.0);
     } else if (current_level == 4) {
         try objects.append(.{
-            .color = .{ 0xaa_fd_f6_e3, 0 },
-            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
+            .colors = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.level4, Mesh.level4_stroke },
+            .colors = .{ 0xaa_22_44_99, 0 },
+            .mesh_indices = .{ Mesh.level4, Mesh.level4_stroke },
             .x = 0.0,
             .y = 0.0,
         });
@@ -175,14 +175,14 @@ pub fn define_and_upload_objects(
         add_food(&objects, &num_food_objects, -160.0, 800.0);
     } else if (current_level == 5) {
         try objects.append(.{
-            .color = .{ 0xaa_fd_f6_e3, 0 },
-            .mesh_index = .{ Mesh.fullscreen_rect, Mesh.invalid },
+            .colors = .{ 0xaa_fd_f6_e3, 0 },
+            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
         try objects.append(.{
-            .color = .{ 0, 0 },
-            .mesh_index = .{ Mesh.level5, Mesh.invalid },
+            .colors = .{ 0, 0 },
+            .mesh_indices = .{ Mesh.level5, Mesh.invalid },
             .x = 0.0,
             .y = 0.0,
         });
@@ -207,8 +207,8 @@ pub fn define_and_upload_objects(
 
     // Player must be the last object (for correct drawing order).
     try objects.append(.{
-        .color = .{ 0xaa_bb_00_00, 0 },
-        .mesh_index = .{ Mesh.player, Mesh.invalid },
+        .colors = .{ 0xaa_bb_00_00, 0 },
+        .mesh_indices = .{ Mesh.player, Mesh.invalid },
         .x = player_start_x,
         .y = player_start_y,
         .move_speed = 250.0,

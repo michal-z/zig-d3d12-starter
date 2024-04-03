@@ -44,7 +44,7 @@ void s00_vertex(
         float4(vertex.x * cos_r - vertex.y * sin_r + object.x,
                vertex.x * sin_r + vertex.y * cos_r + object.y, 0.0, 1.0),
         frame_state.proj);
-    out_color = unpack_color(object.color[root_const.submesh_index]);
+    out_color = unpack_color(object.colors[root_const.submesh_index]);
 }
 
 [RootSignature(root_signature)]
