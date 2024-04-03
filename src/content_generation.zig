@@ -21,6 +21,8 @@ pub const Mesh = struct {
 
     var ellipse_50_35: u32 = undefined;
     var ellipse_50_35_stroke: u32 = undefined;
+    var round_rect_900_50: u32 = undefined;
+    var round_rect_900_50_stroke: u32 = undefined;
     var fullscreen_rect: u32 = undefined;
     var level1: u32 = undefined;
     var level1_stroke: u32 = undefined;
@@ -65,34 +67,45 @@ pub fn define_and_upload_objects(
             .x = 0.0,
             .y = 0.0,
         });
-        try objects.append(.{
-            .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.level1, Mesh.level1_stroke },
-            .x = 0.0,
-            .y = 0.0,
-        });
+        if (false) {
+            try objects.append(.{
+                .color = .{ 0xaa_22_44_99, 0 },
+                .mesh_index = .{ Mesh.level1, Mesh.level1_stroke },
+                .x = 0.0,
+                .y = 0.0,
+            });
+        }
         add_food(&objects, &num_food_objects, -197.0, 352.0);
         add_food(&objects, &num_food_objects, 232.0, 364.0);
         add_food(&objects, &num_food_objects, 100.0, 802.0);
         add_food(&objects, &num_food_objects, -160.0, 800.0);
         try objects.append(.{
             .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
-            .x = -map_size_x / 2,
-            .y = 100.0,
-            .move_direction = 0.0,
-            .move_speed = 125.0,
-            .rotation_speed = 0.025,
+            .mesh_index = .{ Mesh.round_rect_900_50, Mesh.round_rect_900_50_stroke },
+            .x = 0.0,
+            .y = map_size_y / 2,
+            .rotation_speed = 0.01,
         });
-        try objects.append(.{
-            .color = .{ 0xaa_22_44_99, 0 },
-            .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
-            .x = map_size_x / 2,
-            .y = 100.0,
-            .move_direction = std.math.pi,
-            .move_speed = 125.0,
-            .rotation_speed = -0.025,
-        });
+        if (false) {
+            try objects.append(.{
+                .color = .{ 0xaa_22_44_99, 0 },
+                .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
+                .x = -map_size_x / 2,
+                .y = 100.0,
+                .move_direction = 0.0,
+                .move_speed = 125.0,
+                .rotation_speed = 0.025,
+            });
+            try objects.append(.{
+                .color = .{ 0xaa_22_44_99, 0 },
+                .mesh_index = .{ Mesh.ellipse_50_35, Mesh.ellipse_50_35_stroke },
+                .x = map_size_x / 2,
+                .y = 100.0,
+                .move_direction = std.math.pi,
+                .move_speed = 125.0,
+                .rotation_speed = -0.025,
+            });
+        }
     } else if (current_level == 2) {
         try objects.append(.{
             .color = .{ 0xaa_fd_f6_e3, 0 },
@@ -192,7 +205,7 @@ pub fn define_and_upload_objects(
         unreachable;
     }
 
-    // Player must be last object (for correct drawing order).
+    // Player must be the last object (for correct drawing order).
     try objects.append(.{
         .color = .{ 0xaa_bb_00_00, 0 },
         .mesh_index = .{ Mesh.player, Mesh.invalid },
@@ -255,6 +268,60 @@ pub fn define_and_upload_objects(
     return .{ objects, @intCast(num_food_objects), object_buffer };
 }
 
+fn tessellate_geometry(
+    geo: *d2d1.IGeometry,
+    vertices: std.ArrayList(cpu_gpu.Vertex),
+    tessellation_sink: *TessellationSink,
+    meshes: *std.ArrayList(Mesh),
+    is_blocking: bool,
+) !u32 {
+    const first_vertex = vertices.items.len;
+
+    vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(tessellation_sink)));
+
+    const mesh_index: u32 = @intCast(meshes.items.len);
+    try meshes.append(.{
+        .first_vertex = @intCast(first_vertex),
+        .num_vertices = @intCast(vertices.items.len - first_vertex),
+        .geometry = if (is_blocking) geo else null,
+    });
+    return mesh_index;
+}
+
+fn tessellate_geometry_stroke(
+    d2d_factory: *d2d1.IFactory,
+    geo_fill: *d2d1.IGeometry,
+    width: f32,
+    vertices: std.ArrayList(cpu_gpu.Vertex),
+    tessellation_sink: *TessellationSink,
+    meshes: *std.ArrayList(Mesh),
+) !u32 {
+    var geo_stroke: *d2d1.IPathGeometry = undefined;
+    vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
+
+    {
+        var geo_sink: *d2d1.IGeometrySink = undefined;
+        vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
+        defer {
+            vhr(geo_sink.Close());
+            _ = geo_sink.Release();
+        }
+        vhr(geo_fill.Widen(width, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
+    }
+
+    const first_vertex = vertices.items.len;
+
+    vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(tessellation_sink)));
+
+    const mesh_index: u32 = @intCast(meshes.items.len);
+    try meshes.append(.{
+        .first_vertex = @intCast(first_vertex),
+        .num_vertices = @intCast(vertices.items.len - first_vertex),
+        .geometry = @ptrCast(geo_stroke),
+    });
+    return mesh_index;
+}
+
 pub fn define_and_upload_meshes(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
@@ -284,17 +351,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo),
         ));
-
-        const first_vertex = vertices.items.len;
-
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-        Mesh.player = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        });
+        Mesh.player = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes, true);
     }
 
     {
@@ -307,17 +364,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo),
         ));
-
-        const first_vertex = vertices.items.len;
-
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-        Mesh.food = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = @ptrCast(geo),
-        });
+        Mesh.food = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes, true);
     }
 
     {
@@ -330,45 +377,9 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo_fill),
         ));
+        Mesh.ellipse_50_35 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
 
-        {
-            const first_vertex = vertices.items.len;
-
-            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-            Mesh.ellipse_50_35 = @intCast(meshes.items.len);
-            try meshes.append(.{
-                .first_vertex = @intCast(first_vertex),
-                .num_vertices = @intCast(vertices.items.len - first_vertex),
-                .geometry = @ptrCast(geo_fill),
-            });
-        }
-
-        var geo_stroke: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
-
-        {
-            var geo_sink: *d2d1.IGeometrySink = undefined;
-            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
-            defer {
-                vhr(geo_sink.Close());
-                _ = geo_sink.Release();
-            }
-            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
-        }
-
-        {
-            const first_vertex = vertices.items.len;
-
-            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-            Mesh.ellipse_50_35_stroke = @intCast(meshes.items.len);
-            try meshes.append(.{
-                .first_vertex = @intCast(first_vertex),
-                .num_vertices = @intCast(vertices.items.len - first_vertex),
-                .geometry = @ptrCast(geo_stroke),
-            });
-        }
+        Mesh.ellipse_50_35_stroke = try tessellate_geometry_stroke(d2d_factory, @ptrCast(geo_fill), 9.0, vertices, &tessellation_sink, &meshes);
     }
 
     {
@@ -384,49 +395,80 @@ pub fn define_and_upload_meshes(
         ));
         defer _ = geo.Release();
 
-        const first_vertex = vertices.items.len;
+        Mesh.fullscreen_rect = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes, false);
+    }
 
-        vhr(geo.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
+    {
+        const geo_fill: *d2d1.IGeometry = blk: {
+            const w = 900.0;
+            const h = 50.0;
+            var temp: *d2d1.IRoundedRectangleGeometry = undefined;
+            vhr(d2d_factory.CreateRoundedRectangleGeometry(
+                &.{
+                    .rect = .{
+                        .left = 0.0,
+                        .top = 0.0,
+                        .right = w,
+                        .bottom = h,
+                    },
+                    .radiusX = 20.0,
+                    .radiusY = 20.0,
+                },
+                @ptrCast(&temp),
+            ));
+            defer _ = temp.Release();
 
-        Mesh.fullscreen_rect = @intCast(meshes.items.len);
-        try meshes.append(.{
-            .first_vertex = @intCast(first_vertex),
-            .num_vertices = @intCast(vertices.items.len - first_vertex),
-            .geometry = null,
-        });
+            var geo: *d2d1.ITransformedGeometry = undefined;
+            vhr(d2d_factory.CreateTransformedGeometry(
+                @ptrCast(temp),
+                &d2d1.MATRIX_3X2_F.translation(-w / 2, -h / 2),
+                @ptrCast(&geo),
+            ));
+            break :blk @ptrCast(geo);
+        };
+        Mesh.round_rect_900_50 = try tessellate_geometry(
+            @ptrCast(geo_fill),
+            vertices,
+            &tessellation_sink,
+            &meshes,
+            true,
+        );
+        Mesh.round_rect_900_50_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            9.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
     }
 
     // Level 1
     {
-        // We *won't* need it for collision detection.
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
         defer _ = geo_fill.Release();
 
-        // We *will* need it for collision detection.
-        var geo_stroke: *d2d1.IPathGeometry = undefined;
-        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_stroke)));
-
-        const path9 = [_]f32{
-            -89.49, 177.3, -90.59, 177.6, -91.69, 178.2,
-            -128.5, 197.2, -69.09, 391.6, -92.09, 429.5,
-            -115,   467.4, -386.5, 426.9, -394.2, 468.3,
-            -401.9, 509.7, -189.6, 539.3, -186.8, 582.3,
-            -183.9, 625.3, -316.2, 737.7, -298.6, 773.2,
-            -280.9, 808.7, -152.9, 635.5, -112.6, 652.8,
-            -72.19, 670.1, -72.09, 879,   -32.59, 872.7,
-            7.012,  866.4, -6.488, 699.7, 34.61,  687.2,
-            75.61,  674.6, 279.5,  764.6, 306.2,  730.1,
-            332.8,  695.6, 103.4,  641.3, 118.5,  602.1,
-            133.5,  563,   404.3,  480.4, 394.1,  442.3,
-            383.8,  404.2, 161.9,  482.9, 130.3,  450.9,
-            98.81,  418.9, 193.4,  224.4, 161.9,  201.7,
-            130.5,  179,   0.5118, 408.2, -41.59, 397.8,
-            -82.39, 387.7, -56.59, 173.3, -88.39, 177.2,
-        };
-
         // Fill shape
         {
+            const path9 = [_]f32{
+                -89.49, 177.3, -90.59, 177.6, -91.69, 178.2,
+                -128.5, 197.2, -69.09, 391.6, -92.09, 429.5,
+                -115,   467.4, -386.5, 426.9, -394.2, 468.3,
+                -401.9, 509.7, -189.6, 539.3, -186.8, 582.3,
+                -183.9, 625.3, -316.2, 737.7, -298.6, 773.2,
+                -280.9, 808.7, -152.9, 635.5, -112.6, 652.8,
+                -72.19, 670.1, -72.09, 879,   -32.59, 872.7,
+                7.012,  866.4, -6.488, 699.7, 34.61,  687.2,
+                75.61,  674.6, 279.5,  764.6, 306.2,  730.1,
+                332.8,  695.6, 103.4,  641.3, 118.5,  602.1,
+                133.5,  563,   404.3,  480.4, 394.1,  442.3,
+                383.8,  404.2, 161.9,  482.9, 130.3,  450.9,
+                98.81,  418.9, 193.4,  224.4, 161.9,  201.7,
+                130.5,  179,   0.5118, 408.2, -41.59, 397.8,
+                -82.39, 387.7, -56.59, 173.3, -88.39, 177.2,
+            };
+
             var geo_sink: *d2d1.IGeometrySink = undefined;
             vhr(geo_fill.Open(@ptrCast(&geo_sink)));
             defer {
@@ -437,45 +479,21 @@ pub fn define_and_upload_meshes(
             geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
             geo_sink.EndFigure(.CLOSED);
         }
-
-        // Stroke shape
-        {
-            var geo_sink: *d2d1.IGeometrySink = undefined;
-            vhr(geo_stroke.Open(@ptrCast(&geo_sink)));
-            defer {
-                vhr(geo_sink.Close());
-                _ = geo_sink.Release();
-            }
-            vhr(geo_fill.Widen(9.0, null, null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(geo_sink)));
-        }
-
-        // Tessellate fill shape
-        {
-            const first_vertex = vertices.items.len;
-
-            vhr(geo_fill.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-            Mesh.level1 = @intCast(meshes.items.len);
-            try meshes.append(.{
-                .first_vertex = @intCast(first_vertex),
-                .num_vertices = @intCast(vertices.items.len - first_vertex),
-                .geometry = null,
-            });
-        }
-
-        // Tessellate stroke shape
-        {
-            const first_vertex = vertices.items.len;
-
-            vhr(geo_stroke.Tessellate(null, d2d1.DEFAULT_FLATTENING_TOLERANCE, @ptrCast(&tessellation_sink)));
-
-            Mesh.level1_stroke = @intCast(meshes.items.len);
-            try meshes.append(.{
-                .first_vertex = @intCast(first_vertex),
-                .num_vertices = @intCast(vertices.items.len - first_vertex),
-                .geometry = @ptrCast(geo_stroke),
-            });
-        }
+        Mesh.level1 = try tessellate_geometry(
+            @ptrCast(geo_fill),
+            vertices,
+            &tessellation_sink,
+            &meshes,
+            false,
+        );
+        Mesh.level1_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            9.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
     }
 
     // Level 2

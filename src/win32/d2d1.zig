@@ -33,6 +33,18 @@ pub const MATRIX_3X2_F = extern struct {
             },
         };
     }
+
+    pub fn rotation_translation(r: f32, x: f32, y: f32) MATRIX_3X2_F {
+        const sin_r = @sin(r);
+        const cos_r = @cos(r);
+        return .{
+            .m = [_][2]FLOAT{
+                .{ cos_r, sin_r },
+                .{ -sin_r, cos_r },
+                .{ x, y },
+            },
+        };
+    }
 };
 
 pub const POINT_2F = extern struct {
@@ -559,6 +571,7 @@ pub const IFactory = extern struct {
     pub const CreateRoundedRectangleGeometry = IFactory.Methods(@This()).CreateRoundedRectangleGeometry;
     pub const CreateEllipseGeometry = IFactory.Methods(@This()).CreateEllipseGeometry;
     pub const CreatePathGeometry = IFactory.Methods(@This()).CreatePathGeometry;
+    pub const CreateTransformedGeometry = IFactory.Methods(@This()).CreateTransformedGeometry;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -585,6 +598,14 @@ pub const IFactory = extern struct {
             ) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
                     .CreateEllipseGeometry(@ptrCast(self), ellipse, geo);
+            }
+            pub inline fn CreateTransformedGeometry(
+                self: *T,
+                source_geo: *IGeometry,
+                transform: *const MATRIX_3X2_F,
+                geo: *?*ITransformedGeometry,
+            ) HRESULT {
+                return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreateTransformedGeometry(@ptrCast(self), source_geo, transform, geo);
             }
             pub inline fn CreatePathGeometry(self: *T, geo: *?*IPathGeometry) HRESULT {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v)).CreatePathGeometry(@ptrCast(self), geo);
@@ -622,7 +643,12 @@ pub const IFactory = extern struct {
             *?*IEllipseGeometry,
         ) callconv(WINAPI) HRESULT,
         CreateGeometryGroup: *anyopaque,
-        CreateTransformedGeometry: *anyopaque,
+        CreateTransformedGeometry: *const fn (
+            *IFactory,
+            *IGeometry,
+            *const MATRIX_3X2_F,
+            *?*ITransformedGeometry,
+        ) callconv(WINAPI) HRESULT,
         CreatePathGeometry: *const fn (*IFactory, *?*IPathGeometry) callconv(WINAPI) HRESULT,
         CreateStrokeStyle: *const fn (
             *IFactory,

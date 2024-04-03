@@ -285,7 +285,11 @@ const GameState = struct {
                     var contains: w32.BOOL = .FALSE;
                     vhr(geometry.FillContainsPoint(
                         .{ .x = player.x, .y = player.y },
-                        &d2d1.MATRIX_3X2_F.translation(object.x, object.y),
+                        &d2d1.MATRIX_3X2_F.rotation_translation(
+                            object.rotation,
+                            object.x,
+                            object.y,
+                        ),
                         d2d1.DEFAULT_FLATTENING_TOLERANCE,
                         &contains,
                     ));
