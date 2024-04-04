@@ -349,8 +349,14 @@ pub fn define_and_upload_meshes(
             @ptrCast(&geo_fill),
         ));
         Mesh.ellipse_50_35 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
-
-        Mesh.ellipse_50_35_stroke = try tessellate_geometry_stroke(d2d_factory, @ptrCast(geo_fill), 9.0, vertices, &tessellation_sink, &meshes);
+        Mesh.ellipse_50_35_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            9.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
     }
 
     {
@@ -364,8 +370,14 @@ pub fn define_and_upload_meshes(
             @ptrCast(&geo_fill),
         ));
         Mesh.circle_40 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
-
-        Mesh.circle_40_stroke = try tessellate_geometry_stroke(d2d_factory, @ptrCast(geo_fill), 9.0, vertices, &tessellation_sink, &meshes);
+        Mesh.circle_40_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            9.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
     }
 
     {
@@ -463,13 +475,7 @@ pub fn define_and_upload_meshes(
             geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
             geo_sink.EndFigure(.CLOSED);
         }
-        Mesh.star = try tessellate_geometry(
-            @ptrCast(geo_fill),
-            vertices,
-            &tessellation_sink,
-            &meshes,
-            false,
-        );
+        Mesh.star = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, false);
         Mesh.star_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
@@ -621,13 +627,7 @@ pub fn define_and_upload_meshes(
             geo_sink.AddBeziers(@ptrCast(&path2), @sizeOf(@TypeOf(path2)) / @sizeOf(d2d1.BEZIER_SEGMENT));
             geo_sink.EndFigure(.CLOSED);
         }
-        Mesh.spiral = try tessellate_geometry(
-            @ptrCast(geo_fill),
-            vertices,
-            &tessellation_sink,
-            &meshes,
-            true,
-        );
+        Mesh.spiral = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
     }
 
     var vertex_buffer: *d3d12.IResource = undefined;

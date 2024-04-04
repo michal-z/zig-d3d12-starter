@@ -83,7 +83,8 @@ const GameState = struct {
             .{ .clear_color = window_clear_color },
         );
 
-        // If `AudioContext` initialization fails we will use "empty" context that does nothing (game will still run but without sound).
+        // If `AudioContext` initialization fails we will use "empty" context that does nothing
+        // (game will still run but without sound).
         var audio_context = AudioContext.init(allocator) catch AudioContext{};
 
         const eat_sounds = .{
