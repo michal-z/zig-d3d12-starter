@@ -268,7 +268,7 @@ const GameState = struct {
                 }
             }
 
-            for (0..2) |submesh| {
+            for (0..object.mesh_indices.len) |submesh| {
                 if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
 
                 if (game.meshes.items[object.mesh_indices[submesh]].geometry) |geometry| {
@@ -430,7 +430,7 @@ const GameState = struct {
         for (level.objects_cpu.items, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
-            for (0..2) |submesh| {
+            for (0..object.mesh_indices.len) |submesh| {
                 if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
 
                 const mesh = &game.meshes.items[object.mesh_indices[submesh]];
