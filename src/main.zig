@@ -57,7 +57,6 @@ const GameState = struct {
     audio_context: AudioContext,
 
     vertex_buffer: *d3d12.IResource,
-    object_buffer: *d3d12.IResource,
     frame_state_buffer: *d3d12.IResource,
 
     pso: *d3d12.IPipelineState,
@@ -66,12 +65,12 @@ const GameState = struct {
     d2d_factory: *d2d1.IFactory,
 
     meshes: std.ArrayList(cgen.Mesh),
-    objects: std.ArrayList(cpu_gpu.Object),
 
     player_is_dead: f32 = 0.0,
     player_to_next_level: f32 = 0.0,
-    num_food_objects: u32,
-    current_level: u32,
+
+    current_level_name: cgen.LevelName,
+    current_level: cgen.Level,
 
     eat_sounds: [2]AudioContext.SoundHandle,
 
@@ -132,12 +131,11 @@ const GameState = struct {
 
         const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
-        const current_level = 1;
-
-        const objects, const num_food_objects, const object_buffer = try cgen.define_and_upload_objects(
+        const current_level_name = .long_rotating_block;
+        const current_level = try cgen.define_and_upload_level(
             allocator,
             &gpu_context,
-            current_level,
+            current_level_name,
         );
 
         return GameState{
@@ -145,36 +143,32 @@ const GameState = struct {
             .gpu_context = gpu_context,
             .audio_context = audio_context,
             .vertex_buffer = vertex_buffer,
-            .object_buffer = object_buffer,
             .frame_state_buffer = frame_state_buffer,
             .pso = pso,
             .pso_rs = pso_rs,
             .meshes = meshes,
-            .objects = objects,
             .d2d_factory = d2d_factory,
-            .num_food_objects = num_food_objects,
             .current_level = current_level,
+            .current_level_name = current_level_name,
             .eat_sounds = eat_sounds,
         };
     }
 
     fn deinit(game: *GameState) void {
+        game.gpu_context.finish_gpu_commands();
+
         game.audio_context.deinit();
 
         for (game.meshes.items) |mesh| {
             if (mesh.geometry) |geometry| _ = geometry.Release();
         }
         game.meshes.deinit();
-        game.objects.deinit();
+        game.current_level.deinit();
 
         _ = game.d2d_factory.Release();
-
-        game.gpu_context.finish_gpu_commands();
-
         _ = game.pso.Release();
         _ = game.pso_rs.Release();
         _ = game.vertex_buffer.Release();
-        _ = game.object_buffer.Release();
         _ = game.frame_state_buffer.Release();
 
         game.gpu_context.deinit();
@@ -191,23 +185,19 @@ const GameState = struct {
 
         _, const delta_time = update_frame_stats(game.gpu_context.window, window_name);
 
-        var player = &game.objects.items[game.objects.items.len - 1];
-
         if (game.player_is_dead > 0.0) {
             game.player_is_dead -= delta_time;
 
             if (game.player_is_dead <= 0.0) {
                 game.player_is_dead = 0.0;
 
-                game.objects.deinit();
-
                 game.gpu_context.finish_gpu_commands();
-                _ = game.object_buffer.Release();
 
-                game.objects, game.num_food_objects, game.object_buffer = cgen.define_and_upload_objects(
+                game.current_level.deinit();
+                game.current_level = cgen.define_and_upload_level(
                     game.allocator,
                     &game.gpu_context,
-                    game.current_level,
+                    game.current_level_name,
                 ) catch unreachable;
             }
             return true;
@@ -220,8 +210,7 @@ const GameState = struct {
                 game.player_to_next_level = 0.0;
 
                 // Advance to the next level.
-                game.current_level += 1;
-                if (game.current_level > cgen.Mesh.num_levels) {
+                game.current_level_name = game.current_level_name.next_level() catch {
                     _ = w32.MessageBoxA(
                         game.gpu_context.window,
                         "Y O U  H A V E  C O M P L E T E D  T H E  G A M E !!!",
@@ -230,21 +219,22 @@ const GameState = struct {
                     );
                     w32.PostQuitMessage(0);
                     return true;
-                }
-
-                game.objects.deinit();
+                };
 
                 game.gpu_context.finish_gpu_commands();
-                _ = game.object_buffer.Release();
 
-                game.objects, game.num_food_objects, game.object_buffer = cgen.define_and_upload_objects(
+                game.current_level.deinit();
+                game.current_level = cgen.define_and_upload_level(
                     game.allocator,
                     &game.gpu_context,
-                    game.current_level,
+                    game.current_level_name,
                 ) catch unreachable;
             }
             return true;
         }
+
+        const level = &game.current_level;
+        const player = &level.objects_cpu.items[level.objects_cpu.items.len - 1];
 
         const window_width: f32 = @floatFromInt(game.gpu_context.window_width);
         const window_height: f32 = @floatFromInt(game.gpu_context.window_height);
@@ -259,7 +249,7 @@ const GameState = struct {
         player.x += @cos(player.rotation) * player.move_speed * delta_time;
         player.y += @sin(player.rotation) * player.move_speed * delta_time;
 
-        for (game.objects.items) |*object| {
+        for (level.objects_cpu.items) |*object| {
             if (object == player) continue;
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
@@ -302,8 +292,8 @@ const GameState = struct {
                             const idx = random.uintLessThan(u32, game.eat_sounds.len);
                             game.audio_context.play_sound(game.eat_sounds[idx], .{});
 
-                            game.num_food_objects -= 1;
-                            if (game.num_food_objects == 0) {
+                            level.num_food_objects -= 1;
+                            if (level.num_food_objects == 0) {
                                 game.player_to_next_level = 1.0;
                                 return true;
                             }
@@ -333,6 +323,7 @@ const GameState = struct {
     }
 
     fn draw(game: *GameState) void {
+        const level = &game.current_level;
         const gc = &game.gpu_context;
 
         gc.begin_command_list();
@@ -351,7 +342,7 @@ const GameState = struct {
                 .SyncAfter = .{ .COPY = true },
                 .AccessBefore = .{ .NO_ACCESS = true },
                 .AccessAfter = .{ .COPY_DEST = true },
-                .pResource = game.object_buffer,
+                .pResource = level.objects_gpu,
             } } },
         }});
 
@@ -389,12 +380,16 @@ const GameState = struct {
 
         {
             const upload_mem, const buffer, const offset =
-                gc.allocate_upload_buffer_region(cpu_gpu.Object, @intCast(game.objects.items.len));
+                gc.allocate_upload_buffer_region(
+                cpu_gpu.Object,
+                @intCast(level.objects_cpu.items.len),
+            );
 
-            for (game.objects.items, 0..) |object, i| upload_mem[i] = object;
+            for (level.objects_cpu.items, 0..) |object, i|
+                upload_mem[i] = object;
 
             gc.command_list.CopyBufferRegion(
-                game.object_buffer,
+                level.objects_gpu,
                 0,
                 buffer,
                 offset,
@@ -416,7 +411,7 @@ const GameState = struct {
                 .SyncAfter = .{ .DRAW = true },
                 .AccessBefore = .{ .COPY_DEST = true },
                 .AccessAfter = .{ .SHADER_RESOURCE = true },
-                .pResource = game.object_buffer,
+                .pResource = level.objects_gpu,
             } } },
         }});
 
@@ -432,7 +427,7 @@ const GameState = struct {
         gc.command_list.SetPipelineState(game.pso);
         gc.command_list.SetGraphicsRootSignature(game.pso_rs);
 
-        for (game.objects.items, 0..) |object, object_id| {
+        for (level.objects_cpu.items, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
 
             for (0..2) |submesh| {
