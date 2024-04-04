@@ -70,7 +70,7 @@ const GameState = struct {
     player_to_next_level: f32 = 0.0,
 
     current_level_name: cgen.LevelName,
-    current_level: cgen.Level,
+    current_level: cgen.LevelState,
 
     eat_sounds: [2]AudioContext.SoundHandle,
 
@@ -359,8 +359,7 @@ const GameState = struct {
                 );
             };
 
-            const upload_mem, const buffer, const offset =
-                gc.allocate_upload_buffer_region(cpu_gpu.FrameState, 1);
+            const upload_mem, const buffer, const offset = gc.allocate_upload_buffer_region(cpu_gpu.FrameState, 1);
 
             upload_mem[0] = .{
                 .proj = transpose(proj),
@@ -376,14 +375,12 @@ const GameState = struct {
         }
 
         {
-            const upload_mem, const buffer, const offset =
-                gc.allocate_upload_buffer_region(
+            const upload_mem, const buffer, const offset = gc.allocate_upload_buffer_region(
                 cpu_gpu.Object,
                 @intCast(level.objects_cpu.items.len),
             );
 
-            for (level.objects_cpu.items, 0..) |object, i|
-                upload_mem[i] = object;
+            for (level.objects_cpu.items, 0..) |object, i| upload_mem[i] = object;
 
             gc.command_list.CopyBufferRegion(
                 level.objects_gpu,

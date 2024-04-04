@@ -48,12 +48,12 @@ pub const LevelName = enum(u8) {
     }
 };
 
-pub const Level = struct {
+pub const LevelState = struct {
     objects_cpu: std.ArrayList(cpu_gpu.Object),
     objects_gpu: *d3d12.IResource,
     num_food_objects: u32,
 
-    pub fn deinit(level: *Level) void {
+    pub fn deinit(level: *LevelState) void {
         level.objects_cpu.deinit();
         _ = level.objects_gpu.Release();
         level.* = undefined;
@@ -81,7 +81,7 @@ pub fn define_and_upload_level(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
     level_name: LevelName,
-) !Level {
+) !LevelState {
     var objects = std.ArrayList(cpu_gpu.Object).init(allocator);
     var num_food_objects: u32 = 0;
 
