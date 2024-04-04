@@ -35,7 +35,7 @@ pub const Mesh = struct {
 };
 
 pub const LevelName = enum(u8) {
-    long_rotating_block,
+    long_rotating_blocks,
     star,
     strange_star_and_wall,
     spiral,
@@ -101,7 +101,7 @@ pub fn define_and_upload_level(
             add_food(&objects, &num_food_objects, 100.0, 802.0);
             add_food(&objects, &num_food_objects, -160.0, 800.0);
         },
-        .long_rotating_block => {
+        .long_rotating_blocks => {
             const num = 10;
             for (0..num) |i| {
                 const f = std.math.tau * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num));
