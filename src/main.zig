@@ -435,11 +435,7 @@ const GameState = struct {
                 gc.command_list.SetGraphicsRoot32BitConstants(
                     0,
                     3,
-                    &[_]u32{
-                        mesh.first_vertex,
-                        @intCast(object_id),
-                        @intCast(submesh),
-                    },
+                    &[_]u32{ mesh.first_vertex, @intCast(object_id), @intCast(submesh) },
                     0,
                 );
                 gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
