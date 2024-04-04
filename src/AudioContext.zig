@@ -53,7 +53,7 @@ pub fn play_sound(
     }
 }
 
-pub fn load_sound(audctx: *AudioContext, filename: []const u8) !SoundHandle {
+pub fn create_sound_from_file(audctx: *AudioContext, filename: []const u8) !SoundHandle {
     if (audctx.xaudio2) |_| {
         const data = try load_buffer_data(audctx.allocator, filename);
         return audctx.sound_pool.add_sound(data);

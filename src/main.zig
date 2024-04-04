@@ -88,8 +88,8 @@ const GameState = struct {
         var audio_context = AudioContext.init(allocator) catch AudioContext{};
 
         const eat_sounds = .{
-            audio_context.load_sound("data/sounds/tabla_tas1.flac") catch unreachable,
-            audio_context.load_sound("data/sounds/drum_bass_hard.flac") catch unreachable,
+            audio_context.create_sound_from_file("data/sounds/tabla_tas1.flac") catch unreachable,
+            audio_context.create_sound_from_file("data/sounds/drum_bass_hard.flac") catch unreachable,
         };
 
         const pso, const pso_rs = create_pso(gpu_context.device);
