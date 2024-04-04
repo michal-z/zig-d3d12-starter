@@ -433,22 +433,19 @@ const GameState = struct {
             for (0..2) |submesh| {
                 if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
 
+                const mesh = &game.meshes.items[object.mesh_indices[submesh]];
+
                 gc.command_list.SetGraphicsRoot32BitConstants(
                     0,
                     3,
                     &[_]u32{
-                        game.meshes.items[object.mesh_indices[submesh]].first_vertex,
+                        mesh.first_vertex,
                         @intCast(object_id),
                         @intCast(submesh),
                     },
                     0,
                 );
-                gc.command_list.DrawInstanced(
-                    game.meshes.items[object.mesh_indices[submesh]].num_vertices,
-                    1,
-                    0,
-                    0,
-                );
+                gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
             }
         }
 
