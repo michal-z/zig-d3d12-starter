@@ -140,8 +140,6 @@ pub fn define_and_upload_level(
                     Mesh.strange_star_and_wall,
                     Mesh.strange_star_and_wall_stroke,
                 },
-                .x = 0.0,
-                .y = 0.0,
             });
             add_food(&objects, &num_food_objects, -197.0, 352.0);
             add_food(&objects, &num_food_objects, -5.0, 274.0);
