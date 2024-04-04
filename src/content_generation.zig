@@ -17,6 +17,8 @@ pub const Mesh = struct {
     pub var player: u32 = undefined;
     pub var food: u32 = undefined;
 
+    var circle_40: u32 = undefined;
+    var circle_40_stroke: u32 = undefined;
     var ellipse_50_35: u32 = undefined;
     var ellipse_50_35_stroke: u32 = undefined;
     var round_rect_900_50: u32 = undefined;
@@ -100,16 +102,35 @@ pub fn define_and_upload_level(
             add_food(&objects, &num_food_objects, -160.0, 800.0);
         },
         .long_rotating_block => {
-            add_food(&objects, &num_food_objects, -197.0, 352.0);
-            add_food(&objects, &num_food_objects, 232.0, 364.0);
-            add_food(&objects, &num_food_objects, 100.0, 802.0);
-            add_food(&objects, &num_food_objects, -160.0, 800.0);
+            const num = 10;
+            for (0..num) |i| {
+                const f = std.math.tau * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num));
+                const r = 300.0;
+                add_food(&objects, &num_food_objects, r * @cos(f), map_size_y / 2 + r * @sin(f));
+                add_food(&objects, &num_food_objects, r * 1.45 * @sin(f), map_size_y / 2 + r * 1.45 * @cos(f));
+            }
             try objects.append(.{
                 .colors = .{ 0xaa_22_44_99, 0 },
                 .mesh_indices = .{ Mesh.round_rect_900_50, Mesh.round_rect_900_50_stroke },
                 .x = 0.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.01,
+            });
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{
+                    Mesh.round_rect_900_50,
+                    Mesh.round_rect_900_50_stroke,
+                },
+                .x = 0.0,
+                .y = map_size_y / 2,
+                .rotation_speed = -0.01,
+            });
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
+                .x = 0.0,
+                .y = map_size_y / 2,
             });
         },
         .spiral => {
@@ -330,6 +351,21 @@ pub fn define_and_upload_meshes(
         Mesh.ellipse_50_35 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
 
         Mesh.ellipse_50_35_stroke = try tessellate_geometry_stroke(d2d_factory, @ptrCast(geo_fill), 9.0, vertices, &tessellation_sink, &meshes);
+    }
+
+    {
+        var geo_fill: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 40.0,
+                .radiusY = 40.0,
+            },
+            @ptrCast(&geo_fill),
+        ));
+        Mesh.circle_40 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
+
+        Mesh.circle_40_stroke = try tessellate_geometry_stroke(d2d_factory, @ptrCast(geo_fill), 9.0, vertices, &tessellation_sink, &meshes);
     }
 
     {

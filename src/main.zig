@@ -138,7 +138,7 @@ const GameState = struct {
             current_level_name,
         );
 
-        return GameState{
+        return .{
             .allocator = allocator,
             .gpu_context = gpu_context,
             .audio_context = audio_context,
