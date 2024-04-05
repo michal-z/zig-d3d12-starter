@@ -23,7 +23,7 @@ struct Object {
     float rotation_speed;
     float move_direction;
     float move_speed;
-    float _padding[1];
+    unsigned int parent;
 };
 
 struct FrameState {

@@ -23,6 +23,8 @@ pub const Mesh = struct {
     var ellipse_50_35_stroke: u32 = undefined;
     var round_rect_900_50: u32 = undefined;
     var round_rect_900_50_stroke: u32 = undefined;
+    var round_rect_450_50: u32 = undefined;
+    var round_rect_450_50_stroke: u32 = undefined;
     var fullscreen_rect: u32 = undefined;
 
     var star: u32 = undefined;
@@ -35,6 +37,7 @@ pub const Mesh = struct {
 };
 
 pub const LevelName = enum(u8) {
+    rotating_arm,
     long_rotating_blocks,
     star,
     strange_star_and_wall,
@@ -85,12 +88,63 @@ pub fn define_and_upload_level(
     var objects = std.ArrayList(cpu_gpu.Object).init(allocator);
     var num_food_objects: u32 = 0;
 
+    // Background must be the first object (for correct drawing order).
     try objects.append(.{
         .colors = .{ 0xaa_fd_f6_e3, 0 },
         .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
     });
 
     switch (level_name) {
+        .rotating_arm => {
+            const offset = 300.0;
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.star, Mesh.star_stroke },
+                .x = offset,
+            });
+            add_food(&objects, &num_food_objects, -197.0 + offset, 352.0);
+            add_food(&objects, &num_food_objects, 232.0 + offset, 364.0);
+            add_food(&objects, &num_food_objects, 100.0 + offset, 802.0);
+            add_food(&objects, &num_food_objects, -160.0 + offset, 800.0);
+            const num = 10;
+            for (0..num) |i| {
+                const f = std.math.pi * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num - 1));
+                const r = 300.0;
+                const phase = std.math.pi * 0.5;
+                add_food(
+                    &objects,
+                    &num_food_objects,
+                    r * @cos(f + phase) - 400.0,
+                    map_size_y / 2 + r * @sin(f + phase),
+                );
+            }
+            const parent_index: u32 = @intCast(objects.items.len);
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.round_rect_450_50, Mesh.round_rect_450_50_stroke },
+                .x = -300.0,
+                .y = map_size_y / 2,
+                .rotation_speed = 0.01,
+            });
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.round_rect_450_50, Mesh.round_rect_450_50_stroke },
+                .x = 450.0,
+                .rotation_speed = 0.01,
+                .parent = parent_index,
+            });
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
+                .parent = parent_index,
+            });
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
+                .parent = parent_index,
+                .x = 450.0,
+            });
+        },
         .star => {
             try objects.append(.{
                 .colors = .{ 0xaa_22_44_99, 0 },
@@ -432,6 +486,51 @@ pub fn define_and_upload_meshes(
             true,
         );
         Mesh.round_rect_900_50_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            9.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
+    }
+
+    {
+        const geo_fill: *d2d1.IGeometry = blk: {
+            const w = 450.0;
+            const h = 50.0;
+            var temp: *d2d1.IRoundedRectangleGeometry = undefined;
+            vhr(d2d_factory.CreateRoundedRectangleGeometry(
+                &.{
+                    .rect = .{
+                        .left = 0.0,
+                        .top = 0.0,
+                        .right = w,
+                        .bottom = h,
+                    },
+                    .radiusX = 20.0,
+                    .radiusY = 20.0,
+                },
+                @ptrCast(&temp),
+            ));
+            defer _ = temp.Release();
+
+            var geo: *d2d1.ITransformedGeometry = undefined;
+            vhr(d2d_factory.CreateTransformedGeometry(
+                @ptrCast(temp),
+                &d2d1.MATRIX_3X2_F.translation(0.0, -h / 2),
+                @ptrCast(&geo),
+            ));
+            break :blk @ptrCast(geo);
+        };
+        Mesh.round_rect_450_50 = try tessellate_geometry(
+            @ptrCast(geo_fill),
+            vertices,
+            &tessellation_sink,
+            &meshes,
+            true,
+        );
+        Mesh.round_rect_450_50_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
             9.0,

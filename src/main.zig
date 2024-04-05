@@ -132,7 +132,7 @@ const GameState = struct {
 
         const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
-        const current_level_name = .long_rotating_blocks;
+        const current_level_name = .rotating_arm;
         const current_level = try cgen.define_and_upload_level(allocator, &gpu_context, current_level_name);
 
         return .{
@@ -264,6 +264,25 @@ const GameState = struct {
                     object.move_direction += std.math.pi;
                 }
             }
+        }
+
+        if (player.x < -0.5 * cgen.map_size_y * window_aspect) {
+            player.x = 0.5 * cgen.map_size_y * window_aspect;
+        } else if (player.x > 0.5 * cgen.map_size_y * window_aspect) {
+            player.x = -0.5 * cgen.map_size_y * window_aspect;
+        }
+
+        if (player.y < 0.0) {
+            player.y = cgen.map_size_y;
+        } else if (player.y > cgen.map_size_y) {
+            player.y = 0.0;
+        }
+
+        for (level.objects_cpu.items) |*object| {
+            if (object == player) continue;
+            if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
+
+            const parent = level.objects_cpu.items[object.parent];
 
             for (0..object.mesh_indices.len) |submesh| {
                 if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
@@ -272,10 +291,9 @@ const GameState = struct {
                     var contains: w32.BOOL = .FALSE;
                     vhr(geometry.FillContainsPoint(
                         .{ .x = player.x, .y = player.y },
-                        &d2d1.MATRIX_3X2_F.rotation_translation(
-                            object.rotation,
-                            object.x,
-                            object.y,
+                        &d2d1.MATRIX_3X2_F.mul(
+                            d2d1.MATRIX_3X2_F.rotation_translation(object.rotation, object.x, object.y),
+                            d2d1.MATRIX_3X2_F.rotation_translation(parent.rotation, parent.x, parent.y),
                         ),
                         d2d1.DEFAULT_FLATTENING_TOLERANCE,
                         &contains,
@@ -302,18 +320,6 @@ const GameState = struct {
                     }
                 }
             }
-        }
-
-        if (player.x < -0.5 * cgen.map_size_y * window_aspect) {
-            player.x = 0.5 * cgen.map_size_y * window_aspect;
-        } else if (player.x > 0.5 * cgen.map_size_y * window_aspect) {
-            player.x = -0.5 * cgen.map_size_y * window_aspect;
-        }
-
-        if (player.y < 0.0) {
-            player.y = cgen.map_size_y;
-        } else if (player.y > cgen.map_size_y) {
-            player.y = 0.0;
         }
 
         return true;

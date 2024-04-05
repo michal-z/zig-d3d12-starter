@@ -28,7 +28,6 @@ void s00_vertex(
 ) {
     StructuredBuffer<Vertex> vertex_buffer = ResourceDescriptorHeap[rdh_vertex_buffer];
     StructuredBuffer<Object> object_buffer = ResourceDescriptorHeap[rdh_object_buffer];
-
     ConstantBuffer<FrameState> frame_state = ResourceDescriptorHeap[rdh_frame_state_buffer];
 
     const uint first_vertex = root_const.first_vertex;
@@ -36,13 +35,22 @@ void s00_vertex(
 
     const Vertex vertex = vertex_buffer[vertex_id + first_vertex];
     const Object object = object_buffer[object_id];
+    const Object parent = object_buffer[object.parent];
 
-    const float sin_r = sin(object.rotation);
-    const float cos_r = cos(object.rotation);
+    const float o_sin_r = sin(object.rotation);
+    const float o_cos_r = cos(object.rotation);
+
+    const float p_sin_r = sin(parent.rotation);
+    const float p_cos_r = cos(parent.rotation);
+
+    const float2 p =
+        float2(vertex.x * o_cos_r - vertex.y * o_sin_r + object.x,
+               vertex.x * o_sin_r + vertex.y * o_cos_r + object.y);
 
     out_position = mul(
-        float4(vertex.x * cos_r - vertex.y * sin_r + object.x,
-               vertex.x * sin_r + vertex.y * cos_r + object.y, 0.0, 1.0),
+        float4(p.x * p_cos_r - p.y * p_sin_r + parent.x,
+               p.x * p_sin_r + p.y * p_cos_r + parent.y,
+               0.0, 1.0),
         frame_state.proj);
     out_color = unpack_color(object.colors[root_const.submesh_index]);
 }

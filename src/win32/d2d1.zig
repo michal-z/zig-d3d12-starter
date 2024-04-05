@@ -45,6 +45,25 @@ pub const MATRIX_3X2_F = extern struct {
             },
         };
     }
+
+    pub fn mul(a: MATRIX_3X2_F, b: MATRIX_3X2_F) MATRIX_3X2_F {
+        return .{
+            .m = [_][2]FLOAT{
+                .{
+                    a.m[0][0] * b.m[0][0] + a.m[0][1] * b.m[1][0],
+                    a.m[0][0] * b.m[0][1] + a.m[0][1] * b.m[1][1],
+                },
+                .{
+                    a.m[1][0] * b.m[0][0] + a.m[1][1] * b.m[1][0],
+                    a.m[1][0] * b.m[0][1] + a.m[1][1] * b.m[1][1],
+                },
+                .{
+                    a.m[2][0] * b.m[0][0] + a.m[2][1] * b.m[1][0] + b.m[2][0],
+                    a.m[2][0] * b.m[0][1] + a.m[2][1] * b.m[1][1] + b.m[2][1],
+                },
+            },
+        };
+    }
 };
 
 pub const POINT_2F = extern struct {
