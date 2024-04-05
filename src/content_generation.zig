@@ -347,6 +347,8 @@ fn tessellate_geometry_stroke(
     return mesh_index;
 }
 
+const stroke_width = 9.0;
+
 pub fn define_and_upload_meshes(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
@@ -360,11 +362,7 @@ pub fn define_and_upload_meshes(
     var meshes = std.ArrayList(Mesh).init(allocator);
 
     // Index 0 is invalid mesh.
-    try meshes.append(.{
-        .first_vertex = 0,
-        .num_vertices = 0,
-        .geometry = null,
-    });
+    try meshes.append(.{ .first_vertex = 0, .num_vertices = 0, .geometry = null });
 
     {
         var geo: *d2d1.IEllipseGeometry = undefined;
@@ -406,7 +404,7 @@ pub fn define_and_upload_meshes(
         Mesh.ellipse_50_35_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            9.0,
+            stroke_width,
             vertices,
             &tessellation_sink,
             &meshes,
@@ -427,7 +425,7 @@ pub fn define_and_upload_meshes(
         Mesh.circle_40_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            9.0,
+            stroke_width,
             vertices,
             &tessellation_sink,
             &meshes,
@@ -488,7 +486,7 @@ pub fn define_and_upload_meshes(
         Mesh.round_rect_900_50_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            9.0,
+            stroke_width,
             vertices,
             &tessellation_sink,
             &meshes,
@@ -533,7 +531,7 @@ pub fn define_and_upload_meshes(
         Mesh.round_rect_450_50_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            9.0,
+            stroke_width,
             vertices,
             &tessellation_sink,
             &meshes,
@@ -578,7 +576,7 @@ pub fn define_and_upload_meshes(
         Mesh.star_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            9.0,
+            stroke_width,
             vertices,
             &tessellation_sink,
             &meshes,
@@ -662,7 +660,7 @@ pub fn define_and_upload_meshes(
         Mesh.strange_star_and_wall_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            9.0,
+            stroke_width,
             vertices,
             &tessellation_sink,
             &meshes,
