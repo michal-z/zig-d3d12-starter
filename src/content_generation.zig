@@ -29,6 +29,9 @@ pub const Mesh = struct {
     var arm_300_stroke: u32 = undefined;
     var fullscreen_rect: u32 = undefined;
 
+    var gear_150: u32 = undefined;
+    var gear_150_stroke: u32 = undefined;
+
     var star: u32 = undefined;
     var star_stroke: u32 = undefined;
 
@@ -98,16 +101,21 @@ pub fn define_and_upload_level(
 
     switch (level_name) {
         .rotating_arm => {
-            const offset = 300.0;
-            try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
-                .mesh_indices = .{ Mesh.star, Mesh.star_stroke },
-                .x = offset,
-            });
-            add_food(&objects, &num_food_objects, -197.0 + offset, 352.0);
-            add_food(&objects, &num_food_objects, 232.0 + offset, 364.0);
-            add_food(&objects, &num_food_objects, 100.0 + offset, 802.0);
-            add_food(&objects, &num_food_objects, -160.0 + offset, 800.0);
+            {
+                const num = 13;
+                for (0..num) |i| {
+                    if (i % 3 == 0) {
+                        const f = std.math.tau * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num - 1));
+                        const r = 320.0;
+                        add_food(
+                            &objects,
+                            &num_food_objects,
+                            300.0 + r * @cos(f),
+                            map_size_y / 2 + r * @sin(f),
+                        );
+                    }
+                }
+            }
             const num = 10;
             for (0..num) |i| {
                 const f = std.math.pi * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num - 1));
@@ -116,15 +124,29 @@ pub fn define_and_upload_level(
                 add_food(
                     &objects,
                     &num_food_objects,
-                    r * @cos(f + phase) - 400.0,
+                    -400.0 + r * @cos(f + phase),
                     map_size_y / 2 + r * @sin(f + phase),
                 );
             }
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.gear_150, Mesh.gear_150_stroke },
+                .x = 300.0,
+                .y = map_size_y / 2,
+                .rotation_speed = 0.001,
+            });
+            try objects.append(.{
+                .colors = .{ 0xaa_22_44_99, 0 },
+                .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
+                .x = 300.0,
+                .y = map_size_y / 2,
+            });
+
             const parent_index: u32 = @intCast(objects.items.len);
             try objects.append(.{
                 .colors = .{ 0xaa_22_44_99, 0 },
                 .mesh_indices = .{ Mesh.arm_450, Mesh.arm_450_stroke },
-                .x = -300.0,
+                .x = -400.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.01,
             });
@@ -578,6 +600,60 @@ pub fn define_and_upload_meshes(
             true,
         );
         Mesh.arm_300_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            stroke_width,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
+    }
+
+    // gear_150
+    {
+        var geo_fill: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
+        defer _ = geo_fill.Release();
+        {
+            const path9 = [_]f32{
+                266.3,  -39.11, 284,    -37.39, 333.9,  -14.82, 333.9,  14.82,
+                284,    37.39,  266.3,  39.11,  236.2,  34.69,  221.9,  88.06,
+                250.2,  99.3,   264.7,  109.6,  296.6,  154.1,  281.8,  179.8,
+                227.3,  174.4,  211.1,  167,    187.2,  148.1,  148.1,  187.2,
+                167,    211.1,  174.4,  227.3,  179.8,  281.8,  154.1,  296.6,
+                109.6,  264.7,  99.3,   250.2,  88.06,  221.9,  34.69,  236.2,
+                39.11,  266.3,  37.39,  284,    14.82,  333.9,  -14.82, 333.9,
+                -37.39, 284,    -39.11, 266.3,  -34.69, 236.2,  -88.06, 221.9,
+                -99.3,  250.2,  -109.6, 264.7,  -154.1, 296.6,  -179.8, 281.8,
+                -174.4, 227.3,  -167,   211.1,  -148.1, 187.2,  -187.2, 148.1,
+                -211.1, 167,    -227.3, 174.4,  -281.8, 179.8,  -296.6, 154.1,
+                -264.7, 109.6,  -250.2, 99.3,   -221.9, 88.06,  -236.2, 34.69,
+                -266.3, 39.11,  -284,   37.39,  -333.9, 14.82,  -333.9, -14.82,
+                -284,   -37.39, -266.3, -39.11, -236.2, -34.69, -221.9, -88.06,
+                -250.2, -99.3,  -264.7, -109.6, -296.6, -154.1, -281.8, -179.8,
+                -227.3, -174.4, -211.1, -167,   -187.2, -148.1, -148.1, -187.2,
+                -167,   -211.1, -174.4, -227.3, -179.8, -281.8, -154.1, -296.6,
+                -109.6, -264.7, -99.3,  -250.2, -88.06, -221.9, -34.69, -236.2,
+                -39.11, -266.3, -37.39, -284,   -14.82, -333.9, 14.82,  -333.9,
+                37.39,  -284,   39.11,  -266.3, 34.69,  -236.2, 88.06,  -221.9,
+                99.3,   -250.2, 109.6,  -264.7, 154.1,  -296.6, 179.8,  -281.8,
+                174.4,  -227.3, 167,    -211.1, 148.1,  -187.2, 187.2,  -148.1,
+                211.1,  -167,   227.3,  -174.4, 281.8,  -179.8, 296.6,  -154.1,
+                264.7,  -109.6, 250.2,  -99.3,  221.9,  -88.06,
+            };
+
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_fill.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            geo_sink.BeginFigure(.{ .x = 236.2, .y = -34.69 }, .FILLED);
+            geo_sink.AddLines(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.POINT_2F));
+            geo_sink.EndFigure(.CLOSED);
+        }
+        Mesh.gear_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, false);
+        Mesh.gear_150_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
             stroke_width,
