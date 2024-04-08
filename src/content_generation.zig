@@ -23,8 +23,10 @@ pub const Mesh = struct {
     var ellipse_50_35_stroke: u32 = undefined;
     var round_rect_900_50: u32 = undefined;
     var round_rect_900_50_stroke: u32 = undefined;
-    var round_rect_450_50: u32 = undefined;
-    var round_rect_450_50_stroke: u32 = undefined;
+    var arm_450: u32 = undefined;
+    var arm_450_stroke: u32 = undefined;
+    var arm_300: u32 = undefined;
+    var arm_300_stroke: u32 = undefined;
     var fullscreen_rect: u32 = undefined;
 
     var star: u32 = undefined;
@@ -121,14 +123,14 @@ pub fn define_and_upload_level(
             const parent_index: u32 = @intCast(objects.items.len);
             try objects.append(.{
                 .colors = .{ 0xaa_22_44_99, 0 },
-                .mesh_indices = .{ Mesh.round_rect_450_50, Mesh.round_rect_450_50_stroke },
+                .mesh_indices = .{ Mesh.arm_450, Mesh.arm_450_stroke },
                 .x = -300.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.01,
             });
             try objects.append(.{
                 .colors = .{ 0xaa_22_44_99, 0 },
-                .mesh_indices = .{ Mesh.round_rect_450_50, Mesh.round_rect_450_50_stroke },
+                .mesh_indices = .{ Mesh.arm_300, Mesh.arm_300_stroke },
                 .x = 450.0,
                 .rotation_speed = 0.01,
                 .parent = parent_index,
@@ -521,14 +523,61 @@ pub fn define_and_upload_meshes(
             ));
             break :blk @ptrCast(geo);
         };
-        Mesh.round_rect_450_50 = try tessellate_geometry(
+
+        Mesh.arm_450 = try tessellate_geometry(
             @ptrCast(geo_fill),
             vertices,
             &tessellation_sink,
             &meshes,
             true,
         );
-        Mesh.round_rect_450_50_stroke = try tessellate_geometry_stroke(
+        Mesh.arm_450_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            stroke_width,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
+    }
+
+    {
+        const geo_fill: *d2d1.IGeometry = blk: {
+            const w = 300.0;
+            const h = 50.0;
+            var temp: *d2d1.IRoundedRectangleGeometry = undefined;
+            vhr(d2d_factory.CreateRoundedRectangleGeometry(
+                &.{
+                    .rect = .{
+                        .left = 0.0,
+                        .top = 0.0,
+                        .right = w,
+                        .bottom = h,
+                    },
+                    .radiusX = 20.0,
+                    .radiusY = 20.0,
+                },
+                @ptrCast(&temp),
+            ));
+            defer _ = temp.Release();
+
+            var geo: *d2d1.ITransformedGeometry = undefined;
+            vhr(d2d_factory.CreateTransformedGeometry(
+                @ptrCast(temp),
+                &d2d1.MATRIX_3X2_F.translation(0.0, -h / 2),
+                @ptrCast(&geo),
+            ));
+            break :blk @ptrCast(geo);
+        };
+
+        Mesh.arm_300 = try tessellate_geometry(
+            @ptrCast(geo_fill),
+            vertices,
+            &tessellation_sink,
+            &meshes,
+            true,
+        );
+        Mesh.arm_300_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
             stroke_width,

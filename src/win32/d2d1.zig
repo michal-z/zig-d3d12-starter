@@ -94,6 +94,13 @@ pub const FILL_MODE = enum(UINT) {
     WINDING = 1,
 };
 
+pub const COMBINE_MODE = enum(UINT) {
+    UNION = 0,
+    INTERSECT = 1,
+    XOR = 2,
+    EXCLUDE = 3,
+};
+
 pub const PATH_SEGMENT = packed struct(UINT) {
     FORCE_UNSTROKED: bool = false,
     FORCE_ROUND_LINE_JOIN: bool = false,
@@ -233,6 +240,7 @@ pub const IGeometry = extern struct {
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
     pub const FillContainsPoint = IGeometry.Methods(@This()).FillContainsPoint;
     pub const Widen = IGeometry.Methods(@This()).Widen;
+    pub const CombineWithGeometry = IGeometry.Methods(@This()).CombineWithGeometry;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -270,6 +278,17 @@ pub const IGeometry = extern struct {
                 return @as(*const IGeometry.VTable, @ptrCast(self.__v))
                     .Widen(@ptrCast(self), stroke_width, stroke_style, world_transform, flattening_tolerance, geo_sink);
             }
+            pub inline fn CombineWithGeometry(
+                self: *T,
+                input_geo: *IGeometry,
+                mode: COMBINE_MODE,
+                input_geo_transform: ?*const MATRIX_3X2_F,
+                flattening_tolerance: FLOAT,
+                geo_sink: *ISimplifiedGeometrySink,
+            ) HRESULT {
+                return @as(*const IGeometry.VTable, @ptrCast(self.__v))
+                    .CombineWithGeometry(@ptrCast(self), input_geo, mode, input_geo_transform, flattening_tolerance, geo_sink);
+            }
         };
     }
 
@@ -293,7 +312,14 @@ pub const IGeometry = extern struct {
             FLOAT,
             *ITessellationSink,
         ) callconv(WINAPI) HRESULT,
-        CombineWithGeometry: *anyopaque,
+        CombineWithGeometry: *const fn (
+            *IGeometry,
+            *IGeometry,
+            COMBINE_MODE,
+            ?*const MATRIX_3X2_F,
+            FLOAT,
+            *ISimplifiedGeometrySink,
+        ) callconv(WINAPI) HRESULT,
         Outline: *anyopaque,
         ComputeArea: *anyopaque,
         ComputeLength: *anyopaque,
@@ -389,6 +415,7 @@ pub const ITransformedGeometry = extern struct {
     pub const GetBounds = IGeometry.Methods(@This()).GetBounds;
     pub const Tessellate = IGeometry.Methods(@This()).Tessellate;
     pub const Widen = IGeometry.Methods(@This()).Widen;
+    pub const CombineWithGeometry = IGeometry.Methods(@This()).CombineWithGeometry;
 
     pub const VTable = extern struct {
         base: IGeometry.VTable,
@@ -591,6 +618,7 @@ pub const IFactory = extern struct {
     pub const CreateEllipseGeometry = IFactory.Methods(@This()).CreateEllipseGeometry;
     pub const CreatePathGeometry = IFactory.Methods(@This()).CreatePathGeometry;
     pub const CreateTransformedGeometry = IFactory.Methods(@This()).CreateTransformedGeometry;
+    pub const CreateGeometryGroup = IFactory.Methods(@This()).CreateGeometryGroup;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -639,6 +667,16 @@ pub const IFactory = extern struct {
                 return @as(*const IFactory.VTable, @ptrCast(self.__v))
                     .CreateStrokeStyle(@ptrCast(self), properties, dashes, dashes_count, stroke_style);
             }
+            pub inline fn CreateGeometryGroup(
+                self: *T,
+                fill_mode: FILL_MODE,
+                geos: [*]const *IGeometry,
+                num_geos: UINT32,
+                geo: *?*IGeometryGroup,
+            ) HRESULT {
+                return @as(*const IFactory.VTable, @ptrCast(self.__v))
+                    .CreateGeometryGroup(@ptrCast(self), fill_mode, geos, num_geos, geo);
+            }
         };
     }
 
@@ -661,7 +699,13 @@ pub const IFactory = extern struct {
             *const ELLIPSE,
             *?*IEllipseGeometry,
         ) callconv(WINAPI) HRESULT,
-        CreateGeometryGroup: *anyopaque,
+        CreateGeometryGroup: *const fn (
+            *IFactory,
+            FILL_MODE,
+            [*]const *IGeometry,
+            UINT32,
+            *?*IGeometryGroup,
+        ) callconv(WINAPI) HRESULT,
         CreateTransformedGeometry: *const fn (
             *IFactory,
             *IGeometry,
