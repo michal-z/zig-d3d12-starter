@@ -29,8 +29,8 @@ pub const Mesh = struct {
     var arm_300_stroke: u32 = undefined;
     var fullscreen_rect: u32 = undefined;
 
-    var gear_150: u32 = undefined;
-    var gear_150_stroke: u32 = undefined;
+    var gear_12_150: u32 = undefined;
+    var gear_12_150_stroke: u32 = undefined;
 
     var star: u32 = undefined;
     var star_stroke: u32 = undefined;
@@ -130,7 +130,7 @@ pub fn define_and_upload_level(
             }
             try objects.append(.{
                 .colors = .{ 0xaa_22_44_99, 0 },
-                .mesh_indices = .{ Mesh.gear_150, Mesh.gear_150_stroke },
+                .mesh_indices = .{ Mesh.gear_12_150, Mesh.gear_12_150_stroke },
                 .x = 300.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.001,
@@ -594,7 +594,7 @@ pub fn define_and_upload_meshes(
         );
     }
 
-    // gear_150 (tooth size is 150.0)
+    // gear_12_150 (number of tooths: 12, tooth size: 150.0)
     {
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
@@ -637,8 +637,8 @@ pub fn define_and_upload_meshes(
             geo_sink.AddLines(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.POINT_2F));
             geo_sink.EndFigure(.CLOSED);
         }
-        Mesh.gear_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, false);
-        Mesh.gear_150_stroke = try tessellate_geometry_stroke(
+        Mesh.gear_12_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, false);
+        Mesh.gear_12_150_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
             stroke_width,
