@@ -479,12 +479,7 @@ pub fn define_and_upload_meshes(
             var temp: *d2d1.IRoundedRectangleGeometry = undefined;
             vhr(d2d_factory.CreateRoundedRectangleGeometry(
                 &.{
-                    .rect = .{
-                        .left = 0.0,
-                        .top = 0.0,
-                        .right = w,
-                        .bottom = h,
-                    },
+                    .rect = .{ .left = 0.0, .top = 0.0, .right = w, .bottom = h },
                     .radiusX = 20.0,
                     .radiusY = 20.0,
                 },
@@ -524,12 +519,7 @@ pub fn define_and_upload_meshes(
             var temp: *d2d1.IRoundedRectangleGeometry = undefined;
             vhr(d2d_factory.CreateRoundedRectangleGeometry(
                 &.{
-                    .rect = .{
-                        .left = 0.0,
-                        .top = 0.0,
-                        .right = w,
-                        .bottom = h,
-                    },
+                    .rect = .{ .left = 0.0, .top = 0.0, .right = w, .bottom = h },
                     .radiusX = 20.0,
                     .radiusY = 20.0,
                 },
@@ -570,12 +560,7 @@ pub fn define_and_upload_meshes(
             var temp: *d2d1.IRoundedRectangleGeometry = undefined;
             vhr(d2d_factory.CreateRoundedRectangleGeometry(
                 &.{
-                    .rect = .{
-                        .left = 0.0,
-                        .top = 0.0,
-                        .right = w,
-                        .bottom = h,
-                    },
+                    .rect = .{ .left = 0.0, .top = 0.0, .right = w, .bottom = h },
                     .radiusX = 20.0,
                     .radiusY = 20.0,
                 },
@@ -609,7 +594,7 @@ pub fn define_and_upload_meshes(
         );
     }
 
-    // gear_150
+    // gear_150 (tooth size is 150.0)
     {
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
