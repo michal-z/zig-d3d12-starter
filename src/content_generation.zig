@@ -132,7 +132,7 @@ pub fn define_and_upload_level(
                 .colors = .{ 0xaa_22_44_99, 0 },
                 .mesh_indices = .{ Mesh.arm_300, Mesh.arm_300_stroke },
                 .x = 450.0,
-                .rotation_speed = 0.01,
+                .rotation_speed = 0.015,
                 .parent = parent_index,
             });
             try objects.append(.{
