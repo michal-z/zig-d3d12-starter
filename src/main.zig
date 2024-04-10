@@ -443,10 +443,10 @@ const GameState = struct {
 
         gc.command_list.SetPipelineState(game.pso[pso_color]);
 
-        const non_player_objects = level.objects_cpu.items[0 .. level.objects_cpu.items.len - 1];
+        const objects = level.objects_cpu.items[0..level.objects_cpu.items.len];
 
         // Draw objects that don't cast shadows (background)
-        for (non_player_objects, 0..) |object, object_id| {
+        for (objects, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
             if (object.flags & cpu_gpu.obj_flag_no_shadow == 0) continue;
 
@@ -468,7 +468,7 @@ const GameState = struct {
         // Draw shadows
         gc.command_list.SetPipelineState(game.pso[pso_shadow]);
 
-        for (non_player_objects, 0..) |object, object_id| {
+        for (objects, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
             if (object.flags & cpu_gpu.obj_flag_no_shadow != 0) continue;
 
@@ -490,7 +490,7 @@ const GameState = struct {
         // Draw objects that do cast shadows
         gc.command_list.SetPipelineState(game.pso[pso_color]);
 
-        for (non_player_objects, 0..) |object, object_id| {
+        for (objects, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
             if (object.flags & cpu_gpu.obj_flag_no_shadow != 0) continue;
 
@@ -507,26 +507,6 @@ const GameState = struct {
                 );
                 gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
             }
-        }
-
-        // Draw player
-        const player = &level.objects_cpu.items[level.objects_cpu.items.len - 1];
-        for (0..player.mesh_indices.len) |submesh| {
-            if (player.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
-
-            const mesh = &game.meshes.items[player.mesh_indices[submesh]];
-
-            gc.command_list.SetGraphicsRoot32BitConstants(
-                0,
-                3,
-                &[_]u32{
-                    mesh.first_vertex,
-                    @intCast(level.objects_cpu.items.len - 1),
-                    @intCast(submesh),
-                },
-                0,
-            );
-            gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
         }
 
         gc.end_command_list();
