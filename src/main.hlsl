@@ -43,9 +43,17 @@ void s00_vertex(
     const float p_sin_r = sin(parent.rotation);
     const float p_cos_r = cos(parent.rotation);
 
+#ifdef SHADOW
+    const float vx = vertex.x + 10.0;
+    const float vy = vertex.y + 10.0;
+#else
+    const float vx = vertex.x;
+    const float vy = vertex.y;
+#endif
+
     const float2 p =
-        float2(vertex.x * o_cos_r - vertex.y * o_sin_r + object.x,
-               vertex.x * o_sin_r + vertex.y * o_cos_r + object.y);
+        float2(vx * o_cos_r - vy * o_sin_r + object.x,
+               vx * o_sin_r + vy * o_cos_r + object.y);
 
     out_position = mul(
         float4(p.x * p_cos_r - p.y * p_sin_r + parent.x,
@@ -61,7 +69,11 @@ void s00_pixel(
     float3 color : _Color,
     out float4 out_color : SV_Target0
 ) {
+#ifdef SHADOW
+    out_color = float4(0, 0, 0, 0.65);
+#else
     out_color = float4(color, 1.0);
+#endif
 }
 
 #elif _S01

@@ -25,7 +25,8 @@ else
 
 pub const upload_heap_capacity = 2 * 1024 * 1024;
 
-const max_rtv_descriptors = 1024;
+const max_rtv_descriptors = 64;
+const max_dsv_descriptors = 64;
 const max_shader_descriptors = 32 * 1024;
 
 const swap_chain_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
@@ -55,6 +56,10 @@ rtv_dheap: *d3d12.IDescriptorHeap,
 rtv_dheap_start: d3d12.CPU_DESCRIPTOR_HANDLE,
 rtv_dheap_descriptor_size: u32,
 
+dsv_dheap: *d3d12.IDescriptorHeap,
+dsv_dheap_start: d3d12.CPU_DESCRIPTOR_HANDLE,
+dsv_dheap_descriptor_size: u32,
+
 shader_dheap: *d3d12.IDescriptorHeap,
 shader_dheap_start_cpu: d3d12.CPU_DESCRIPTOR_HANDLE,
 shader_dheap_start_gpu: d3d12.GPU_DESCRIPTOR_HANDLE,
@@ -69,6 +74,10 @@ upload_heaps: [max_buffered_frames]UploadMemoryHeap,
 
 msaa_target: if (msaa_target_num_samples > 1) *d3d12.IResource else void,
 msaa_target_clear_color: [4]f32,
+
+ds_target: ?*d3d12.IResource,
+ds_target_clear_value: d3d12.DEPTH_STENCIL_VALUE,
+ds_target_format: dxgi.FORMAT,
 
 debug: if (d3d12_debug) *d3d12d.IDebug5 else void,
 debug_device: if (d3d12_debug) *d3d12.IDebugDevice else void,
@@ -341,13 +350,27 @@ pub fn handle_window_resize(gc: *GpuContext) enum { minimized, resized, unchange
             );
         }
 
+        if (gc.ds_target_format != .UNKNOWN) {
+            _ = gc.ds_target.?.Release();
+            gc.ds_target = create_depth_stencil_target(
+                gc.device,
+                gc.window_width,
+                gc.window_height,
+                gc.ds_target_clear_value,
+                gc.ds_target_format,
+            );
+            gc.device.CreateDepthStencilView(gc.ds_target, null, gc.dsv_dheap_start);
+        }
+
         return .resized;
     }
     return .unchanged;
 }
 
 pub fn init(window: w32.HWND, args: struct {
-    clear_color: [4]f32 = .{ 0, 0, 0, 0 },
+    color_target_clear_color: [4]f32 = .{ 0, 0, 0, 0 },
+    ds_target_clear_value: d3d12.DEPTH_STENCIL_VALUE = .{ .Depth = 1.0, .Stencil = 0 },
+    ds_target_format: dxgi.FORMAT = .UNKNOWN,
 }) GpuContext {
     //
     // Factory, adapater, device
@@ -591,6 +614,25 @@ pub fn init(window: w32.HWND, args: struct {
     });
 
     //
+    // DSV descriptor heap
+    //
+    var dsv_dheap: *d3d12.IDescriptorHeap = undefined;
+    vhr(device.CreateDescriptorHeap(&.{
+        .Type = .DSV,
+        .NumDescriptors = max_dsv_descriptors,
+        .Flags = .{},
+        .NodeMask = 0,
+    }, &d3d12.IDescriptorHeap.IID, @ptrCast(&dsv_dheap)));
+
+    const dsv_dheap_start = dsv_dheap.GetCPUDescriptorHandleForHeapStart();
+    const dsv_dheap_descriptor_size = device.GetDescriptorHandleIncrementSize(.DSV);
+
+    log.info("DSV descriptor heap created (NumDescriptors: {d}, DescriptorSize: {d}).", .{
+        max_dsv_descriptors,
+        dsv_dheap_descriptor_size,
+    });
+
+    //
     // Shader descriptor heap
     //
     var shader_dheap: *d3d12.IDescriptorHeap = undefined;
@@ -632,7 +674,12 @@ pub fn init(window: w32.HWND, args: struct {
     // MSAA render target
     //
     const msaa_target = if (msaa_target_num_samples > 1) blk: {
-        const msaa_target = create_msaa_srgb_target(device, window_width, window_height, args.clear_color);
+        const msaa_target = create_msaa_srgb_target(
+            device,
+            window_width,
+            window_height,
+            args.color_target_clear_color,
+        );
         device.CreateRenderTargetView(
             msaa_target,
             null,
@@ -647,6 +694,28 @@ pub fn init(window: w32.HWND, args: struct {
         });
         break :blk msaa_target;
     } else {};
+
+    //
+    // Depth-Stencil target
+    //
+    const ds_target = if (args.ds_target_format != .UNKNOWN) blk: {
+        const ds_target = create_depth_stencil_target(
+            device,
+            window_width,
+            window_height,
+            args.ds_target_clear_value,
+            args.ds_target_format,
+        );
+        device.CreateDepthStencilView(ds_target, null, dsv_dheap_start);
+        const desc = ds_target.GetDesc();
+        log.info("Depth-Stencil render target created ({d}x{d}, {s}, NumSamples: {d}).", .{
+            desc.Width,
+            desc.Height,
+            @tagName(desc.Format),
+            desc.SampleDesc.Count,
+        });
+        break :blk ds_target;
+    } else null;
 
     return .{
         .window = window,
@@ -664,6 +733,9 @@ pub fn init(window: w32.HWND, args: struct {
         .rtv_dheap = rtv_dheap,
         .rtv_dheap_start = rtv_dheap_start,
         .rtv_dheap_descriptor_size = rtv_dheap_descriptor_size,
+        .dsv_dheap = dsv_dheap,
+        .dsv_dheap_start = dsv_dheap_start,
+        .dsv_dheap_descriptor_size = dsv_dheap_descriptor_size,
         .shader_dheap = shader_dheap,
         .shader_dheap_start_cpu = shader_dheap_start_cpu,
         .shader_dheap_start_gpu = shader_dheap_start_gpu,
@@ -673,7 +745,10 @@ pub fn init(window: w32.HWND, args: struct {
         .frame_index = swap_chain.GetCurrentBackBufferIndex(),
         .upload_heaps = upload_heaps,
         .msaa_target = msaa_target,
-        .msaa_target_clear_color = args.clear_color,
+        .msaa_target_clear_color = args.color_target_clear_color,
+        .ds_target = ds_target,
+        .ds_target_clear_value = args.ds_target_clear_value,
+        .ds_target_format = args.ds_target_format,
         .debug = debug,
         .debug_device = debug_device,
         .debug_info_queue = debug_info_queue,
@@ -684,6 +759,7 @@ pub fn init(window: w32.HWND, args: struct {
 
 pub fn deinit(gc: *GpuContext) void {
     if (msaa_target_num_samples > 1) _ = gc.msaa_target.Release();
+    if (gc.ds_target) |ds_target| _ = ds_target.Release();
     for (&gc.upload_heaps) |*heap| heap.deinit();
     _ = gc.command_list.Release();
     for (gc.command_allocators) |cmdalloc| _ = cmdalloc.Release();
@@ -692,6 +768,7 @@ pub fn deinit(gc: *GpuContext) void {
     _ = gc.shader_dheap.Release();
     _ = gc.rtv_dheap.Release();
     for (gc.swap_chain_targets) |texture| _ = texture.Release();
+    _ = gc.dsv_dheap.Release();
     _ = gc.swap_chain.Release();
     _ = gc.command_queue.Release();
     _ = gc.device.Release();
@@ -730,11 +807,41 @@ fn create_msaa_srgb_target(
             .Width = @intCast(width),
             .Height = @intCast(height),
             .Format = msaa_target_format,
-            .SampleDesc = .{ .Count = msaa_target_num_samples },
+            .SampleDesc = .{ .Count = display_target_num_samples },
             .Flags = .{ .ALLOW_RENDER_TARGET = true },
         },
         .RENDER_TARGET,
         &.{ .Format = msaa_target_format, .u = .{ .Color = clear_color } },
+        null,
+        0,
+        null,
+        &d3d12.IResource.IID,
+        @ptrCast(&texture),
+    ));
+    return texture;
+}
+
+fn create_depth_stencil_target(
+    device: *IDevice,
+    width: u32,
+    height: u32,
+    clear_value: d3d12.DEPTH_STENCIL_VALUE,
+    format: dxgi.FORMAT,
+) *d3d12.IResource {
+    var texture: *d3d12.IResource = undefined;
+    vhr(device.CreateCommittedResource3(
+        &.{ .Type = .DEFAULT },
+        d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
+        &.{
+            .Dimension = .TEXTURE2D,
+            .Width = @intCast(width),
+            .Height = @intCast(height),
+            .Format = format,
+            .SampleDesc = .{ .Count = display_target_num_samples },
+            .Flags = .{ .ALLOW_DEPTH_STENCIL = true, .DENY_SHADER_RESOURCE = true },
+        },
+        .DEPTH_STENCIL_WRITE,
+        &.{ .Format = format, .u = .{ .DepthStencil = clear_value } },
         null,
         0,
         null,

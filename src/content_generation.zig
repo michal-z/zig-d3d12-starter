@@ -76,7 +76,7 @@ pub const player_start_y = 20.0;
 fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: f32, y: f32) void {
     const fc = 0xaa_0f_6c_0b;
     objects.append(.{
-        .flags = cpu_gpu.obj_flag_is_food,
+        .flags = cpu_gpu.obj_flag_is_food | cpu_gpu.obj_flag_no_shadow,
         .colors = .{ fc, 0 },
         .mesh_indices = .{ Mesh.food, Mesh.invalid },
         .x = x,
@@ -97,6 +97,7 @@ pub fn define_and_upload_level(
     try objects.append(.{
         .colors = .{ 0xaa_fd_f6_e3, 0 },
         .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
+        .flags = cpu_gpu.obj_flag_no_shadow,
     });
 
     switch (level_name) {
@@ -258,6 +259,7 @@ pub fn define_and_upload_level(
         .y = player_start_y,
         .move_speed = 250.0,
         .rotation_speed = 5.0,
+        .flags = cpu_gpu.obj_flag_no_shadow,
     });
 
     var object_buffer: *d3d12.IResource = undefined;

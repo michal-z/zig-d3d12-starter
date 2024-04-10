@@ -12,6 +12,12 @@ pub const std_options = .{
     .log_level = .info,
 };
 
+// IDEAS:
+// Level with rotating planets
+// Level with neurons
+// Level with PCB paths
+// Level with logic gates
+
 export const D3D12SDKVersion: u32 = 613;
 export const D3D12SDKPath: [*:0]const u8 = ".\\d3d12\\";
 
@@ -21,8 +27,12 @@ const GpuContext = @import("GpuContext.zig");
 const AudioContext = @import("AudioContext.zig");
 const vhr = GpuContext.vhr;
 const window_clear_color: [4]f32 = .{ 1, 1, 1, 0 };
+const ds_target_format: dxgi.FORMAT = .D32_FLOAT;
 var random_state = std.Random.DefaultPrng.init(0);
 const random = random_state.random();
+
+const pso_color = 0;
+const pso_shadow = 1;
 
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
@@ -59,7 +69,7 @@ const GameState = struct {
     vertex_buffer: *d3d12.IResource,
     frame_state_buffer: *d3d12.IResource,
 
-    pso: *d3d12.IPipelineState,
+    pso: [2]*d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
 
     d2d_factory: *d2d1.IFactory,
@@ -80,7 +90,10 @@ const GameState = struct {
                 w32.GetSystemMetrics(w32.SM_CXSCREEN),
                 w32.GetSystemMetrics(w32.SM_CYSCREEN),
             ),
-            .{ .clear_color = window_clear_color },
+            .{
+                .color_target_clear_color = window_clear_color,
+                .ds_target_format = .D32_FLOAT,
+            },
         );
 
         // If `AudioContext` initialization fails we will use "empty" context that does nothing
@@ -133,6 +146,7 @@ const GameState = struct {
         const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
         const current_level_name = .rotating_arm;
+        //const current_level_name = .strange_star_and_wall;
         const current_level = try cgen.define_and_upload_level(allocator, &gpu_context, current_level_name);
 
         return .{
@@ -163,7 +177,7 @@ const GameState = struct {
         game.current_level.deinit();
 
         _ = game.d2d_factory.Release();
-        _ = game.pso.Release();
+        for (game.pso) |pso| _ = pso.Release();
         _ = game.pso_rs.Release();
         _ = game.vertex_buffer.Release();
         _ = game.frame_state_buffer.Release();
@@ -419,16 +433,22 @@ const GameState = struct {
             1,
             &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.display_target_descriptor()},
             .TRUE,
-            null,
+            &gc.dsv_dheap_start,
         );
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &window_clear_color, 0, null);
+        gc.command_list.ClearDepthStencilView(gc.dsv_dheap_start, .{ .DEPTH = true }, 1.0, 0, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
-        gc.command_list.SetPipelineState(game.pso);
         gc.command_list.SetGraphicsRootSignature(game.pso_rs);
 
-        for (level.objects_cpu.items, 0..) |object, object_id| {
+        gc.command_list.SetPipelineState(game.pso[pso_color]);
+
+        const non_player_objects = level.objects_cpu.items[0 .. level.objects_cpu.items.len - 1];
+
+        // Draw objects that don't cast shadows (background)
+        for (non_player_objects, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
+            if (object.flags & cpu_gpu.obj_flag_no_shadow == 0) continue;
 
             for (0..object.mesh_indices.len) |submesh| {
                 if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
@@ -445,6 +465,70 @@ const GameState = struct {
             }
         }
 
+        // Draw shadows
+        gc.command_list.SetPipelineState(game.pso[pso_shadow]);
+
+        for (non_player_objects, 0..) |object, object_id| {
+            if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
+            if (object.flags & cpu_gpu.obj_flag_no_shadow != 0) continue;
+
+            for (0..object.mesh_indices.len) |submesh| {
+                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+
+                const mesh = &game.meshes.items[object.mesh_indices[submesh]];
+
+                gc.command_list.SetGraphicsRoot32BitConstants(
+                    0,
+                    3,
+                    &[_]u32{ mesh.first_vertex, @intCast(object_id), @intCast(submesh) },
+                    0,
+                );
+                gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
+            }
+        }
+
+        // Draw objects that do cast shadows
+        gc.command_list.SetPipelineState(game.pso[pso_color]);
+
+        for (non_player_objects, 0..) |object, object_id| {
+            if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
+            if (object.flags & cpu_gpu.obj_flag_no_shadow != 0) continue;
+
+            for (0..object.mesh_indices.len) |submesh| {
+                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+
+                const mesh = &game.meshes.items[object.mesh_indices[submesh]];
+
+                gc.command_list.SetGraphicsRoot32BitConstants(
+                    0,
+                    3,
+                    &[_]u32{ mesh.first_vertex, @intCast(object_id), @intCast(submesh) },
+                    0,
+                );
+                gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
+            }
+        }
+
+        // Draw player
+        const player = &level.objects_cpu.items[level.objects_cpu.items.len - 1];
+        for (0..player.mesh_indices.len) |submesh| {
+            if (player.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+
+            const mesh = &game.meshes.items[player.mesh_indices[submesh]];
+
+            gc.command_list.SetGraphicsRoot32BitConstants(
+                0,
+                3,
+                &[_]u32{
+                    mesh.first_vertex,
+                    @intCast(level.objects_cpu.items.len - 1),
+                    @intCast(submesh),
+                },
+                0,
+            );
+            gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
+        }
+
         gc.end_command_list();
 
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
@@ -452,23 +536,29 @@ const GameState = struct {
     }
 };
 
-fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d12.IRootSignature } {
-    const vs_cso = @embedFile("cso/s00.vs.cso");
-    const ps_cso = @embedFile("cso/s00.ps.cso");
+fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d3d12.IRootSignature } {
+    const s00_vs = @embedFile("cso/s00.vs.cso");
+    const s00_ps = @embedFile("cso/s00.ps.cso");
+    const s00_shadow_vs = @embedFile("cso/s00_shadow.vs.cso");
+    const s00_shadow_ps = @embedFile("cso/s00_shadow.ps.cso");
 
-    var root_signature: *d3d12.IRootSignature = undefined;
+    var pso_rs: *d3d12.IRootSignature = undefined;
     vhr(device.CreateRootSignature(
         0,
-        vs_cso,
-        vs_cso.len,
+        s00_vs,
+        s00_vs.len,
         &d3d12.IRootSignature.IID,
-        @ptrCast(&root_signature),
+        @ptrCast(&pso_rs),
     ));
 
-    var pipeline: *d3d12.IPipelineState = undefined;
+    var pso: [2]*d3d12.IPipelineState = undefined;
     vhr(device.CreateGraphicsPipelineState(
         &.{
-            .DepthStencilState = .{ .DepthEnable = .FALSE },
+            .DepthStencilState = .{
+                .DepthEnable = .FALSE,
+                .DepthFunc = .LESS_EQUAL,
+            },
+            .DSVFormat = ds_target_format,
             .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
             .NumRenderTargets = 1,
             .BlendState = .{
@@ -476,20 +566,41 @@ fn create_pso(device: *GpuContext.IDevice) struct { *d3d12.IPipelineState, *d3d1
                     .RenderTargetWriteMask = 0x0f,
                 }} ++ .{.{}} ** 7,
             },
-            .RasterizerState = .{
-                //.FillMode = .WIREFRAME,
-                .CullMode = .NONE,
-            },
+            .RasterizerState = .{ .CullMode = .NONE },
             .PrimitiveTopologyType = .TRIANGLE,
-            .VS = .{ .pShaderBytecode = vs_cso, .BytecodeLength = vs_cso.len },
-            .PS = .{ .pShaderBytecode = ps_cso, .BytecodeLength = ps_cso.len },
+            .VS = .{ .pShaderBytecode = s00_vs, .BytecodeLength = s00_vs.len },
+            .PS = .{ .pShaderBytecode = s00_ps, .BytecodeLength = s00_ps.len },
             .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
         },
         &d3d12.IPipelineState.IID,
-        @ptrCast(&pipeline),
+        @ptrCast(&pso[pso_color]),
     ));
 
-    return .{ pipeline, root_signature };
+    vhr(device.CreateGraphicsPipelineState(
+        &.{
+            .DepthStencilState = .{ .DepthEnable = .TRUE },
+            .DSVFormat = ds_target_format,
+            .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
+            .NumRenderTargets = 1,
+            .BlendState = .{
+                .RenderTarget = .{.{
+                    .RenderTargetWriteMask = 0x0f,
+                    .BlendEnable = .TRUE,
+                    .SrcBlend = .SRC_ALPHA,
+                    .DestBlend = .INV_SRC_ALPHA,
+                }} ++ .{.{}} ** 7,
+            },
+            .RasterizerState = .{ .CullMode = .NONE },
+            .PrimitiveTopologyType = .TRIANGLE,
+            .VS = .{ .pShaderBytecode = s00_shadow_vs, .BytecodeLength = s00_shadow_vs.len },
+            .PS = .{ .pShaderBytecode = s00_shadow_ps, .BytecodeLength = s00_shadow_ps.len },
+            .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
+        },
+        &d3d12.IPipelineState.IID,
+        @ptrCast(&pso[pso_shadow]),
+    ));
+
+    return .{ pso, pso_rs };
 }
 
 fn process_window_message(
