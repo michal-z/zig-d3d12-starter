@@ -87,8 +87,8 @@ const GameState = struct {
     fn init(allocator: std.mem.Allocator) !GameState {
         var gpu_context = GpuContext.init(
             create_window(
-                w32.GetSystemMetrics(w32.SM_CXSCREEN),
-                w32.GetSystemMetrics(w32.SM_CYSCREEN),
+                @divTrunc(w32.GetSystemMetrics(w32.SM_CXSCREEN), 2),
+                @divTrunc(w32.GetSystemMetrics(w32.SM_CYSCREEN), 2),
             ),
             .{
                 .color_target_clear_color = window_clear_color,
@@ -534,10 +534,7 @@ fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d
     var pso: [2]*d3d12.IPipelineState = undefined;
     vhr(device.CreateGraphicsPipelineState(
         &.{
-            .DepthStencilState = .{
-                .DepthEnable = .FALSE,
-                .DepthFunc = .LESS_EQUAL,
-            },
+            .DepthStencilState = .{ .DepthEnable = .FALSE },
             .DSVFormat = ds_target_format,
             .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
             .NumRenderTargets = 1,
@@ -549,7 +546,6 @@ fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d
                     .DestBlend = .INV_SRC_ALPHA,
                 }} ++ .{.{}} ** 7,
             },
-            .RasterizerState = .{ .CullMode = .NONE },
             .PrimitiveTopologyType = .TRIANGLE,
             .VS = .{ .pShaderBytecode = s00_vs, .BytecodeLength = s00_vs.len },
             .PS = .{ .pShaderBytecode = s00_ps, .BytecodeLength = s00_ps.len },
@@ -573,7 +569,6 @@ fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d
                     .DestBlend = .INV_SRC_ALPHA,
                 }} ++ .{.{}} ** 7,
             },
-            .RasterizerState = .{ .CullMode = .NONE },
             .PrimitiveTopologyType = .TRIANGLE,
             .VS = .{ .pShaderBytecode = s00_shadow_vs, .BytecodeLength = s00_shadow_vs.len },
             .PS = .{ .pShaderBytecode = s00_shadow_ps, .BytecodeLength = s00_shadow_ps.len },
@@ -631,10 +626,10 @@ fn create_window(width: i32, height: i32) w32.HWND {
     _ = w32.RegisterClassExA(&winclass);
 
     const window = w32.CreateWindowExA(
-        w32.WS_EX_TOPMOST,
+        if (@import("builtin").mode == .Debug) 0 else w32.WS_EX_TOPMOST,
         window_name,
         window_name,
-        w32.WS_POPUP | w32.WS_VISIBLE,
+        if (@import("builtin").mode == .Debug) w32.WS_OVERLAPPEDWINDOW else w32.WS_POPUP,
         w32.CW_USEDEFAULT,
         w32.CW_USEDEFAULT,
         width,
@@ -645,7 +640,10 @@ fn create_window(width: i32, height: i32) w32.HWND {
         null,
     ).?;
 
-    _ = w32.ShowCursor(.FALSE);
+    _ = w32.ShowWindow(window, w32.SW_SHOWMAXIMIZED);
+
+    if (@import("builtin").mode != .Debug)
+        _ = w32.ShowCursor(.FALSE);
 
     return window;
 }
