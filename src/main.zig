@@ -544,6 +544,9 @@ fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d
             .BlendState = .{
                 .RenderTarget = .{.{
                     .RenderTargetWriteMask = 0x0f,
+                    .BlendEnable = .TRUE,
+                    .SrcBlend = .SRC_ALPHA,
+                    .DestBlend = .INV_SRC_ALPHA,
                 }} ++ .{.{}} ** 7,
             },
             .RasterizerState = .{ .CullMode = .NONE },

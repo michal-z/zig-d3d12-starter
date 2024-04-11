@@ -12,11 +12,12 @@ struct RootConst {
 };
 ConstantBuffer<RootConst> root_const : register(b0);
 
-float3 unpack_color(uint color) {
-    return float3(
+float4 unpack_color(uint color) {
+    return float4(
         ((color & 0xff0000) >> 16) / 255.0,
         ((color & 0xff00) >> 8) / 255.0,
-        (color & 0xff) / 255.0
+        (color & 0xff) / 255.0,
+        ((color & 0xff000000) >> 24) / 255.0
     );
 }
 
@@ -24,7 +25,7 @@ float3 unpack_color(uint color) {
 void s00_vertex(
     uint vertex_id : SV_VertexID,
     out float4 out_position : SV_Position,
-    out float3 out_color : _Color
+    out float4 out_color : _Color
 ) {
     StructuredBuffer<Vertex> vertex_buffer = ResourceDescriptorHeap[rdh_vertex_buffer];
     StructuredBuffer<Object> object_buffer = ResourceDescriptorHeap[rdh_object_buffer];
@@ -66,13 +67,13 @@ void s00_vertex(
 [RootSignature(root_signature)]
 void s00_pixel(
     float4 position : SV_Position,
-    float3 color : _Color,
+    float4 color : _Color,
     out float4 out_color : SV_Target0
 ) {
 #ifdef SHADOW
     out_color = float4(0, 0, 0, 0.65);
 #else
-    out_color = float4(color, 1.0);
+    out_color = color;
 #endif
 }
 

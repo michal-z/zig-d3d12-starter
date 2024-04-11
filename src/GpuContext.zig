@@ -32,7 +32,7 @@ const max_shader_descriptors = 32 * 1024;
 const swap_chain_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
 const swap_chain_target_view_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
 
-const msaa_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
+const msaa_target_format = swap_chain_target_view_format;
 const msaa_target_num_samples = @import("build_options").d3d12_msaa;
 
 window: w32.HWND,

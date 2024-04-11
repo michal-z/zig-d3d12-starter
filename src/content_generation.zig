@@ -19,6 +19,8 @@ pub const Mesh = struct {
 
     var circle_40: u32 = undefined;
     var circle_40_stroke: u32 = undefined;
+    var circle_150: u32 = undefined;
+    var circle_150_stroke: u32 = undefined;
     var ellipse_50_35: u32 = undefined;
     var ellipse_50_35_stroke: u32 = undefined;
     var round_rect_900_50: u32 = undefined;
@@ -74,7 +76,7 @@ pub const player_start_x = -600.0;
 pub const player_start_y = 20.0;
 
 fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: f32, y: f32) void {
-    const fc = 0xaa_0f_6c_0b;
+    const fc = 0xff_0f_6c_0b;
     objects.append(.{
         .flags = cpu_gpu.obj_flag_is_food | cpu_gpu.obj_flag_no_shadow,
         .colors = .{ fc, 0 },
@@ -95,7 +97,7 @@ pub fn define_and_upload_level(
 
     // Background must be the first object (for correct drawing order).
     try objects.append(.{
-        .colors = .{ 0xaa_fd_f6_e3, 0 },
+        .colors = .{ 0xff_fd_f6_e3, 0 },
         .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
         .flags = cpu_gpu.obj_flag_no_shadow,
     });
@@ -130,41 +132,50 @@ pub fn define_and_upload_level(
                 );
             }
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xee_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.gear_12_150, Mesh.gear_12_150_stroke },
                 .x = 300.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.001,
+                .flags = cpu_gpu.obj_flag_no_shadow,
             });
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                .mesh_indices = .{ Mesh.circle_150, Mesh.circle_150_stroke },
+                .x = 300.0,
+                .y = map_size_y / 2,
+                .flags = cpu_gpu.obj_flag_no_shadow,
+            });
+            try objects.append(.{
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .x = 300.0,
                 .y = map_size_y / 2,
+                .flags = cpu_gpu.obj_flag_no_shadow,
             });
 
             const parent_index: u32 = @intCast(objects.items.len);
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.arm_450, Mesh.arm_450_stroke },
                 .x = -400.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.01,
             });
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.arm_300, Mesh.arm_300_stroke },
                 .x = 450.0,
                 .rotation_speed = 0.015,
                 .parent = parent_index,
             });
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .parent = parent_index,
             });
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .parent = parent_index,
                 .x = 450.0,
@@ -172,7 +183,7 @@ pub fn define_and_upload_level(
         },
         .star => {
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.star, Mesh.star_stroke },
             });
             add_food(&objects, &num_food_objects, -197.0, 352.0);
@@ -189,14 +200,14 @@ pub fn define_and_upload_level(
                 add_food(&objects, &num_food_objects, r * 1.45 * @sin(f), map_size_y / 2 + r * 1.45 * @cos(f));
             }
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.round_rect_900_50, Mesh.round_rect_900_50_stroke },
                 .x = 0.0,
                 .y = map_size_y / 2,
                 .rotation_speed = 0.01,
             });
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{
                     Mesh.round_rect_900_50,
                     Mesh.round_rect_900_50_stroke,
@@ -206,7 +217,7 @@ pub fn define_and_upload_level(
                 .rotation_speed = -0.01,
             });
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .x = 0.0,
                 .y = map_size_y / 2,
@@ -214,7 +225,7 @@ pub fn define_and_upload_level(
         },
         .spiral => {
             try objects.append(.{
-                .colors = .{ 0, 0 },
+                .colors = .{ 0xff_00_00_00, 0 },
                 .mesh_indices = .{ Mesh.spiral, Mesh.invalid },
             });
             add_food(&objects, &num_food_objects, -17.0, 533.0);
@@ -235,7 +246,7 @@ pub fn define_and_upload_level(
         },
         .strange_star_and_wall => {
             try objects.append(.{
-                .colors = .{ 0xaa_22_44_99, 0 },
+                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                 .mesh_indices = .{
                     Mesh.strange_star_and_wall,
                     Mesh.strange_star_and_wall_stroke,
@@ -253,7 +264,7 @@ pub fn define_and_upload_level(
 
     // Player must be the last object (for correct drawing order).
     try objects.append(.{
-        .colors = .{ 0xaa_bb_00_00, 0 },
+        .colors = .{ 0xff_bb_00_00, 0 },
         .mesh_indices = .{ Mesh.player, Mesh.invalid },
         .x = player_start_x,
         .y = player_start_y,
@@ -449,6 +460,27 @@ pub fn define_and_upload_meshes(
         ));
         Mesh.circle_40 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
         Mesh.circle_40_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            stroke_width,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
+    }
+
+    {
+        var geo_fill: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 0.0, .y = 0.0 },
+                .radiusX = 150.0,
+                .radiusY = 150.0,
+            },
+            @ptrCast(&geo_fill),
+        ));
+        Mesh.circle_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
+        Mesh.circle_150_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
             stroke_width,
