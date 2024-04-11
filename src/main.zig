@@ -145,8 +145,8 @@ const GameState = struct {
 
         const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
-        const current_level_name = .rotating_arm;
-        //const current_level_name = .strange_star_and_wall;
+        const current_level_name = .rotating_arm_and_gear;
+        //const current_level_name = .long_rotating_blocks;
         const current_level = try cgen.define_and_upload_level(allocator, &gpu_context, current_level_name);
 
         return .{

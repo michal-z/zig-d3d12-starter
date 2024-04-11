@@ -44,7 +44,7 @@ pub const Mesh = struct {
 };
 
 pub const LevelName = enum(u8) {
-    rotating_arm,
+    rotating_arm_and_gear,
     long_rotating_blocks,
     star,
     strange_star_and_wall,
@@ -103,7 +103,7 @@ pub fn define_and_upload_level(
     });
 
     switch (level_name) {
-        .rotating_arm => {
+        .rotating_arm_and_gear => {
             {
                 const num = 13;
                 for (0..num) |i| {
