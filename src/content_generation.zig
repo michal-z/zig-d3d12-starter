@@ -141,13 +141,13 @@ pub fn define_and_upload_level(
             });
             try objects.append(.{
                 .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
-                .mesh_indices = .{ Mesh.circle_150, Mesh.circle_150_stroke },
+                .mesh_indices = .{ Mesh.invalid, Mesh.circle_150_stroke },
                 .x = 300.0,
                 .y = map_size_y / 2,
                 .flags = cpu_gpu.obj_flag_no_shadow,
             });
             try objects.append(.{
-                .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                .colors = .{ 0xff_fd_f6_e3, 0xff_00_00_00 },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .x = 300.0,
                 .y = map_size_y / 2,
