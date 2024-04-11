@@ -44,10 +44,10 @@ pub const Mesh = struct {
 };
 
 pub const LevelName = enum(u8) {
-    rotating_arm_and_gear,
-    long_rotating_blocks,
     star,
     strange_star_and_wall,
+    rotating_arm_and_gear,
+    long_rotating_blocks,
     spiral,
 
     pub fn next_level(level: LevelName) !LevelName {
