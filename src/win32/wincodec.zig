@@ -223,7 +223,7 @@ pub const IBitmapSource = extern struct {
     pub const VTable = extern struct {
         base: IUnknown.VTable,
         GetSize: *const fn (*IBitmapSource, *UINT, *UINT) callconv(WINAPI) HRESULT,
-        GetPixelFormat: *const fn (*IBitmapSource, *GUID) callconv(WINAPI) HRESULT,
+        GetPixelFormat: *const fn (*IBitmapSource, *PixelFormatGUID) callconv(WINAPI) HRESULT,
         GetResolution: *anyopaque,
         CopyPalette: *anyopaque,
         CopyPixels: *const fn (*IBitmapSource, ?*const Rect, UINT, UINT, [*]BYTE) callconv(WINAPI) HRESULT,
