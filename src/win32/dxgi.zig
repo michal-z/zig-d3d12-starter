@@ -1067,6 +1067,8 @@ pub const IFactory = extern struct {
 pub const IDevice = extern struct {
     __v: *const VTable,
 
+    pub const IID = GUID.parse("{54ec77fa-1377-44e6-8c32-88fd5f44c84c}");
+
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;

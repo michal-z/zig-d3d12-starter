@@ -898,14 +898,29 @@ pub const IFactory6 = extern struct {
     pub const CreateTransformedGeometry = IFactory.Methods(@This()).CreateTransformedGeometry;
     pub const CreateGeometryGroup = IFactory.Methods(@This()).CreateGeometryGroup;
 
+    pub const CreateDevice5 = IFactory6.Methods(@This()).CreateDevice5;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateDevice5(self: *T, dxgi_device: *dxgi.IDevice, device: *?*IDevice5) HRESULT {
+                return @as(*const IFactory6.VTable, @ptrCast(self.__v))
+                    .CreateDevice5(@ptrCast(self), dxgi_device, device);
+            }
+        };
+    }
+
     pub const VTable = extern struct {
         base: IFactory5.VTable,
-        CreateDevice5: *anyopaque,
+        CreateDevice5: *const fn (*IFactory6, *dxgi.IDevice, *?*IDevice5) callconv(WINAPI) HRESULT,
     };
 };
 
 pub const IDevice = extern struct {
     __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
     pub const VTable = extern struct {
         base: IResource.VTable,
@@ -920,6 +935,10 @@ pub const IDevice = extern struct {
 pub const IDevice1 = extern struct {
     __v: *const VTable,
 
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
     pub const VTable = extern struct {
         base: IDevice.VTable,
         GetRenderingPriority: *anyopaque,
@@ -930,6 +949,10 @@ pub const IDevice1 = extern struct {
 
 pub const IDevice2 = extern struct {
     __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
     pub const VTable = extern struct {
         base: IDevice1.VTable,
@@ -942,6 +965,10 @@ pub const IDevice2 = extern struct {
 pub const IDevice3 = extern struct {
     __v: *const VTable,
 
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
     pub const VTable = extern struct {
         base: IDevice2.VTable,
         CreateDeviceContext3: *anyopaque,
@@ -950,6 +977,10 @@ pub const IDevice3 = extern struct {
 
 pub const IDevice4 = extern struct {
     __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
     pub const VTable = extern struct {
         base: IDevice3.VTable,
@@ -962,9 +993,28 @@ pub const IDevice4 = extern struct {
 pub const IDevice5 = extern struct {
     __v: *const VTable,
 
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const CreateDeviceContext5 = IDevice5.Methods(@This()).CreateDeviceContext5;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateDeviceContext5(
+                self: *T,
+                options: DEVICE_CONTEXT_OPTIONS,
+                devctx: *?*IDeviceContext5,
+            ) HRESULT {
+                return @as(*const IDevice5.VTable, @ptrCast(self.__v))
+                    .CreateDeviceContext5(@ptrCast(self), options, devctx);
+            }
+        };
+    }
+
     pub const VTable = extern struct {
         base: IDevice4.VTable,
-        CreateDeviceContext5: *anyopaque,
+        CreateDeviceContext5: *const fn (*IDevice5, DEVICE_CONTEXT_OPTIONS, *?*IDeviceContext5) callconv(WINAPI) HRESULT,
     };
 };
 
@@ -1346,6 +1396,10 @@ pub const IBitmap1 = extern struct {
 pub const IDeviceContext = extern struct {
     __v: *const VTable,
 
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn CreateBitmapFromDxgiSurface(
@@ -1405,6 +1459,211 @@ pub const IDeviceContext = extern struct {
         GetEffectInvalidRectangles: *anyopaque,
         GetEffectRequiredInputRectangles: *anyopaque,
         FillOpacityMask1: *anyopaque,
+    };
+};
+
+pub const IDeviceContext1 = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IDeviceContext.VTable,
+        CreateFilledGeometryRealization: *anyopaque,
+        CreateStrokedGeometryRealization: *anyopaque,
+        DrawGeometryRealization: *anyopaque,
+    };
+};
+
+pub const INK_NIB_SHAPE = enum(UINT) {
+    ROUND = 0,
+    SQUARE = 1,
+};
+
+pub const INK_POINT = extern struct {
+    x: FLOAT,
+    y: FLOAT,
+    radius: FLOAT,
+};
+
+pub const INK_BEZIER_SEGMENT = extern struct {
+    point1: INK_POINT,
+    point2: INK_POINT,
+    point3: INK_POINT,
+};
+
+pub const INK_STYLE_PROPERTIES = extern struct {
+    nibShape: INK_NIB_SHAPE,
+    nibTransform: MATRIX_3X2_F,
+};
+
+pub const IInk = extern struct {
+    __v: *const VTable,
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn SetStartPoint(self: *T, point: *const INK_POINT) void {
+                @as(*const IInk.VTable, @ptrCast(self.__v)).SetStartPoint(@ptrCast(self), point);
+            }
+            pub inline fn GetStartPoint(self: *T) INK_POINT {
+                var point: INK_POINT = undefined;
+                _ = @as(*const IInk.VTable, @ptrCast(self.__v)).GetStartPoint(@ptrCast(self), &point);
+                return point;
+            }
+            pub inline fn AddSegments(self: *T, segments: [*]const INK_BEZIER_SEGMENT, count: UINT32) HRESULT {
+                return @as(*const IInk.VTable, @ptrCast(self.__v)).AddSegments(@ptrCast(self), segments, count);
+            }
+            pub inline fn RemoveSegmentsAtEnd(self: *T, count: UINT32) HRESULT {
+                return @as(*const IInk.VTable, @ptrCast(self.__v)).RemoveSegmentsAtEnd(@ptrCast(self), count);
+            }
+            pub inline fn SetSegments(
+                self: *T,
+                start_segment: UINT32,
+                segments: [*]const INK_BEZIER_SEGMENT,
+                count: UINT32,
+            ) HRESULT {
+                return @as(*const IInk.VTable, @ptrCast(self.__v))
+                    .SetSegments(@ptrCast(self), start_segment, segments, count);
+            }
+            pub inline fn SetSegmentAtEnd(self: *T, segment: *const INK_BEZIER_SEGMENT) HRESULT {
+                return @as(*const IInk.VTable, @ptrCast(self.__v)).SetSegmentAtEnd(@ptrCast(self), segment);
+            }
+            pub inline fn GetSegmentCount(self: *T) UINT32 {
+                return @as(*const IInk.VTable, @ptrCast(self.__v)).GetSegmentCount(@ptrCast(self));
+            }
+            pub inline fn GetSegments(
+                self: *T,
+                start_segment: UINT32,
+                segments: [*]const INK_BEZIER_SEGMENT,
+                count: UINT32,
+            ) HRESULT {
+                return @as(*const IInk.VTable, @ptrCast(self.__v))
+                    .GetSegments(@ptrCast(self), start_segment, segments, count);
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        const T = IInk;
+        base: IResource.VTable,
+        SetStartPoint: *const fn (*T, *const INK_POINT) callconv(WINAPI) void,
+        GetStartPoint: *const fn (*T, *INK_POINT) callconv(WINAPI) *INK_POINT,
+        AddSegments: *const fn (*T, [*]const INK_BEZIER_SEGMENT, UINT32) callconv(WINAPI) HRESULT,
+        RemoveSegmentsAtEnd: *const fn (*T, UINT32) callconv(WINAPI) HRESULT,
+        SetSegments: *const fn (*T, UINT32, [*]const INK_BEZIER_SEGMENT, UINT32) callconv(WINAPI) HRESULT,
+        SetSegmentAtEnd: *const fn (*T, *const INK_BEZIER_SEGMENT) callconv(WINAPI) HRESULT,
+        GetSegmentCount: *const fn (*T) callconv(WINAPI) UINT32,
+        GetSegments: *const fn (*T, UINT32, [*]const INK_BEZIER_SEGMENT, UINT32) callconv(WINAPI) HRESULT,
+        StreamAsGeometry: *anyopaque,
+        GetBounds: *anyopaque,
+    };
+};
+
+pub const IInkStyle = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+        SetNibTransform: *anyopaque,
+        GetNibTransform: *anyopaque,
+        SetNibShape: *anyopaque,
+        GetNibShape: *anyopaque,
+    };
+};
+
+pub const IDeviceContext2 = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateInk(self: *T, start_point: *const INK_POINT, ink: *?*IInk) HRESULT {
+                return @as(*const IDeviceContext2.VTable, @ptrCast(self.__v))
+                    .CreateInk(@ptrCast(self), start_point, ink);
+            }
+            pub inline fn CreateInkStyle(
+                self: *T,
+                properties: ?*const INK_STYLE_PROPERTIES,
+                ink_style: *?*IInkStyle,
+            ) HRESULT {
+                return @as(*const IDeviceContext2.VTable, @ptrCast(self.__v))
+                    .CreateInkStyle(@ptrCast(self), properties, ink_style);
+            }
+            pub inline fn DrawInk(self: *T, ink: *IInk, brush: *IBrush, style: ?*IInkStyle) void {
+                return @as(*const IDeviceContext2.VTable, @ptrCast(self.__v))
+                    .DrawInk(@ptrCast(self), ink, brush, style);
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        const T = IDeviceContext2;
+        base: IDeviceContext1.VTable,
+        CreateInk: *const fn (*T, *const INK_POINT, *?*IInk) callconv(WINAPI) HRESULT,
+        CreateInkStyle: *const fn (*T, ?*const INK_STYLE_PROPERTIES, *?*IInkStyle) callconv(WINAPI) HRESULT,
+        CreateGradientMesh: *anyopaque,
+        CreateImageSourceFromWic: *anyopaque,
+        CreateLookupTable3D: *anyopaque,
+        CreateImageSourceFromDxgi: *anyopaque,
+        GetGradientMeshWorldBounds: *anyopaque,
+        DrawInk: *const fn (*T, *IInk, *IBrush, ?*IInkStyle) callconv(WINAPI) void,
+        DrawGradientMesh: *anyopaque,
+        DrawGdiMetafile1: *anyopaque,
+        CreateTransformedImageSource: *anyopaque,
+    };
+};
+
+pub const IDeviceContext3 = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IDeviceContext2.VTable,
+        CreateSpriteBatch: *anyopaque,
+        DrawSpriteBatch: *anyopaque,
+    };
+};
+
+pub const IDeviceContext4 = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IDeviceContext3.VTable,
+        CreateSvgGlyphStyle: *anyopaque,
+        DrawText1: *anyopaque,
+        DrawTextLayout1: *anyopaque,
+        DrawColorBitmapGlyphRun: *anyopaque,
+        DrawSvgGlyphRun: *anyopaque,
+        GetColorBitmapGlyphImage: *anyopaque,
+        GetSvgGlyphImage: *anyopaque,
+    };
+};
+
+pub const IDeviceContext5 = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IDeviceContext4.VTable,
+        CreateSvgDocument: *anyopaque,
+        DrawSvgDocument: *anyopaque,
+        CreateColorContextFromDxgiColorSpace: *anyopaque,
+        CreateColorContextFromSimpleColorProfile: *anyopaque,
     };
 };
 

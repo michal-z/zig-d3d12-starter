@@ -97,27 +97,6 @@ const GameState = struct {
             },
         );
 
-        {
-            var device11: *d3d11.IDevice = undefined;
-            vhr(d3d11.CreateDevice(
-                null,
-                .WARP,
-                null,
-                .{},
-                &.{.@"11_1"},
-                1,
-                d3d11.SDK_VERSION,
-                @ptrCast(&device11),
-                null,
-                null,
-            ));
-            defer _ = device11.Release();
-
-            var device11_1: *d3d11.IDevice = undefined;
-            vhr(device11.QueryInterface(&d3d11.IDevice1.IID, @ptrCast(&device11_1)));
-            defer _ = device11_1.Release();
-        }
-
         // If `AudioContext` initialization fails we will use "empty" context that does nothing
         // (game will still run but without sound).
         var audio_context = AudioContext.init(allocator) catch AudioContext{};
@@ -164,6 +143,39 @@ const GameState = struct {
             if (GpuContext.d3d12_debug) &.{ .debugLevel = .INFORMATION } else &.{ .debugLevel = .NONE },
             @ptrCast(&d2d_factory),
         ));
+
+        {
+            var device11: *d3d11.IDevice = undefined;
+            vhr(d3d11.CreateDevice(
+                null,
+                .WARP,
+                null,
+                .{ .BGRA_SUPPORT = true },
+                &.{.@"11_1"},
+                1,
+                d3d11.SDK_VERSION,
+                @ptrCast(&device11),
+                null,
+                null,
+            ));
+            defer _ = device11.Release();
+
+            var device11_1: *d3d11.IDevice = undefined;
+            vhr(device11.QueryInterface(&d3d11.IDevice1.IID, @ptrCast(&device11_1)));
+            defer _ = device11_1.Release();
+
+            var dxgi_device: *dxgi.IDevice = undefined;
+            vhr(device11_1.QueryInterface(&dxgi.IDevice.IID, @ptrCast(&dxgi_device)));
+            defer _ = dxgi_device.Release();
+
+            var d2d_device: *d2d1.IDevice5 = undefined;
+            vhr(d2d_factory.CreateDevice5(dxgi_device, @ptrCast(&d2d_device)));
+            defer _ = d2d_device.Release();
+
+            var d2d_device_ctx: *d2d1.IDeviceContext5 = undefined;
+            vhr(d2d_device.CreateDeviceContext5(0, @ptrCast(&d2d_device_ctx)));
+            defer _ = d2d_device_ctx.Release();
+        }
 
         const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
