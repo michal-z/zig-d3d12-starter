@@ -1,5 +1,6 @@
 const std = @import("std");
 const w32 = @import("win32/win32.zig");
+const d3d11 = @import("win32/d3d11.zig");
 const d3d12 = @import("win32/d3d12.zig");
 const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
@@ -72,7 +73,7 @@ const GameState = struct {
     pso: [2]*d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
 
-    d2d_factory: *d2d1.IFactory,
+    d2d_factory: *d2d1.IFactory6,
 
     meshes: std.ArrayList(cgen.Mesh),
 
@@ -95,6 +96,27 @@ const GameState = struct {
                 .ds_target_format = .D32_FLOAT,
             },
         );
+
+        {
+            var device11: *d3d11.IDevice = undefined;
+            vhr(d3d11.CreateDevice(
+                null,
+                .WARP,
+                null,
+                .{},
+                &.{.@"11_1"},
+                1,
+                d3d11.SDK_VERSION,
+                @ptrCast(&device11),
+                null,
+                null,
+            ));
+            defer _ = device11.Release();
+
+            var device11_1: *d3d11.IDevice = undefined;
+            vhr(device11.QueryInterface(&d3d11.IDevice1.IID, @ptrCast(&device11_1)));
+            defer _ = device11_1.Release();
+        }
 
         // If `AudioContext` initialization fails we will use "empty" context that does nothing
         // (game will still run but without sound).
@@ -135,10 +157,10 @@ const GameState = struct {
                 gpu_context.shader_dheap_descriptor_size },
         );
 
-        var d2d_factory: *d2d1.IFactory = undefined;
+        var d2d_factory: *d2d1.IFactory6 = undefined;
         vhr(d2d1.CreateFactory(
             .SINGLE_THREADED,
-            &d2d1.IFactory.IID,
+            &d2d1.IFactory6.IID,
             if (GpuContext.d3d12_debug) &.{ .debugLevel = .INFORMATION } else &.{ .debugLevel = .NONE },
             @ptrCast(&d2d_factory),
         ));

@@ -352,7 +352,7 @@ fn tessellate_geometry(
 }
 
 fn tessellate_geometry_stroke(
-    d2d_factory: *d2d1.IFactory,
+    d2d_factory: *d2d1.IFactory6,
     geo_fill: *d2d1.IGeometry,
     width: f32,
     vertices: std.ArrayList(cpu_gpu.Vertex),
@@ -390,7 +390,7 @@ const stroke_width = 9.0;
 pub fn define_and_upload_meshes(
     allocator: std.mem.Allocator,
     gc: *GpuContext,
-    d2d_factory: *d2d1.IFactory,
+    d2d_factory: *d2d1.IFactory6,
 ) !struct { std.ArrayList(Mesh), *d3d12.IResource } {
     var vertices = std.ArrayList(cpu_gpu.Vertex).init(allocator);
     defer vertices.deinit();

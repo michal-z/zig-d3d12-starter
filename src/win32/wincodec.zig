@@ -34,6 +34,12 @@ pub const BitmapEncoderCacheOption = enum(UINT) {
     NoCache = 0x2,
 };
 
+pub const BitmapCreateCacheOption = enum(UINT) {
+    NoCache = 0,
+    CacheOnDemand = 0x1,
+    CacheOnLoad = 0x2,
+};
+
 pub const BitmapPaletteType = enum(UINT) {
     Custom = 0,
     MedianCut = 0x1,
@@ -422,6 +428,36 @@ pub const IImagingFactory = extern struct {
                 return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
                     .CreateFormatConverter(@ptrCast(self), converter);
             }
+            pub inline fn CreateBitmap(
+                self: *T,
+                width: UINT,
+                height: UINT,
+                format: *const PixelFormatGUID,
+                cache_option: BitmapCreateCacheOption,
+                bitmap: ?*?*IBitmap,
+            ) HRESULT {
+                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v)).CreateBitmap(
+                    @ptrCast(self),
+                    width,
+                    height,
+                    format,
+                    cache_option,
+                    bitmap,
+                );
+            }
+            pub inline fn CreateEncoder(
+                self: *T,
+                container_format: *const GUID,
+                vendor: ?*const GUID,
+                encoder: ?*?*IBitmapEncoder,
+            ) HRESULT {
+                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
+                    .CreateEncoder(@ptrCast(self), container_format, vendor, encoder);
+            }
+            pub inline fn CreateStream(self: *T, wic_stream: ?*?*IWicStream) HRESULT {
+                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
+                    .CreateStream(@ptrCast(self), wic_stream);
+            }
         };
     }
 
@@ -453,7 +489,14 @@ pub const IImagingFactory = extern struct {
         CreateStream: *const fn (*IImagingFactory, ?*?*IWicStream) callconv(WINAPI) HRESULT,
         CreateColorContext: *anyopaque,
         CreateColorTransformer: *anyopaque,
-        CreateBitmap: *anyopaque,
+        CreateBitmap: *const fn (
+            *IImagingFactory,
+            UINT,
+            UINT,
+            *const PixelFormatGUID,
+            BitmapCreateCacheOption,
+            ?*?*IBitmap,
+        ) callconv(WINAPI) HRESULT,
         CreateBitmapFromSource: *anyopaque,
         CreateBitmapFromSourceRect: *anyopaque,
         CreateBitmapFromMemory: *anyopaque,

@@ -8,6 +8,9 @@ const UINT32 = w32.UINT32;
 const UINT = w32.UINT;
 const GUID = w32.GUID;
 const BOOL = w32.BOOL;
+const LPCWSTR = w32.LPCWSTR;
+const UINT64 = w32.UINT64;
+const dxgi = @import("dxgi.zig");
 
 pub const RECT_F = extern struct {
     left: FLOAT,
@@ -19,6 +22,39 @@ pub const RECT_F = extern struct {
 pub const VECTOR_2F = extern struct {
     x: FLOAT,
     y: FLOAT,
+};
+
+pub const BRUSH_PROPERTIES = extern struct {
+    opacity: FLOAT,
+    transform: MATRIX_3X2_F,
+};
+
+pub const RADIAL_GRADIENT_BRUSH_PROPERTIES = extern struct {
+    center: POINT_2F,
+    gradientOriginOffset: POINT_2F,
+    radiusX: FLOAT,
+    radiusY: FLOAT,
+};
+
+pub const BITMAP_INTERPOLATION_MODE = enum(UINT) {
+    NEAREST_NEIGHBOR = 0,
+    LINEAR = 1,
+};
+
+pub const GAMMA = enum(UINT) {
+    _2_2 = 0,
+    _1_0 = 1,
+};
+
+pub const EXTEND_MODE = enum(UINT) {
+    CLAMP = 0,
+    WRAP = 1,
+    MIRROR = 2,
+};
+
+pub const GRADIENT_STOP = extern struct {
+    position: FLOAT,
+    color: COLOR_F,
 };
 
 pub const MATRIX_3X2_F = extern struct {
@@ -65,6 +101,19 @@ pub const MATRIX_3X2_F = extern struct {
         };
     }
 };
+
+// TODO: packed struct
+pub const DEVICE_CONTEXT_OPTIONS = UINT;
+pub const DEVICE_CONTEXT_OPTIONS_NONE = 0;
+pub const DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS = 0x1;
+
+// TODO: packed struct
+pub const BITMAP_OPTIONS = UINT;
+pub const BITMAP_OPTIONS_NONE = 0;
+pub const BITMAP_OPTIONS_TARGET = 0x1;
+pub const BITMAP_OPTIONS_CANNOT_DRAW = 0x2;
+pub const BITMAP_OPTIONS_CPU_READ = 0x4;
+pub const BITMAP_OPTIONS_GDI_COMPATIBLE = 0x8;
 
 pub const POINT_2F = extern struct {
     x: FLOAT,
@@ -184,6 +233,34 @@ pub const STROKE_STYLE_PROPERTIES = extern struct {
     dashOffset: FLOAT,
 };
 
+pub const COLOR_F = extern struct {
+    r: FLOAT,
+    g: FLOAT,
+    b: FLOAT,
+    a: FLOAT,
+
+    pub const Black = COLOR_F{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 };
+
+    fn toSrgb(s: FLOAT) FLOAT {
+        var l: FLOAT = undefined;
+        if (s > 0.0031308) {
+            l = 1.055 * (std.math.pow(FLOAT, s, (1.0 / 2.4))) - 0.055;
+        } else {
+            l = 12.92 * s;
+        }
+        return l;
+    }
+
+    pub fn linearToSrgb(r: FLOAT, g: FLOAT, b: FLOAT, a: FLOAT) COLOR_F {
+        return COLOR_F{
+            .r = toSrgb(r),
+            .g = toSrgb(g),
+            .b = toSrgb(b),
+            .a = a,
+        };
+    }
+};
+
 pub const ITessellationSink = extern struct {
     __v: *const VTable,
 
@@ -224,6 +301,29 @@ pub const IResource = extern struct {
     pub const VTable = extern struct {
         base: IUnknown.VTable,
         GetFactory: *anyopaque,
+    };
+};
+
+pub const IImage = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+    };
+};
+
+pub const IBitmap = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IImage.VTable,
+        GetSize: *anyopaque,
+        GetPixelSize: *anyopaque,
+        GetPixelFormat: *anyopaque,
+        GetPixelDpi: *anyopaque,
+        CopyFromBitmap: *anyopaque,
+        CopyFromRenderTarget: *anyopaque,
+        CopyFromMemory: *anyopaque,
     };
 };
 
@@ -725,6 +825,586 @@ pub const IFactory = extern struct {
         CreateHwndRenderTarget: *anyopaque,
         CreateDxgiSurfaceRenderTarget: *anyopaque,
         CreateDCRenderTarget: *anyopaque,
+    };
+};
+
+pub const IFactory1 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IFactory.VTable,
+        CreateDevice: *anyopaque,
+        CreateStrokeStyle1: *anyopaque,
+        CreatePathGeometry1: *anyopaque,
+        CreateDrawingStateBlock1: *anyopaque,
+        CreateGdiMetafile: *anyopaque,
+        RegisterEffectFromStream: *anyopaque,
+        RegisterEffectFromString: *anyopaque,
+        UnregisterEffect: *anyopaque,
+        GetRegisteredEffects: *anyopaque,
+        GetEffectProperties: *anyopaque,
+    };
+};
+
+pub const IFactory2 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IFactory1.VTable,
+        CreateDevice1: *anyopaque,
+    };
+};
+
+pub const IFactory3 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IFactory2.VTable,
+        CreateDevice2: *anyopaque,
+    };
+};
+
+pub const IFactory4 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IFactory3.VTable,
+        CreateDevice3: *anyopaque,
+    };
+};
+
+pub const IFactory5 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IFactory4.VTable,
+        CreateDevice4: *anyopaque,
+    };
+};
+
+pub const IFactory6 = extern struct {
+    __v: *const VTable,
+
+    pub const IID = GUID.parse("{f9976f46-f642-44c1-97ca-da32ea2a2635}");
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const CreateRectangleGeometry = IFactory.Methods(@This()).CreateRectangleGeometry;
+    pub const CreateRoundedRectangleGeometry = IFactory.Methods(@This()).CreateRoundedRectangleGeometry;
+    pub const CreateEllipseGeometry = IFactory.Methods(@This()).CreateEllipseGeometry;
+    pub const CreatePathGeometry = IFactory.Methods(@This()).CreatePathGeometry;
+    pub const CreateTransformedGeometry = IFactory.Methods(@This()).CreateTransformedGeometry;
+    pub const CreateGeometryGroup = IFactory.Methods(@This()).CreateGeometryGroup;
+
+    pub const VTable = extern struct {
+        base: IFactory5.VTable,
+        CreateDevice5: *anyopaque,
+    };
+};
+
+pub const IDevice = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+        CreateDeviceContext: *anyopaque,
+        CreatePrintControl: *anyopaque,
+        SetMaximumTextureMemory: *anyopaque,
+        GetMaximumTextureMemory: *anyopaque,
+        ClearResources: *anyopaque,
+    };
+};
+
+pub const IDevice1 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IDevice.VTable,
+        GetRenderingPriority: *anyopaque,
+        SetRenderingPriority: *anyopaque,
+        CreateDeviceContext1: *anyopaque,
+    };
+};
+
+pub const IDevice2 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IDevice1.VTable,
+        CreateDeviceContext2: *anyopaque,
+        FlushDeviceContexts: *anyopaque,
+        GetDxgiDevice: *anyopaque,
+    };
+};
+
+pub const IDevice3 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IDevice2.VTable,
+        CreateDeviceContext3: *anyopaque,
+    };
+};
+
+pub const IDevice4 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IDevice3.VTable,
+        CreateDeviceContext4: *anyopaque,
+        SetMaximumColorGlyphCacheMemory: *anyopaque,
+        GetMaximumColorGlyphCacheMemory: *anyopaque,
+    };
+};
+
+pub const IDevice5 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IDevice4.VTable,
+        CreateDeviceContext5: *anyopaque,
+    };
+};
+
+pub const IGradientStopCollection = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+        GetGradientStopCount: *anyopaque,
+        GetGradientStops: *anyopaque,
+        GetColorInterpolationGamma: *anyopaque,
+        GetExtendMode: *anyopaque,
+    };
+};
+
+pub const IBrush = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+        SetOpacity: *anyopaque,
+        SetTransform: *anyopaque,
+        GetOpacity: *anyopaque,
+        GetTransform: *anyopaque,
+    };
+};
+
+pub const ISolidColorBrush = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn SetColor(self: *T, color: *const COLOR_F) void {
+                @as(*const ISolidColorBrush.VTable, @ptrCast(self.__v))
+                    .SetColor(@ptrCast(self), color);
+            }
+            pub inline fn GetColor(self: *T) COLOR_F {
+                var color: COLOR_F = undefined;
+                _ = @as(*const ISolidColorBrush.VTable, @ptrCast(self.__v))
+                    .GetColor(@ptrCast(self), &color);
+                return color;
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IBrush.VTable,
+        SetColor: *const fn (*ISolidColorBrush, *const COLOR_F) callconv(WINAPI) void,
+        GetColor: *const fn (*ISolidColorBrush, *COLOR_F) callconv(WINAPI) *COLOR_F,
+    };
+};
+
+pub const IRadialGradientBrush = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IBrush.VTable,
+        SetCenter: *anyopaque,
+        SetGradientOriginOffset: *anyopaque,
+        SetRadiusX: *anyopaque,
+        SetRadiusY: *anyopaque,
+        GetCenter: *anyopaque,
+        GetGradientOriginOffset: *anyopaque,
+        GetRadiusX: *anyopaque,
+        GetRadiusY: *anyopaque,
+        GetGradientStopCollection: *anyopaque,
+    };
+};
+
+pub const TAG = UINT64;
+
+pub const IRenderTarget = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateSolidColorBrush(
+                self: *T,
+                color: *const COLOR_F,
+                properties: ?*const BRUSH_PROPERTIES,
+                brush: *?*ISolidColorBrush,
+            ) HRESULT {
+                return @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .CreateSolidColorBrush(@ptrCast(self), color, properties, brush);
+            }
+            pub inline fn CreateGradientStopCollection(
+                self: *T,
+                stops: [*]const GRADIENT_STOP,
+                num_stops: UINT32,
+                gamma: GAMMA,
+                extend_mode: EXTEND_MODE,
+                stop_collection: *?*IGradientStopCollection,
+            ) HRESULT {
+                return @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).CreateGradientStopCollection(
+                    @ptrCast(self),
+                    stops,
+                    num_stops,
+                    gamma,
+                    extend_mode,
+                    stop_collection,
+                );
+            }
+            pub inline fn CreateRadialGradientBrush(
+                self: *T,
+                gradient_properties: *const RADIAL_GRADIENT_BRUSH_PROPERTIES,
+                brush_properties: ?*const BRUSH_PROPERTIES,
+                stop_collection: *IGradientStopCollection,
+                brush: *?*IRadialGradientBrush,
+            ) HRESULT {
+                return @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).CreateRadialGradientBrush(
+                    @ptrCast(self),
+                    gradient_properties,
+                    brush_properties,
+                    stop_collection,
+                    brush,
+                );
+            }
+            pub inline fn DrawLine(
+                self: *T,
+                p0: POINT_2F,
+                p1: POINT_2F,
+                brush: *IBrush,
+                width: FLOAT,
+                style: ?*IStrokeStyle,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .DrawLine(@ptrCast(self), p0, p1, brush, width, style);
+            }
+            pub inline fn DrawRectangle(
+                self: *T,
+                rect: *const RECT_F,
+                brush: *IBrush,
+                width: FLOAT,
+                stroke: ?*IStrokeStyle,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .DrawRectangle(@ptrCast(self), rect, brush, width, stroke);
+            }
+            pub inline fn FillRectangle(self: *T, rect: *const RECT_F, brush: *IBrush) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .FillRectangle(@ptrCast(self), rect, brush);
+            }
+            pub inline fn DrawRoundedRectangle(
+                self: *T,
+                rect: *const ROUNDED_RECT,
+                brush: *IBrush,
+                width: FLOAT,
+                stroke: ?*IStrokeStyle,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .DrawRoundedRectangle(@ptrCast(self), rect, brush, width, stroke);
+            }
+            pub inline fn FillRoundedRectangle(self: *T, rect: *const ROUNDED_RECT, brush: *IBrush) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .FillRoundedRectangle(@ptrCast(self), rect, brush);
+            }
+            pub inline fn DrawEllipse(
+                self: *T,
+                ellipse: *const ELLIPSE,
+                brush: *IBrush,
+                width: FLOAT,
+                stroke: ?*IStrokeStyle,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .DrawEllipse(@ptrCast(self), ellipse, brush, width, stroke);
+            }
+            pub inline fn FillEllipse(self: *T, ellipse: *const ELLIPSE, brush: *IBrush) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .FillEllipse(@ptrCast(self), ellipse, brush);
+            }
+            pub inline fn DrawGeometry(
+                self: *T,
+                geo: *IGeometry,
+                brush: *IBrush,
+                width: FLOAT,
+                stroke: ?*IStrokeStyle,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .DrawGeometry(@ptrCast(self), geo, brush, width, stroke);
+            }
+            pub inline fn FillGeometry(self: *T, geo: *IGeometry, brush: *IBrush, opacity_brush: ?*IBrush) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .FillGeometry(@ptrCast(self), geo, brush, opacity_brush);
+            }
+            pub inline fn DrawBitmap(
+                self: *T,
+                bitmap: *IBitmap,
+                dst_rect: ?*const RECT_F,
+                opacity: FLOAT,
+                interpolation_mode: BITMAP_INTERPOLATION_MODE,
+                src_rect: ?*const RECT_F,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).DrawBitmap(
+                    @ptrCast(self),
+                    bitmap,
+                    dst_rect,
+                    opacity,
+                    interpolation_mode,
+                    src_rect,
+                );
+            }
+            pub inline fn SetTransform(self: *T, m: *const MATRIX_3X2_F) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).SetTransform(@ptrCast(self), m);
+            }
+            pub inline fn Clear(self: *T, color: ?*const COLOR_F) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).Clear(@ptrCast(self), color);
+            }
+            pub inline fn BeginDraw(self: *T) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).BeginDraw(@ptrCast(self));
+            }
+            pub inline fn EndDraw(self: *T, tag1: ?*TAG, tag2: ?*TAG) HRESULT {
+                return @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .EndDraw(@ptrCast(self), tag1, tag2);
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        const T = IRenderTarget;
+        base: IResource.VTable,
+        CreateBitmap: *anyopaque,
+        CreateBitmapFromWicBitmap: *anyopaque,
+        CreateSharedBitmap: *anyopaque,
+        CreateBitmapBrush: *anyopaque,
+        CreateSolidColorBrush: *const fn (
+            *T,
+            *const COLOR_F,
+            ?*const BRUSH_PROPERTIES,
+            *?*ISolidColorBrush,
+        ) callconv(WINAPI) HRESULT,
+        CreateGradientStopCollection: *const fn (
+            *T,
+            [*]const GRADIENT_STOP,
+            UINT32,
+            GAMMA,
+            EXTEND_MODE,
+            *?*IGradientStopCollection,
+        ) callconv(WINAPI) HRESULT,
+        CreateLinearGradientBrush: *anyopaque,
+        CreateRadialGradientBrush: *const fn (
+            *T,
+            *const RADIAL_GRADIENT_BRUSH_PROPERTIES,
+            ?*const BRUSH_PROPERTIES,
+            *IGradientStopCollection,
+            *?*IRadialGradientBrush,
+        ) callconv(WINAPI) HRESULT,
+        CreateCompatibleRenderTarget: *anyopaque,
+        CreateLayer: *anyopaque,
+        CreateMesh: *anyopaque,
+        DrawLine: *const fn (
+            *T,
+            POINT_2F,
+            POINT_2F,
+            *IBrush,
+            FLOAT,
+            ?*IStrokeStyle,
+        ) callconv(WINAPI) void,
+        DrawRectangle: *const fn (*T, *const RECT_F, *IBrush, FLOAT, ?*IStrokeStyle) callconv(WINAPI) void,
+        FillRectangle: *const fn (*T, *const RECT_F, *IBrush) callconv(WINAPI) void,
+        DrawRoundedRectangle: *const fn (
+            *T,
+            *const ROUNDED_RECT,
+            *IBrush,
+            FLOAT,
+            ?*IStrokeStyle,
+        ) callconv(WINAPI) void,
+        FillRoundedRectangle: *const fn (*T, *const ROUNDED_RECT, *IBrush) callconv(WINAPI) void,
+        DrawEllipse: *const fn (*T, *const ELLIPSE, *IBrush, FLOAT, ?*IStrokeStyle) callconv(WINAPI) void,
+        FillEllipse: *const fn (*T, *const ELLIPSE, *IBrush) callconv(WINAPI) void,
+        DrawGeometry: *const fn (*T, *IGeometry, *IBrush, FLOAT, ?*IStrokeStyle) callconv(WINAPI) void,
+        FillGeometry: *const fn (*T, *IGeometry, *IBrush, ?*IBrush) callconv(WINAPI) void,
+        FillMesh: *anyopaque,
+        FillOpacityMask: *anyopaque,
+        DrawBitmap: *const fn (
+            *T,
+            *IBitmap,
+            ?*const RECT_F,
+            FLOAT,
+            BITMAP_INTERPOLATION_MODE,
+            ?*const RECT_F,
+        ) callconv(WINAPI) void,
+        DrawText: *anyopaque,
+        DrawTextLayout: *anyopaque,
+        DrawGlyphRun: *anyopaque,
+        SetTransform: *const fn (*T, *const MATRIX_3X2_F) callconv(WINAPI) void,
+        GetTransform: *anyopaque,
+        SetAntialiasMode: *anyopaque,
+        GetAntialiasMode: *anyopaque,
+        SetTextAntialiasMode: *anyopaque,
+        GetTextAntialiasMode: *anyopaque,
+        SetTextRenderingParams: *anyopaque,
+        GetTextRenderingParams: *anyopaque,
+        SetTags: *anyopaque,
+        GetTags: *anyopaque,
+        PushLayer: *anyopaque,
+        PopLayer: *anyopaque,
+        Flush: *anyopaque,
+        SaveDrawingState: *anyopaque,
+        RestoreDrawingState: *anyopaque,
+        PushAxisAlignedClip: *anyopaque,
+        PopAxisAlignedClip: *anyopaque,
+        Clear: *const fn (*T, ?*const COLOR_F) callconv(WINAPI) void,
+        BeginDraw: *const fn (*T) callconv(WINAPI) void,
+        EndDraw: *const fn (*T, ?*TAG, ?*TAG) callconv(WINAPI) HRESULT,
+        GetPixelFormat: *anyopaque,
+        SetDpi: *anyopaque,
+        GetDpi: *anyopaque,
+        GetSize: *anyopaque,
+        GetPixelSize: *anyopaque,
+        GetMaximumBitmapSize: *anyopaque,
+        IsSupported: *anyopaque,
+    };
+};
+
+pub const PIXEL_FORMAT = extern struct {
+    format: dxgi.FORMAT,
+    alphaMode: ALPHA_MODE,
+};
+
+pub const ALPHA_MODE = enum(UINT) {
+    UNKNOWN = 0,
+    PREMULTIPLIED = 1,
+    STRAIGHT = 2,
+    IGNORE = 3,
+};
+
+pub const BITMAP_PROPERTIES1 = extern struct {
+    pixelFormat: PIXEL_FORMAT,
+    dpiX: FLOAT,
+    dpiY: FLOAT,
+    bitmapOptions: BITMAP_OPTIONS,
+    colorContext: ?*IColorContext,
+};
+
+pub const IColorContext = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+        GetColorSpace: *anyopaque,
+        GetProfileSize: *anyopaque,
+        GetProfile: *anyopaque,
+    };
+};
+
+pub const IBitmap1 = extern struct {
+    __v: *const VTable,
+
+    pub const VTable = extern struct {
+        base: IBitmap.VTable,
+        GetColorContext: *anyopaque,
+        GetOptions: *anyopaque,
+        GetSurface: *anyopaque,
+        Map: *anyopaque,
+        Unmap: *anyopaque,
+    };
+};
+
+pub const IDeviceContext = extern struct {
+    __v: *const VTable,
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateBitmapFromDxgiSurface(
+                self: *T,
+                surface: *dxgi.ISurface,
+                properties: ?*const BITMAP_PROPERTIES1,
+                bitmap: *?*IBitmap1,
+            ) HRESULT {
+                return @as(*const IDeviceContext.VTable, @ptrCast(self.__v))
+                    .CreateBitmapFromDxgiSurface(@ptrCast(self), surface, properties, bitmap);
+            }
+            pub inline fn SetTarget(self: *T, image: ?*IImage) void {
+                @as(*const IDeviceContext.VTable, @ptrCast(self.__v)).SetTarget(@ptrCast(self), image);
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IRenderTarget.VTable,
+        CreateBitmap1: *anyopaque,
+        CreateBitmapFromWicBitmap1: *anyopaque,
+        CreateColorContext: *anyopaque,
+        CreateColorContextFromFilename: *anyopaque,
+        CreateColorContextFromWicColorContext: *anyopaque,
+        CreateBitmapFromDxgiSurface: *const fn (
+            *IDeviceContext,
+            *dxgi.ISurface,
+            ?*const BITMAP_PROPERTIES1,
+            *?*IBitmap1,
+        ) callconv(WINAPI) HRESULT,
+        CreateEffect: *anyopaque,
+        CreateGradientStopCollection1: *anyopaque,
+        CreateImageBrush: *anyopaque,
+        CreateBitmapBrush1: *anyopaque,
+        CreateCommandList: *anyopaque,
+        IsDxgiFormatSupported: *anyopaque,
+        IsBufferPrecisionSupported: *anyopaque,
+        GetImageLocalBounds: *anyopaque,
+        GetImageWorldBounds: *anyopaque,
+        GetGlyphRunWorldBounds: *anyopaque,
+        GetDevice: *anyopaque,
+        SetTarget: *const fn (*IDeviceContext, ?*IImage) callconv(WINAPI) void,
+        GetTarget: *anyopaque,
+        SetRenderingControls: *anyopaque,
+        GetRenderingControls: *anyopaque,
+        SetPrimitiveBlend: *anyopaque,
+        GetPrimitiveBlend: *anyopaque,
+        SetUnitMode: *anyopaque,
+        GetUnitMode: *anyopaque,
+        DrawGlyphRun1: *anyopaque,
+        DrawImage: *anyopaque,
+        DrawGdiMetafile: *anyopaque,
+        DrawBitmap1: *anyopaque,
+        PushLayer1: *anyopaque,
+        InvalidateEffectInputRectangle: *anyopaque,
+        GetEffectInvalidRectangleCount: *anyopaque,
+        GetEffectInvalidRectangles: *anyopaque,
+        GetEffectRequiredInputRectangles: *anyopaque,
+        FillOpacityMask1: *anyopaque,
     };
 };
 
