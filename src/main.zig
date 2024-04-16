@@ -76,7 +76,7 @@ const GameState = struct {
     pso: [2]*d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
 
-    wic_factory: *wic.IImagingFactory,
+    wic_factory: *wic.IImagingFactory2,
 
     d2d: struct {
         factory: *d2d1.IFactory6,
@@ -145,7 +145,7 @@ const GameState = struct {
                 gpu_context.shader_dheap_descriptor_size },
         );
 
-        var wic_factory: *wic.IImagingFactory = undefined;
+        var wic_factory: *wic.IImagingFactory2 = undefined;
         vhr(w32.CoCreateInstance(
             &wic.CLSID_ImagingFactory2,
             null,
@@ -634,12 +634,14 @@ const GameState = struct {
 
             vhr(frame_encode.Initialize(null));
 
-            // create image encoder
-            // call WriteFrame()
+            var image_encoder: *wic.IImageEncoder = undefined;
+            vhr(game.wic_factory.CreateImageEncoder(
+                @ptrCast(game.d2d.device),
+                @ptrCast(&image_encoder),
+            ));
+            defer _ = image_encoder.Release();
 
-            //vhr(frame_encode.SetSize(cgen.map_size_x, cgen.map_size_y));
-            //vhr(frame_encode.SetPixelFormat(&format));
-            //vhr(frame_encode.WriteSource(@ptrCast(wic_bitmap), null));
+            vhr(image_encoder.WriteFrame(@ptrCast(render_target), frame_encode, null));
 
             vhr(frame_encode.Commit());
 

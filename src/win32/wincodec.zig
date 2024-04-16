@@ -548,11 +548,13 @@ pub const IImageEncoder = extern struct {
             pub inline fn WriteFrame(
                 self: *T,
                 d2d_image: *d2d1.IImage,
+                frame_encode: *IBitmapFrameEncode,
                 image_parameters: ?*const ImageParameters,
             ) HRESULT {
                 return @as(*const IImageEncoder.VTable, @ptrCast(self.__v)).WriteFrame(
                     @ptrCast(self),
                     d2d_image,
+                    frame_encode,
                     image_parameters,
                 );
             }
@@ -561,7 +563,12 @@ pub const IImageEncoder = extern struct {
 
     pub const VTable = extern struct {
         base: IUnknown.VTable,
-        WriteFrame: *const fn (*IImageEncoder, *d2d1.IImage, ?*const ImageParameters) callconv(WINAPI) HRESULT,
+        WriteFrame: *const fn (
+            *IImageEncoder,
+            *d2d1.IImage,
+            *IBitmapFrameEncode,
+            ?*const ImageParameters,
+        ) callconv(WINAPI) HRESULT,
         WriteFrameThumbnail: *anyopaque,
         WriteThumbnail: *anyopaque,
     };
@@ -602,7 +609,7 @@ pub const IImagingFactory2 = extern struct {
 
     pub const VTable = extern struct {
         base: IImagingFactory.VTable,
-        CreateImageEncoder: *const fn (*IImagingFactory2, *d2d1.Device, ?*?*IImageEncoder) callconv(WINAPI) HRESULT,
+        CreateImageEncoder: *const fn (*IImagingFactory2, *d2d1.IDevice, ?*?*IImageEncoder) callconv(WINAPI) HRESULT,
     };
 };
 
