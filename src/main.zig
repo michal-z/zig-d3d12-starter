@@ -611,11 +611,7 @@ const GameState = struct {
             ));
 
             var encoder: *wic.IBitmapEncoder = undefined;
-            vhr(game.wic_factory.CreateEncoder(
-                &wic.GUID_ContainerFormatPng,
-                null,
-                @ptrCast(&encoder),
-            ));
+            vhr(game.wic_factory.CreateEncoder(&wic.GUID_ContainerFormatPng, null, @ptrCast(&encoder)));
             defer _ = encoder.Release();
 
             vhr(encoder.Initialize(@ptrCast(stream), .NoCache));
@@ -627,10 +623,7 @@ const GameState = struct {
             vhr(frame_encode.Initialize(null));
 
             var image_encoder: *wic.IImageEncoder = undefined;
-            vhr(game.wic_factory.CreateImageEncoder(
-                @ptrCast(game.d2d.device),
-                @ptrCast(&image_encoder),
-            ));
+            vhr(game.wic_factory.CreateImageEncoder(@ptrCast(game.d2d.device), @ptrCast(&image_encoder)));
             defer _ = image_encoder.Release();
 
             vhr(image_encoder.WriteFrame(@ptrCast(render_target), frame_encode, null));
