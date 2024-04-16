@@ -241,6 +241,7 @@ pub const COLOR_F = extern struct {
     a: FLOAT,
 
     pub const Black = COLOR_F{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 };
+    pub const Red = COLOR_F{ .r = 1.0, .g = 0.0, .b = 0.0, .a = 1.0 };
 
     fn toSrgb(s: FLOAT) FLOAT {
         var l: FLOAT = undefined;

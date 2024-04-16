@@ -6,13 +6,14 @@ const GUID = w32.GUID;
 const LPCWSTR = w32.LPCWSTR;
 const DWORD = w32.DWORD;
 const UINT = w32.UINT;
+const UINT32 = w32.UINT32;
 const INT = w32.INT;
 const BYTE = w32.BYTE;
+const FLOAT = w32.FLOAT;
 const objidl = @import("objidl.zig");
-const ISequentialStream = objidl.ISequentialStream;
-const IStream = objidl.IStream;
 const ocidl = @import("ocidl.zig");
 const IPropertyBag2 = ocidl.IPropertyBag2;
+const d2d1 = @import("d2d1.zig");
 
 pub const PixelFormatGUID = w32.GUID;
 
@@ -78,7 +79,7 @@ pub const IPalette = extern struct {
     };
 };
 
-pub const IWicStream = extern struct {
+pub const IStream = extern struct {
     __v: *const VTable,
 
     pub const IID = GUID.parse("{135FF860-22B7-4ddf-B0F6-218F4F299A43}");
@@ -87,7 +88,7 @@ pub const IWicStream = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
-    pub const InitializeFromFilename = IWicStream.Methods(@This()).InitializeFromFilename;
+    pub const InitializeFromFilename = IStream.Methods(@This()).InitializeFromFilename;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -96,16 +97,16 @@ pub const IWicStream = extern struct {
                 filename: LPCWSTR,
                 desired_access: DWORD,
             ) HRESULT {
-                return @as(*const IWicStream.VTable, @ptrCast(self.__v))
+                return @as(*const IStream.VTable, @ptrCast(self.__v))
                     .InitializeFromFilename(@ptrCast(self), filename, desired_access);
             }
         };
     }
 
     pub const VTable = extern struct {
-        base: IStream.VTable,
+        base: objidl.IStream.VTable,
         InitializeFromIStream: *anyopaque,
-        InitializeFromFilename: *const fn (*IWicStream, LPCWSTR, DWORD) callconv(WINAPI) HRESULT,
+        InitializeFromFilename: *const fn (*IStream, LPCWSTR, DWORD) callconv(WINAPI) HRESULT,
         InitializeFromMemory: *anyopaque,
         InitializeFromIStreamRegion: *anyopaque,
     };
@@ -162,7 +163,7 @@ pub const IBitmapEncoder = extern struct {
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
-            pub inline fn Initialize(self: *T, stream: ?*IStream, cache_option: BitmapEncoderCacheOption) HRESULT {
+            pub inline fn Initialize(self: *T, stream: ?*objidl.IStream, cache_option: BitmapEncoderCacheOption) HRESULT {
                 return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v))
                     .Initialize(@ptrCast(self), stream, cache_option);
             }
@@ -179,7 +180,7 @@ pub const IBitmapEncoder = extern struct {
 
     pub const VTable = extern struct {
         base: IUnknown.VTable,
-        Initialize: *const fn (*IBitmapEncoder, ?*IStream, BitmapEncoderCacheOption) callconv(WINAPI) HRESULT,
+        Initialize: *const fn (*IBitmapEncoder, ?*objidl.IStream, BitmapEncoderCacheOption) callconv(WINAPI) HRESULT,
         GetContainerFormat: *anyopaque,
         GetEncoderInfo: *anyopaque,
         SetColorContexts: *anyopaque,
@@ -266,6 +267,8 @@ pub const IBitmapFrameEncode = extern struct {
     pub const Commit = IBitmapFrameEncode.Methods(@This()).Commit;
     pub const SetSize = IBitmapFrameEncode.Methods(@This()).SetSize;
     pub const SetPixelFormat = IBitmapFrameEncode.Methods(@This()).SetPixelFormat;
+    pub const Initialize = IBitmapFrameEncode.Methods(@This()).Initialize;
+    pub const WriteSource = IBitmapFrameEncode.Methods(@This()).WriteSource;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -291,12 +294,20 @@ pub const IBitmapFrameEncode = extern struct {
                 return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
                     .SetPixelFormat(@ptrCast(self), format);
             }
+            pub inline fn Initialize(self: *T, encoder_options: ?*IPropertyBag2) HRESULT {
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
+                    .Initialize(@ptrCast(self), encoder_options);
+            }
+            pub inline fn WriteSource(self: *T, bitmap_source: ?*IBitmapSource, rect: ?*Rect) HRESULT {
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
+                    .WriteSource(@ptrCast(self), bitmap_source, rect);
+            }
         };
     }
 
     pub const VTable = extern struct {
         base: IUnknown.VTable,
-        Initialize: *anyopaque,
+        Initialize: *const fn (*IBitmapFrameEncode, ?*IPropertyBag2) callconv(WINAPI) HRESULT,
         SetSize: *const fn (*IBitmapFrameEncode, UINT, UINT) callconv(WINAPI) HRESULT,
         SetResolution: *anyopaque,
         SetPixelFormat: *const fn (*IBitmapFrameEncode, *PixelFormatGUID) callconv(WINAPI) HRESULT,
@@ -304,7 +315,7 @@ pub const IBitmapFrameEncode = extern struct {
         SetPalette: *anyopaque,
         SetThumbnail: *anyopaque,
         WritePixels: *const fn (*IBitmapFrameEncode, UINT, UINT, UINT, *BYTE) callconv(WINAPI) HRESULT,
-        WriteSource: *anyopaque,
+        WriteSource: *const fn (*IBitmapFrameEncode, ?*IBitmapSource, ?*Rect) callconv(WINAPI) HRESULT,
         Commit: *const fn (*IBitmapFrameEncode) callconv(WINAPI) HRESULT,
         GetMetadataQueryWriter: *anyopaque,
     };
@@ -405,6 +416,8 @@ pub const IImagingFactory = extern struct {
     pub const CreateDecoderFromFilename = IImagingFactory.Methods(@This()).CreateDecoderFromFilename;
     pub const CreateFormatConverter = IImagingFactory.Methods(@This()).CreateFormatConverter;
     pub const CreateBitmap = IImagingFactory.Methods(@This()).CreateBitmap;
+    pub const CreateStream = IImagingFactory.Methods(@This()).CreateStream;
+    pub const CreateEncoder = IImagingFactory.Methods(@This()).CreateEncoder;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -455,7 +468,7 @@ pub const IImagingFactory = extern struct {
                 return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
                     .CreateEncoder(@ptrCast(self), container_format, vendor, encoder);
             }
-            pub inline fn CreateStream(self: *T, wic_stream: ?*?*IWicStream) HRESULT {
+            pub inline fn CreateStream(self: *T, wic_stream: ?*?*IStream) HRESULT {
                 return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
                     .CreateStream(@ptrCast(self), wic_stream);
             }
@@ -487,7 +500,7 @@ pub const IImagingFactory = extern struct {
         CreateBitmapScaler: *anyopaque,
         CreateBitmapClipper: *anyopaque,
         CreateBitmapFlipRotator: *anyopaque,
-        CreateStream: *const fn (*IImagingFactory, ?*?*IWicStream) callconv(WINAPI) HRESULT,
+        CreateStream: *const fn (*IImagingFactory, ?*?*IStream) callconv(WINAPI) HRESULT,
         CreateColorContext: *anyopaque,
         CreateColorTransformer: *anyopaque,
         CreateBitmap: *const fn (
@@ -511,13 +524,94 @@ pub const IImagingFactory = extern struct {
     };
 };
 
+pub const ImageParameters = extern struct {
+    PixelFormat: d2d1.PIXEL_FORMAT,
+    DpiX: FLOAT,
+    DpiY: FLOAT,
+    Top: FLOAT,
+    Left: FLOAT,
+    PixelWidth: UINT32,
+    PixelHeight: UINT32,
+};
+
+pub const IImageEncoder = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const WriteFrame = IImageEncoder.Methods(@This()).WriteFrame;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn WriteFrame(
+                self: *T,
+                d2d_image: *d2d1.IImage,
+                image_parameters: ?*const ImageParameters,
+            ) HRESULT {
+                return @as(*const IImageEncoder.VTable, @ptrCast(self.__v)).WriteFrame(
+                    @ptrCast(self),
+                    d2d_image,
+                    image_parameters,
+                );
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IUnknown.VTable,
+        WriteFrame: *const fn (*IImageEncoder, *d2d1.IImage, ?*const ImageParameters) callconv(WINAPI) HRESULT,
+        WriteFrameThumbnail: *anyopaque,
+        WriteThumbnail: *anyopaque,
+    };
+};
+
+pub const IImagingFactory2 = extern struct {
+    __v: *const VTable,
+
+    pub const IID = GUID.parse("{7B816B45-1996-4476-B132-DE9E247C8AF0}");
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const CreateDecoderFromFilename = IImagingFactory.Methods(@This()).CreateDecoderFromFilename;
+    pub const CreateFormatConverter = IImagingFactory.Methods(@This()).CreateFormatConverter;
+    pub const CreateBitmap = IImagingFactory.Methods(@This()).CreateBitmap;
+    pub const CreateStream = IImagingFactory.Methods(@This()).CreateStream;
+    pub const CreateEncoder = IImagingFactory.Methods(@This()).CreateEncoder;
+
+    pub const CreateImageEncoder = IImagingFactory2.Methods(@This()).CreateImageEncoder;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateImageEncoder(
+                self: *T,
+                d2d_device: *d2d1.IDevice,
+                image_encoder: ?*?*IImageEncoder,
+            ) HRESULT {
+                return @as(*const IImagingFactory2.VTable, @ptrCast(self.__v)).CreateImageEncoder(
+                    @ptrCast(self),
+                    d2d_device,
+                    image_encoder,
+                );
+            }
+        };
+    }
+
+    pub const VTable = extern struct {
+        base: IImagingFactory.VTable,
+        CreateImageEncoder: *const fn (*IImagingFactory2, *d2d1.Device, ?*?*IImageEncoder) callconv(WINAPI) HRESULT,
+    };
+};
+
 pub const CLSID_ImagingFactory = GUID{
     .Data1 = 0xcacaf262,
     .Data2 = 0x9370,
     .Data3 = 0x4615,
     .Data4 = .{ 0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0xa },
 };
-
 pub const CLSID_ImagingFactory2 = GUID{
     .Data1 = 0x317d06e8,
     .Data2 = 0x5f24,
@@ -525,13 +619,18 @@ pub const CLSID_ImagingFactory2 = GUID{
     .Data4 = .{ 0xbd, 0xf7, 0x79, 0xce, 0x68, 0xd8, 0xab, 0xc2 },
 };
 
+pub const GUID_PixelFormatDontCare = PixelFormatGUID{
+    .Data1 = 0x6fddc324,
+    .Data2 = 0x4e03,
+    .Data3 = 0x4bfe,
+    .Data4 = .{ 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x00 },
+};
 pub const GUID_PixelFormat2bppIndexed = PixelFormatGUID{
     .Data1 = 0x6fddc324,
     .Data2 = 0x4e03,
     .Data3 = 0x4bfe,
     .Data4 = .{ 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x02 },
 };
-
 pub const GUID_PixelFormat24bppRGB = PixelFormatGUID{
     .Data1 = 0x6fddc324,
     .Data2 = 0x4e03,
@@ -556,7 +655,6 @@ pub const GUID_PixelFormat32bppPRGBA = PixelFormatGUID{
     .Data3 = 0x4d37,
     .Data4 = .{ 0xa9, 0x16, 0x31, 0x42, 0xc7, 0xeb, 0xed, 0xba },
 };
-
 pub const GUID_PixelFormat24bppBGR = PixelFormatGUID{
     .Data1 = 0x6fddc324,
     .Data2 = 0x4e03,
@@ -581,14 +679,12 @@ pub const GUID_PixelFormat32bppPBGRA = PixelFormatGUID{
     .Data3 = 0x4bfe,
     .Data4 = .{ 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x10 },
 };
-
 pub const GUID_PixelFormat64bppRGBA = PixelFormatGUID{
     .Data1 = 0x6fddc324,
     .Data2 = 0x4e03,
     .Data3 = 0x4bfe,
     .Data4 = .{ 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x16 },
 };
-
 pub const GUID_PixelFormat8bppGray = PixelFormatGUID{
     .Data1 = 0x6fddc324,
     .Data2 = 0x4e03,
@@ -600,4 +696,11 @@ pub const GUID_PixelFormat8bppAlpha = PixelFormatGUID{
     .Data2 = 0xeeba,
     .Data3 = 0x4161,
     .Data4 = .{ 0xaa, 0x85, 0x27, 0xdd, 0x9f, 0xb3, 0xa8, 0x95 },
+};
+
+pub const GUID_ContainerFormatPng = GUID{
+    .Data1 = 0x1b7cfaf4,
+    .Data2 = 0x713f,
+    .Data3 = 0x473c,
+    .Data4 = .{ 0xbb, 0xcd, 0x61, 0x37, 0x42, 0x5f, 0xae, 0xaf },
 };

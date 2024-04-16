@@ -147,10 +147,10 @@ const GameState = struct {
 
         var wic_factory: *wic.IImagingFactory = undefined;
         vhr(w32.CoCreateInstance(
-            &wic.CLSID_ImagingFactory,
+            &wic.CLSID_ImagingFactory2,
             null,
             w32.CLSCTX_INPROC_SERVER,
-            &wic.IImagingFactory.IID,
+            &wic.IImagingFactory2.IID,
             @ptrCast(&wic_factory),
         ));
 
@@ -603,13 +603,48 @@ const GameState = struct {
         ));
         defer _ = render_target.Release();
 
-        std.debug.print("{any}\n", .{game.d2d.device_context.GetSize()});
-
         game.d2d.device_context.SetTarget(@ptrCast(render_target));
-        std.debug.print("{any}\n", .{game.d2d.device_context.GetSize()});
         game.d2d.device_context.BeginDraw();
-        game.d2d.device_context.Clear(null);
+        game.d2d.device_context.Clear(&d2d1.COLOR_F.Red);
         vhr(game.d2d.device_context.EndDraw(null, null));
+
+        {
+            var stream: *wic.IStream = undefined;
+            vhr(game.wic_factory.CreateStream(@ptrCast(&stream)));
+            defer _ = stream.Release();
+
+            vhr(stream.InitializeFromFilename(
+                std.unicode.utf8ToUtf16LeStringLiteral("image.png"),
+                w32.GENERIC_WRITE,
+            ));
+
+            var encoder: *wic.IBitmapEncoder = undefined;
+            vhr(game.wic_factory.CreateEncoder(
+                &wic.GUID_ContainerFormatPng,
+                null,
+                @ptrCast(&encoder),
+            ));
+            defer _ = encoder.Release();
+
+            vhr(encoder.Initialize(@ptrCast(stream), .NoCache));
+
+            var frame_encode: *wic.IBitmapFrameEncode = undefined;
+            vhr(encoder.CreateNewFrame(@ptrCast(&frame_encode), null));
+            defer _ = frame_encode.Release();
+
+            vhr(frame_encode.Initialize(null));
+
+            // create image encoder
+            // call WriteFrame()
+
+            //vhr(frame_encode.SetSize(cgen.map_size_x, cgen.map_size_y));
+            //vhr(frame_encode.SetPixelFormat(&format));
+            //vhr(frame_encode.WriteSource(@ptrCast(wic_bitmap), null));
+
+            vhr(frame_encode.Commit());
+
+            vhr(encoder.Commit());
+        }
     }
 };
 
