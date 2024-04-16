@@ -576,23 +576,15 @@ const GameState = struct {
     }
 
     fn d2d_test(game: *GameState) void {
-        var wic_bitmap: *wic.IBitmap = undefined;
-        vhr(game.wic_factory.CreateBitmap(
-            cgen.map_size_x,
-            cgen.map_size_y,
-            &wic.GUID_PixelFormat32bppBGR,
-            .CacheOnLoad,
-            @ptrCast(&wic_bitmap),
-        ));
-        defer _ = wic_bitmap.Release();
-
         var render_target: *d2d1.IBitmap1 = undefined;
-        vhr(game.d2d.device_context.CreateBitmapFromWicBitmap1(
-            @ptrCast(wic_bitmap),
+        vhr(game.d2d.device_context.CreateBitmap1(
+            .{ .width = cgen.map_size_x, .height = cgen.map_size_y },
+            null,
+            0,
             &.{
                 .pixelFormat = .{
                     .format = .B8G8R8A8_UNORM,
-                    .alphaMode = .UNKNOWN,
+                    .alphaMode = .IGNORE,
                 },
                 .dpiX = 96.0,
                 .dpiY = 96.0,
@@ -642,9 +634,7 @@ const GameState = struct {
             defer _ = image_encoder.Release();
 
             vhr(image_encoder.WriteFrame(@ptrCast(render_target), frame_encode, null));
-
             vhr(frame_encode.Commit());
-
             vhr(encoder.Commit());
         }
     }

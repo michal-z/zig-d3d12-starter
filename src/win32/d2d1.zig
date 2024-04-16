@@ -196,6 +196,11 @@ pub const SIZE_F = extern struct {
     height: FLOAT,
 };
 
+pub const SIZE_U = extern struct {
+    width: UINT32,
+    height: UINT32,
+};
+
 pub const SWEEP_DIRECTION = enum(UINT) {
     COUNTER_CLOCKWISE = 0,
     CLOCKWISE = 1,
@@ -1462,6 +1467,7 @@ pub const IDeviceContext = extern struct {
     pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
     pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
 
+    pub const CreateBitmap1 = IDeviceContext.Methods(@This()).CreateBitmap1;
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
@@ -1479,6 +1485,17 @@ pub const IDeviceContext = extern struct {
             pub inline fn SetTarget(self: *T, image: ?*IImage) void {
                 @as(*const IDeviceContext.VTable, @ptrCast(self.__v)).SetTarget(@ptrCast(self), image);
             }
+            pub inline fn CreateBitmap1(
+                self: *T,
+                size: SIZE_U,
+                src_data: ?*const anyopaque,
+                pitch: UINT32,
+                properties: *const BITMAP_PROPERTIES1,
+                bitmap: *?*IBitmap1,
+            ) HRESULT {
+                return @as(*const IDeviceContext.VTable, @ptrCast(self.__v))
+                    .CreateBitmap1(@ptrCast(self), size, src_data, pitch, properties, bitmap);
+            }
             pub inline fn CreateBitmapFromWicBitmap1(
                 self: *T,
                 wic_bitmap_source: *wic.IBitmapSource,
@@ -1493,7 +1510,14 @@ pub const IDeviceContext = extern struct {
 
     pub const VTable = extern struct {
         base: IRenderTarget.VTable,
-        CreateBitmap1: *anyopaque,
+        CreateBitmap1: *const fn (
+            *IDeviceContext,
+            SIZE_U,
+            ?*const anyopaque,
+            UINT32,
+            *const BITMAP_PROPERTIES1,
+            *?*IBitmap1,
+        ) callconv(WINAPI) HRESULT,
         CreateBitmapFromWicBitmap1: *const fn (
             *IDeviceContext,
             *wic.IBitmapSource,
@@ -1567,6 +1591,7 @@ pub const IDeviceContext1 = extern struct {
     pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
     pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
 
+    pub const CreateBitmap1 = IDeviceContext.Methods(@This()).CreateBitmap1;
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
@@ -1700,6 +1725,7 @@ pub const IDeviceContext2 = extern struct {
     pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
     pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
 
+    pub const CreateBitmap1 = IDeviceContext.Methods(@This()).CreateBitmap1;
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
@@ -1767,6 +1793,7 @@ pub const IDeviceContext3 = extern struct {
     pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
     pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
 
+    pub const CreateBitmap1 = IDeviceContext.Methods(@This()).CreateBitmap1;
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
@@ -1803,6 +1830,7 @@ pub const IDeviceContext4 = extern struct {
     pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
     pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
 
+    pub const CreateBitmap1 = IDeviceContext.Methods(@This()).CreateBitmap1;
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
@@ -1844,6 +1872,7 @@ pub const IDeviceContext5 = extern struct {
     pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
     pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
 
+    pub const CreateBitmap1 = IDeviceContext.Methods(@This()).CreateBitmap1;
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
