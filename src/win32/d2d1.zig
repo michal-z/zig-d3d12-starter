@@ -11,6 +11,7 @@ const BOOL = w32.BOOL;
 const LPCWSTR = w32.LPCWSTR;
 const UINT64 = w32.UINT64;
 const dxgi = @import("dxgi.zig");
+const wic = @import("wincodec.zig");
 
 pub const RECT_F = extern struct {
     left: FLOAT,
@@ -307,6 +308,10 @@ pub const IResource = extern struct {
 pub const IImage = extern struct {
     __v: *const VTable,
 
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
     pub const VTable = extern struct {
         base: IResource.VTable,
     };
@@ -314,6 +319,10 @@ pub const IImage = extern struct {
 
 pub const IBitmap = extern struct {
     __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
     pub const VTable = extern struct {
         base: IImage.VTable,
@@ -1109,6 +1118,25 @@ pub const IRenderTarget = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn CreateSolidColorBrush(
@@ -1249,6 +1277,12 @@ pub const IRenderTarget = extern struct {
                 return @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
                     .EndDraw(@ptrCast(self), tag1, tag2);
             }
+            pub inline fn GetSize(self: *T) SIZE_F {
+                var size: SIZE_F = undefined;
+                _ = @as(*const IRenderTarget.VTable, @ptrCast(self.__v))
+                    .GetSize(@ptrCast(self), &size);
+                return size;
+            }
         };
     }
 
@@ -1342,7 +1376,7 @@ pub const IRenderTarget = extern struct {
         GetPixelFormat: *anyopaque,
         SetDpi: *anyopaque,
         GetDpi: *anyopaque,
-        GetSize: *anyopaque,
+        GetSize: *const fn (*T, *SIZE_F) callconv(WINAPI) *SIZE_F,
         GetPixelSize: *anyopaque,
         GetMaximumBitmapSize: *anyopaque,
         IsSupported: *anyopaque,
@@ -1372,6 +1406,10 @@ pub const BITMAP_PROPERTIES1 = extern struct {
 pub const IColorContext = extern struct {
     __v: *const VTable,
 
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
     pub const VTable = extern struct {
         base: IResource.VTable,
         GetColorSpace: *anyopaque,
@@ -1382,6 +1420,10 @@ pub const IColorContext = extern struct {
 
 pub const IBitmap1 = extern struct {
     __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
 
     pub const VTable = extern struct {
         base: IBitmap.VTable,
@@ -1400,6 +1442,28 @@ pub const IDeviceContext = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
+    pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
+    pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
+
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn CreateBitmapFromDxgiSurface(
@@ -1414,13 +1478,27 @@ pub const IDeviceContext = extern struct {
             pub inline fn SetTarget(self: *T, image: ?*IImage) void {
                 @as(*const IDeviceContext.VTable, @ptrCast(self.__v)).SetTarget(@ptrCast(self), image);
             }
+            pub inline fn CreateBitmapFromWicBitmap1(
+                self: *T,
+                wic_bitmap_source: *wic.IBitmapSource,
+                properties: ?*const BITMAP_PROPERTIES1,
+                bitmap: *?*IBitmap1,
+            ) HRESULT {
+                return @as(*const IDeviceContext.VTable, @ptrCast(self.__v))
+                    .CreateBitmapFromWicBitmap1(@ptrCast(self), wic_bitmap_source, properties, bitmap);
+            }
         };
     }
 
     pub const VTable = extern struct {
         base: IRenderTarget.VTable,
         CreateBitmap1: *anyopaque,
-        CreateBitmapFromWicBitmap1: *anyopaque,
+        CreateBitmapFromWicBitmap1: *const fn (
+            *IDeviceContext,
+            *wic.IBitmapSource,
+            ?*const BITMAP_PROPERTIES1,
+            *?*IBitmap1,
+        ) callconv(WINAPI) HRESULT,
         CreateColorContext: *anyopaque,
         CreateColorContextFromFilename: *anyopaque,
         CreateColorContextFromWicColorContext: *anyopaque,
@@ -1468,6 +1546,28 @@ pub const IDeviceContext1 = extern struct {
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
+    pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
+    pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
     pub const VTable = extern struct {
         base: IDeviceContext.VTable,
@@ -1580,6 +1680,28 @@ pub const IDeviceContext2 = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
+    pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
+    pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
+
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn CreateInk(self: *T, start_point: *const INK_POINT, ink: *?*IInk) HRESULT {
@@ -1625,6 +1747,28 @@ pub const IDeviceContext3 = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
+    pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
+    pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
+
     pub const VTable = extern struct {
         base: IDeviceContext2.VTable,
         CreateSpriteBatch: *anyopaque,
@@ -1638,6 +1782,28 @@ pub const IDeviceContext4 = extern struct {
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
+    pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
+    pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
     pub const VTable = extern struct {
         base: IDeviceContext3.VTable,
@@ -1657,6 +1823,28 @@ pub const IDeviceContext5 = extern struct {
     pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const CreateSolidColorBrush = IRenderTarget.Methods(@This()).CreateSolidColorBrush;
+    pub const CreateGradientStopCollection = IRenderTarget.Methods(@This()).CreateGradientStopCollection;
+    pub const CreateRadialGradientBrush = IRenderTarget.Methods(@This()).CreateRadialGradientBrush;
+    pub const DrawLine = IRenderTarget.Methods(@This()).DrawLine;
+    pub const DrawRectangle = IRenderTarget.Methods(@This()).DrawRectangle;
+    pub const FillRectangle = IRenderTarget.Methods(@This()).FillRectangle;
+    pub const DrawRoundedRectangle = IRenderTarget.Methods(@This()).DrawRoundedRectangle;
+    pub const FillRoundedRectangle = IRenderTarget.Methods(@This()).FillRoundedRectangle;
+    pub const DrawEllipse = IRenderTarget.Methods(@This()).DrawEllipse;
+    pub const FillEllipse = IRenderTarget.Methods(@This()).FillEllipse;
+    pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
+    pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
+    pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
+    pub const Clear = IRenderTarget.Methods(@This()).Clear;
+    pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
+    pub const EndDraw = IRenderTarget.Methods(@This()).EndDraw;
+    pub const GetSize = IRenderTarget.Methods(@This()).GetSize;
+
+    pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
+    pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
     pub const VTable = extern struct {
         base: IDeviceContext4.VTable,

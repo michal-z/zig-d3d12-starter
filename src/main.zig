@@ -6,6 +6,7 @@ const d3d12d = @import("win32/d3d12sdklayers.zig");
 const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const xa2 = @import("win32/xaudio2.zig");
+const wic = @import("win32/wincodec.zig");
 const cgen = @import("content_generation.zig");
 const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
 
@@ -48,6 +49,8 @@ pub fn main() !void {
     var game = try GameState.init(allocator);
     defer game.deinit();
 
+    game.d2d_test();
+
     while (true) {
         var message = std.mem.zeroes(w32.MSG);
         if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == .TRUE) {
@@ -73,7 +76,13 @@ const GameState = struct {
     pso: [2]*d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
 
-    d2d_factory: *d2d1.IFactory6,
+    wic_factory: *wic.IImagingFactory,
+
+    d2d: struct {
+        factory: *d2d1.IFactory6,
+        device: *d2d1.IDevice5,
+        device_context: *d2d1.IDeviceContext5,
+    },
 
     meshes: std.ArrayList(cgen.Mesh),
 
@@ -136,6 +145,15 @@ const GameState = struct {
                 gpu_context.shader_dheap_descriptor_size },
         );
 
+        var wic_factory: *wic.IImagingFactory = undefined;
+        vhr(w32.CoCreateInstance(
+            &wic.CLSID_ImagingFactory,
+            null,
+            w32.CLSCTX_INPROC_SERVER,
+            &wic.IImagingFactory.IID,
+            @ptrCast(&wic_factory),
+        ));
+
         var d2d_factory: *d2d1.IFactory6 = undefined;
         vhr(d2d1.CreateFactory(
             .SINGLE_THREADED,
@@ -144,13 +162,13 @@ const GameState = struct {
             @ptrCast(&d2d_factory),
         ));
 
-        {
+        const d2d_device, const d2d_device_context = blk: {
             var device11: *d3d11.IDevice = undefined;
             vhr(d3d11.CreateDevice(
                 null,
                 .WARP,
                 null,
-                .{ .BGRA_SUPPORT = true },
+                .{ .DEBUG = GpuContext.d3d12_debug, .BGRA_SUPPORT = true },
                 &.{.@"11_1"},
                 1,
                 d3d11.SDK_VERSION,
@@ -170,12 +188,12 @@ const GameState = struct {
 
             var d2d_device: *d2d1.IDevice5 = undefined;
             vhr(d2d_factory.CreateDevice5(dxgi_device, @ptrCast(&d2d_device)));
-            defer _ = d2d_device.Release();
 
-            var d2d_device_ctx: *d2d1.IDeviceContext5 = undefined;
-            vhr(d2d_device.CreateDeviceContext5(0, @ptrCast(&d2d_device_ctx)));
-            defer _ = d2d_device_ctx.Release();
-        }
+            var d2d_device_context: *d2d1.IDeviceContext5 = undefined;
+            vhr(d2d_device.CreateDeviceContext5(0, @ptrCast(&d2d_device_context)));
+
+            break :blk .{ d2d_device, d2d_device_context };
+        };
 
         const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
@@ -191,7 +209,12 @@ const GameState = struct {
             .pso = pso,
             .pso_rs = pso_rs,
             .meshes = meshes,
-            .d2d_factory = d2d_factory,
+            .wic_factory = wic_factory,
+            .d2d = .{
+                .factory = d2d_factory,
+                .device = d2d_device,
+                .device_context = d2d_device_context,
+            },
             .current_level = current_level,
             .current_level_name = current_level_name,
             .eat_sounds = eat_sounds,
@@ -209,7 +232,11 @@ const GameState = struct {
         game.meshes.deinit();
         game.current_level.deinit();
 
-        _ = game.d2d_factory.Release();
+        _ = game.d2d.device_context.Release();
+        _ = game.d2d.device.Release();
+        _ = game.d2d.factory.Release();
+        _ = game.wic_factory.Release();
+
         for (game.pso) |pso| _ = pso.Release();
         _ = game.pso_rs.Release();
         _ = game.vertex_buffer.Release();
@@ -546,6 +573,43 @@ const GameState = struct {
 
         gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
         gc.present_frame();
+    }
+
+    fn d2d_test(game: *GameState) void {
+        var wic_bitmap: *wic.IBitmap = undefined;
+        vhr(game.wic_factory.CreateBitmap(
+            cgen.map_size_x,
+            cgen.map_size_y,
+            &wic.GUID_PixelFormat32bppBGR,
+            .CacheOnLoad,
+            @ptrCast(&wic_bitmap),
+        ));
+        defer _ = wic_bitmap.Release();
+
+        var render_target: *d2d1.IBitmap1 = undefined;
+        vhr(game.d2d.device_context.CreateBitmapFromWicBitmap1(
+            @ptrCast(wic_bitmap),
+            &.{
+                .pixelFormat = .{
+                    .format = .B8G8R8A8_UNORM,
+                    .alphaMode = .UNKNOWN,
+                },
+                .dpiX = 96.0,
+                .dpiY = 96.0,
+                .bitmapOptions = d2d1.BITMAP_OPTIONS_TARGET,
+                .colorContext = null,
+            },
+            @ptrCast(&render_target),
+        ));
+        defer _ = render_target.Release();
+
+        std.debug.print("{any}\n", .{game.d2d.device_context.GetSize()});
+
+        game.d2d.device_context.SetTarget(@ptrCast(render_target));
+        std.debug.print("{any}\n", .{game.d2d.device_context.GetSize()});
+        game.d2d.device_context.BeginDraw();
+        game.d2d.device_context.Clear(null);
+        vhr(game.d2d.device_context.EndDraw(null, null));
     }
 };
 

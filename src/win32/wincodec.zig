@@ -404,6 +404,7 @@ pub const IImagingFactory = extern struct {
 
     pub const CreateDecoderFromFilename = IImagingFactory.Methods(@This()).CreateDecoderFromFilename;
     pub const CreateFormatConverter = IImagingFactory.Methods(@This()).CreateFormatConverter;
+    pub const CreateBitmap = IImagingFactory.Methods(@This()).CreateBitmap;
 
     pub fn Methods(comptime T: type) type {
         return extern struct {
@@ -515,6 +516,13 @@ pub const CLSID_ImagingFactory = GUID{
     .Data2 = 0x9370,
     .Data3 = 0x4615,
     .Data4 = .{ 0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0xa },
+};
+
+pub const CLSID_ImagingFactory2 = GUID{
+    .Data1 = 0x317d06e8,
+    .Data2 = 0x5f24,
+    .Data3 = 0x433d,
+    .Data4 = .{ 0xbd, 0xf7, 0x79, 0xce, 0x68, 0xd8, 0xab, 0xc2 },
 };
 
 pub const GUID_PixelFormat2bppIndexed = PixelFormatGUID{
