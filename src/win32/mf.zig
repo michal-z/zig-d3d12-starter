@@ -81,20 +81,16 @@ pub const IAttributes = extern struct {
                 );
             }
             pub inline fn GetGUID(self: *T, key: *const GUID, value: *GUID) HRESULT {
-                return @as(*const IAttributes.VTable, @ptrCast(self.__v))
-                    .GetGUID(@ptrCast(self), key, value);
+                return @as(*const IAttributes.VTable, @ptrCast(self.__v)).GetGUID(@ptrCast(self), key, value);
             }
             pub inline fn SetUINT32(self: *T, guid: *const GUID, value: UINT32) HRESULT {
-                return @as(*const IAttributes.VTable, @ptrCast(self.__v))
-                    .SetUINT32(@ptrCast(self), guid, value);
+                return @as(*const IAttributes.VTable, @ptrCast(self.__v)).SetUINT32(@ptrCast(self), guid, value);
             }
             pub inline fn SetGUID(self: *T, key: *const GUID, value: *const GUID) HRESULT {
-                return @as(*const IAttributes.VTable, @ptrCast(self.__v))
-                    .SetGUID(@ptrCast(self), key, value);
+                return @as(*const IAttributes.VTable, @ptrCast(self.__v)).SetGUID(@ptrCast(self), key, value);
             }
             pub inline fn SetUnknown(self: *T, guid: *const GUID, unknown: ?*IUnknown) HRESULT {
-                return @as(*const IAttributes.VTable, @ptrCast(self.__v))
-                    .SetUnknown(@ptrCast(self), guid, unknown);
+                return @as(*const IAttributes.VTable, @ptrCast(self.__v)).SetUnknown(@ptrCast(self), guid, unknown);
             }
         };
     }
@@ -155,20 +151,16 @@ pub const IMediaEvent = extern struct {
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn GetType(self: *T, met: *MediaEventType) HRESULT {
-                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v))
-                    .GetType(@ptrCast(self), met);
+                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v)).GetType(@ptrCast(self), met);
             }
             pub inline fn GetExtendedType(self: *T, ex_met: *GUID) HRESULT {
-                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v))
-                    .GetExtendedType(@ptrCast(self), ex_met);
+                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v)).GetExtendedType(@ptrCast(self), ex_met);
             }
             pub inline fn GetStatus(self: *T, status: *HRESULT) HRESULT {
-                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v))
-                    .GetStatus(@ptrCast(self), status);
+                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v)).GetStatus(@ptrCast(self), status);
             }
             pub inline fn GetValue(self: *T, value: *PROPVARIANT) HRESULT {
-                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v))
-                    .GetValue(@ptrCast(self), value);
+                return @as(*const IMediaEvent.VTable, @ptrCast(self.__v)).GetValue(@ptrCast(self), value);
             }
         };
     }
@@ -215,8 +207,11 @@ pub const ISourceReader = extern struct {
                 stream_index: DWORD,
                 media_type: **IMediaType,
             ) HRESULT {
-                return @as(*const ISourceReader.VTable, @ptrCast(self.__v))
-                    .GetCurrentMediaType(@ptrCast(self), stream_index, media_type);
+                return @as(*const ISourceReader.VTable, @ptrCast(self.__v)).GetCurrentMediaType(
+                    @ptrCast(self),
+                    stream_index,
+                    media_type,
+                );
             }
             pub inline fn SetCurrentMediaType(
                 self: *T,
@@ -224,8 +219,12 @@ pub const ISourceReader = extern struct {
                 reserved: ?*DWORD,
                 media_type: *IMediaType,
             ) HRESULT {
-                return @as(*const ISourceReader.VTable, @ptrCast(self.__v))
-                    .SetCurrentMediaType(@ptrCast(self), stream_index, reserved, media_type);
+                return @as(*const ISourceReader.VTable, @ptrCast(self.__v)).SetCurrentMediaType(
+                    @ptrCast(self),
+                    stream_index,
+                    reserved,
+                    media_type,
+                );
             }
             pub inline fn ReadSample(
                 self: *T,
@@ -247,8 +246,11 @@ pub const ISourceReader = extern struct {
                 );
             }
             pub inline fn SetCurrentPosition(self: *T, guid: *const GUID, prop: *const PROPVARIANT) HRESULT {
-                return @as(*const ISourceReader.VTable, @ptrCast(self.__v))
-                    .SetCurrentPosition(@ptrCast(self), guid, prop);
+                return @as(*const ISourceReader.VTable, @ptrCast(self.__v)).SetCurrentPosition(
+                    @ptrCast(self),
+                    guid,
+                    prop,
+                );
             }
         };
     }
@@ -318,12 +320,17 @@ pub const ISample = extern struct {
     fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn ConvertToContiguousBuffer(self: *T, buffer: **IMediaBuffer) HRESULT {
-                return @as(*const ISample.VTable, @ptrCast(self.__v))
-                    .ConvertToContiguousBuffer(@ptrCast(self), buffer);
+                return @as(*const ISample.VTable, @ptrCast(self.__v)).ConvertToContiguousBuffer(
+                    @ptrCast(self),
+                    buffer,
+                );
             }
             pub inline fn GetBufferByIndex(self: *T, index: DWORD, buffer: **IMediaBuffer) HRESULT {
-                return @as(*const ISample.VTable, @ptrCast(self.__v))
-                    .GetBufferByIndex(@ptrCast(self), index, buffer);
+                return @as(*const ISample.VTable, @ptrCast(self.__v)).GetBufferByIndex(
+                    @ptrCast(self),
+                    index,
+                    buffer,
+                );
             }
         };
     }
@@ -361,15 +368,18 @@ pub const IMediaBuffer = extern struct {
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn Lock(self: *T, ptr: *[*]BYTE, max_len: ?*DWORD, current_len: ?*DWORD) HRESULT {
-                return @as(*const IMediaBuffer.VTable, @ptrCast(self.__v))
-                    .Lock(@ptrCast(self), ptr, max_len, current_len);
+                return @as(*const IMediaBuffer.VTable, @ptrCast(self.__v)).Lock(
+                    @ptrCast(self),
+                    ptr,
+                    max_len,
+                    current_len,
+                );
             }
             pub inline fn Unlock(self: *T) HRESULT {
                 return @as(*const IMediaBuffer.VTable, @ptrCast(self.__v)).Unlock(@ptrCast(self));
             }
             pub inline fn GetCurrentLength(self: *T, length: *DWORD) HRESULT {
-                return @as(*const IMediaBuffer.VTable, @ptrCast(self.__v))
-                    .GetCurrentLength(@ptrCast(self), length);
+                return @as(*const IMediaBuffer.VTable, @ptrCast(self.__v)).GetCurrentLength(@ptrCast(self), length);
             }
         };
     }
@@ -418,12 +428,17 @@ pub const ISourceReaderCallback = extern struct {
                 );
             }
             pub inline fn OnFlush(self: *T, stream_index: DWORD) HRESULT {
-                return @as(*const ISourceReaderCallback.VTable, @ptrCast(self.__v))
-                    .OnFlush(@ptrCast(self), stream_index);
+                return @as(*const ISourceReaderCallback.VTable, @ptrCast(self.__v)).OnFlush(
+                    @ptrCast(self),
+                    stream_index,
+                );
             }
             pub inline fn OnEvent(self: *T, stream_index: DWORD, event: *IMediaEvent) HRESULT {
-                return @as(*const ISourceReaderCallback.VTable, @ptrCast(self.__v))
-                    .OnEvent(@ptrCast(self), stream_index, event);
+                return @as(*const ISourceReaderCallback.VTable, @ptrCast(self.__v)).OnEvent(
+                    @ptrCast(self),
+                    stream_index,
+                    event,
+                );
             }
         };
     }

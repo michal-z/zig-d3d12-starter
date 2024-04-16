@@ -97,8 +97,11 @@ pub const IStream = extern struct {
                 filename: LPCWSTR,
                 desired_access: DWORD,
             ) HRESULT {
-                return @as(*const IStream.VTable, @ptrCast(self.__v))
-                    .InitializeFromFilename(@ptrCast(self), filename, desired_access);
+                return @as(*const IStream.VTable, @ptrCast(self.__v)).InitializeFromFilename(
+                    @ptrCast(self),
+                    filename,
+                    desired_access,
+                );
             }
         };
     }
@@ -128,8 +131,7 @@ pub const IBitmapDecoder = extern struct {
                 index: UINT,
                 frame: ?*?*IBitmapFrameDecode,
             ) HRESULT {
-                return @as(*const IBitmapDecoder.VTable, @ptrCast(self.__v))
-                    .GetFrame(@ptrCast(self), index, frame);
+                return @as(*const IBitmapDecoder.VTable, @ptrCast(self.__v)).GetFrame(@ptrCast(self), index, frame);
             }
         };
     }
@@ -164,30 +166,43 @@ pub const IBitmapEncoder = extern struct {
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn Initialize(self: *T, stream: ?*objidl.IStream, cache_option: BitmapEncoderCacheOption) HRESULT {
-                return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v))
-                    .Initialize(@ptrCast(self), stream, cache_option);
+                return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v)).Initialize(
+                    @ptrCast(self),
+                    stream,
+                    cache_option,
+                );
             }
             pub inline fn CreateNewFrame(self: *T, frame: ?*?*IBitmapFrameEncode, encoder_options: ?*?*IPropertyBag2) HRESULT {
-                return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v))
-                    .CreateNewFrame(@ptrCast(self), frame, encoder_options);
+                return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v)).CreateNewFrame(
+                    @ptrCast(self),
+                    frame,
+                    encoder_options,
+                );
             }
             pub inline fn Commit(self: *T) HRESULT {
-                return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v))
-                    .Commit(@ptrCast(self));
+                return @as(*const IBitmapEncoder.VTable, @ptrCast(self.__v)).Commit(@ptrCast(self));
             }
         };
     }
 
     pub const VTable = extern struct {
         base: IUnknown.VTable,
-        Initialize: *const fn (*IBitmapEncoder, ?*objidl.IStream, BitmapEncoderCacheOption) callconv(WINAPI) HRESULT,
+        Initialize: *const fn (
+            *IBitmapEncoder,
+            ?*objidl.IStream,
+            BitmapEncoderCacheOption,
+        ) callconv(WINAPI) HRESULT,
         GetContainerFormat: *anyopaque,
         GetEncoderInfo: *anyopaque,
         SetColorContexts: *anyopaque,
         SetPalette: *anyopaque,
         SetThumbnail: *anyopaque,
         SetPreview: *anyopaque,
-        CreateNewFrame: *const fn (*IBitmapEncoder, ?*?*IBitmapFrameEncode, ?*?*IPropertyBag2) callconv(WINAPI) HRESULT,
+        CreateNewFrame: *const fn (
+            *IBitmapEncoder,
+            ?*?*IBitmapFrameEncode,
+            ?*?*IPropertyBag2,
+        ) callconv(WINAPI) HRESULT,
         Commit: *const fn (*IBitmapEncoder) callconv(WINAPI) HRESULT,
         GetMetadataQueryWriter: *anyopaque,
     };
@@ -207,12 +222,10 @@ pub const IBitmapSource = extern struct {
     pub fn Methods(comptime T: type) type {
         return extern struct {
             pub inline fn GetSize(self: *T, width: *UINT, height: *UINT) HRESULT {
-                return @as(*const IBitmapSource.VTable, @ptrCast(self.__v))
-                    .GetSize(@ptrCast(self), width, height);
+                return @as(*const IBitmapSource.VTable, @ptrCast(self.__v)).GetSize(@ptrCast(self), width, height);
             }
             pub inline fn GetPixelFormat(self: *T, guid: *PixelFormatGUID) HRESULT {
-                return @as(*const IBitmapSource.VTable, @ptrCast(self.__v))
-                    .GetPixelFormat(@ptrCast(self), guid);
+                return @as(*const IBitmapSource.VTable, @ptrCast(self.__v)).GetPixelFormat(@ptrCast(self), guid);
             }
             pub inline fn CopyPixels(
                 self: *T,
@@ -221,8 +234,13 @@ pub const IBitmapSource = extern struct {
                 size: UINT,
                 buffer: [*]BYTE,
             ) HRESULT {
-                return @as(*const IBitmapSource.VTable, @ptrCast(self.__v))
-                    .CopyPixels(@ptrCast(self), rect, stride, size, buffer);
+                return @as(*const IBitmapSource.VTable, @ptrCast(self.__v)).CopyPixels(
+                    @ptrCast(self),
+                    rect,
+                    stride,
+                    size,
+                    buffer,
+                );
             }
         };
     }
@@ -279,28 +297,42 @@ pub const IBitmapFrameEncode = extern struct {
                 buffer_size: UINT,
                 pixels: *BYTE,
             ) HRESULT {
-                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
-                    .WritePixels(@ptrCast(self), line_count, stride, buffer_size, pixels);
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v)).WritePixels(
+                    @ptrCast(self),
+                    line_count,
+                    stride,
+                    buffer_size,
+                    pixels,
+                );
             }
             pub inline fn Commit(self: *T) HRESULT {
-                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
-                    .Commit(@ptrCast(self));
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v)).Commit(@ptrCast(self));
             }
             pub inline fn SetSize(self: *T, width: UINT, height: UINT) HRESULT {
-                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
-                    .SetSize(@ptrCast(self), width, height);
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v)).SetSize(
+                    @ptrCast(self),
+                    width,
+                    height,
+                );
             }
             pub inline fn SetPixelFormat(self: *T, format: *PixelFormatGUID) HRESULT {
-                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
-                    .SetPixelFormat(@ptrCast(self), format);
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v)).SetPixelFormat(
+                    @ptrCast(self),
+                    format,
+                );
             }
             pub inline fn Initialize(self: *T, encoder_options: ?*IPropertyBag2) HRESULT {
-                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
-                    .Initialize(@ptrCast(self), encoder_options);
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v)).Initialize(
+                    @ptrCast(self),
+                    encoder_options,
+                );
             }
             pub inline fn WriteSource(self: *T, bitmap_source: ?*IBitmapSource, rect: ?*Rect) HRESULT {
-                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v))
-                    .WriteSource(@ptrCast(self), bitmap_source, rect);
+                return @as(*const IBitmapFrameEncode.VTable, @ptrCast(self.__v)).WriteSource(
+                    @ptrCast(self),
+                    bitmap_source,
+                    rect,
+                );
             }
         };
     }
@@ -439,8 +471,10 @@ pub const IImagingFactory = extern struct {
                 );
             }
             pub inline fn CreateFormatConverter(self: *T, converter: ?*?*IFormatConverter) HRESULT {
-                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
-                    .CreateFormatConverter(@ptrCast(self), converter);
+                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v)).CreateFormatConverter(
+                    @ptrCast(self),
+                    converter,
+                );
             }
             pub inline fn CreateBitmap(
                 self: *T,
@@ -465,12 +499,18 @@ pub const IImagingFactory = extern struct {
                 vendor: ?*const GUID,
                 encoder: ?*?*IBitmapEncoder,
             ) HRESULT {
-                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
-                    .CreateEncoder(@ptrCast(self), container_format, vendor, encoder);
+                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v)).CreateEncoder(
+                    @ptrCast(self),
+                    container_format,
+                    vendor,
+                    encoder,
+                );
             }
             pub inline fn CreateStream(self: *T, wic_stream: ?*?*IStream) HRESULT {
-                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v))
-                    .CreateStream(@ptrCast(self), wic_stream);
+                return @as(*const IImagingFactory.VTable, @ptrCast(self.__v)).CreateStream(
+                    @ptrCast(self),
+                    wic_stream,
+                );
             }
         };
     }
@@ -609,7 +649,11 @@ pub const IImagingFactory2 = extern struct {
 
     pub const VTable = extern struct {
         base: IImagingFactory.VTable,
-        CreateImageEncoder: *const fn (*IImagingFactory2, *d2d1.IDevice, ?*?*IImageEncoder) callconv(WINAPI) HRESULT,
+        CreateImageEncoder: *const fn (
+            *IImagingFactory2,
+            *d2d1.IDevice,
+            ?*?*IImageEncoder,
+        ) callconv(WINAPI) HRESULT,
     };
 };
 
