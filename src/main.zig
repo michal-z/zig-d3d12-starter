@@ -178,7 +178,7 @@ const GameState = struct {
             ));
             defer _ = device11.Release();
 
-            var device11_1: *d3d11.IDevice = undefined;
+            var device11_1: *d3d11.IDevice1 = undefined;
             vhr(device11.QueryInterface(&d3d11.IDevice1.IID, @ptrCast(&device11_1)));
             defer _ = device11_1.Release();
 
