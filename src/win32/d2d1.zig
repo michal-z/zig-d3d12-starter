@@ -43,8 +43,8 @@ pub const BITMAP_INTERPOLATION_MODE = enum(UINT) {
 };
 
 pub const GAMMA = enum(UINT) {
-    _2_2 = 0,
-    _1_0 = 1,
+    @"2_2" = 0,
+    @"1_0" = 1,
 };
 
 pub const EXTEND_MODE = enum(UINT) {
@@ -60,6 +60,14 @@ pub const GRADIENT_STOP = extern struct {
 
 pub const MATRIX_3X2_F = extern struct {
     m: [3][2]FLOAT,
+
+    pub const identity = MATRIX_3X2_F{
+        .m = [_][2]FLOAT{
+            .{ 1.0, 0.0 },
+            .{ 0.0, 1.0 },
+            .{ 0.0, 0.0 },
+        },
+    };
 
     pub fn translation(x: f32, y: f32) MATRIX_3X2_F {
         return .{

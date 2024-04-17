@@ -495,6 +495,7 @@ const GameState = struct {
             .TRUE,
             &gc.dsv_dheap_start,
         );
+
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &window_clear_color, 0, null);
         gc.command_list.ClearDepthStencilView(gc.dsv_dheap_start, .{ .DEPTH = true }, 1.0, 0, 0, null);
 
@@ -576,7 +577,7 @@ const GameState = struct {
     }
 
     fn d2d_test(game: *GameState) void {
-        var render_target: *d2d1.IBitmap1 = undefined;
+        var rt_bitmap: *d2d1.IBitmap1 = undefined;
         vhr(game.d2d.device_context.CreateBitmap1(
             .{ .width = cgen.map_size_x, .height = cgen.map_size_y },
             null,
@@ -591,13 +592,31 @@ const GameState = struct {
                 .bitmapOptions = d2d1.BITMAP_OPTIONS_TARGET,
                 .colorContext = null,
             },
-            @ptrCast(&render_target),
+            @ptrCast(&rt_bitmap),
         ));
-        defer _ = render_target.Release();
+        defer _ = rt_bitmap.Release();
 
-        game.d2d.device_context.SetTarget(@ptrCast(render_target));
+        var brush: *d2d1.ISolidColorBrush = undefined;
+        vhr(game.d2d.device_context.CreateSolidColorBrush(
+            &d2d1.COLOR_F.init(.Red, 1.0),
+            &.{
+                .opacity = 0.5,
+                .transform = d2d1.MATRIX_3X2_F.identity,
+            },
+            @ptrCast(&brush),
+        ));
+        defer _ = brush.Release();
+
+        game.d2d.device_context.SetTarget(@ptrCast(rt_bitmap));
         game.d2d.device_context.BeginDraw();
         game.d2d.device_context.Clear(&d2d1.COLOR_F.init(.LightSkyBlue, 1.0));
+        game.d2d.device_context.DrawLine(
+            .{ .x = 10.0, .y = 10.0 },
+            .{ .x = cgen.map_size_x - 10.0, .y = cgen.map_size_y - 10.0 },
+            @ptrCast(brush),
+            17.0,
+            null,
+        );
         vhr(game.d2d.device_context.EndDraw(null, null));
 
         {
@@ -626,7 +645,7 @@ const GameState = struct {
             vhr(game.wic_factory.CreateImageEncoder(@ptrCast(game.d2d.device), @ptrCast(&image_encoder)));
             defer _ = image_encoder.Release();
 
-            vhr(image_encoder.WriteFrame(@ptrCast(render_target), frame_encode, null));
+            vhr(image_encoder.WriteFrame(@ptrCast(rt_bitmap), frame_encode, null));
             vhr(frame_encode.Commit());
             vhr(encoder.Commit());
         }
