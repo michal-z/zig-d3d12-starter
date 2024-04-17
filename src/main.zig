@@ -597,7 +597,7 @@ const GameState = struct {
 
         game.d2d.device_context.SetTarget(@ptrCast(render_target));
         game.d2d.device_context.BeginDraw();
-        game.d2d.device_context.Clear(&d2d1.COLOR_F.Red);
+        game.d2d.device_context.Clear(&d2d1.COLOR_F.init(.LightSkyBlue, 1.0));
         vhr(game.d2d.device_context.EndDraw(null, null));
 
         {
