@@ -329,7 +329,7 @@ pub fn define_and_upload_level(
     );
 
     vhr(gc.command_list.Close());
-    gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+    gc.command_queue.ExecuteCommandLists(1, &.{@ptrCast(gc.command_list)});
     gc.finish_gpu_commands();
 
     return .{
@@ -931,7 +931,7 @@ pub fn define_and_upload_meshes(
     );
 
     vhr(gc.command_list.Close());
-    gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+    gc.command_queue.ExecuteCommandLists(1, &.{@ptrCast(gc.command_list)});
     gc.finish_gpu_commands();
 
     return .{ meshes, vertex_buffer };

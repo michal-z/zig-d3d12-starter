@@ -149,14 +149,18 @@ const GameState = struct {
                 gpu_context.shader_dheap_descriptor_size },
         );
 
+        const window_height: f32 = @floatFromInt(gpu_context.window_height);
+        const width: u32 = @intFromFloat(window_height * 1.333);
+        const height: u32 = @intFromFloat(window_height);
+
         var background_texture: *d3d12.IResource = undefined;
         vhr(gpu_context.device.CreateCommittedResource3(
             &.{ .Type = .DEFAULT },
             d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
             &.{
                 .Dimension = .TEXTURE2D,
-                .Width = cgen.map_size_x,
-                .Height = cgen.map_size_y,
+                .Width = width,
+                .Height = height,
                 .Format = .B8G8R8A8_UNORM,
             },
             .COPY_DEST,
@@ -504,31 +508,30 @@ const GameState = struct {
             );
         }
 
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
+        gc.command_list.Barrier(1, &.{.{
             .Type = .BUFFER,
             .NumBarriers = 2,
-            .u = .{ .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{ .{
-                .SyncBefore = .{ .COPY = true },
-                .SyncAfter = .{ .DRAW = true },
-                .AccessBefore = .{ .COPY_DEST = true },
-                .AccessAfter = .{ .CONSTANT_BUFFER = true },
-                .pResource = game.frame_state_buffer,
-            }, .{
-                .SyncBefore = .{ .COPY = true },
-                .SyncAfter = .{ .DRAW = true },
-                .AccessBefore = .{ .COPY_DEST = true },
-                .AccessAfter = .{ .SHADER_RESOURCE = true },
-                .pResource = level.objects_gpu,
-            } } },
+            .u = .{
+                .pBufferBarriers = &.{
+                    .{
+                        .SyncBefore = .{ .COPY = true },
+                        .SyncAfter = .{ .DRAW = true },
+                        .AccessBefore = .{ .COPY_DEST = true },
+                        .AccessAfter = .{ .CONSTANT_BUFFER = true },
+                        .pResource = game.frame_state_buffer,
+                    },
+                    .{
+                        .SyncBefore = .{ .COPY = true },
+                        .SyncAfter = .{ .DRAW = true },
+                        .AccessBefore = .{ .COPY_DEST = true },
+                        .AccessAfter = .{ .SHADER_RESOURCE = true },
+                        .pResource = level.objects_gpu,
+                    },
+                },
+            },
         }});
 
-        gc.command_list.OMSetRenderTargets(
-            1,
-            &[_]d3d12.CPU_DESCRIPTOR_HANDLE{gc.display_target_descriptor()},
-            .TRUE,
-            &gc.dsv_dheap_start,
-        );
-
+        gc.command_list.OMSetRenderTargets(1, &.{gc.display_target_descriptor()}, .TRUE, &gc.dsv_dheap_start);
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &window_clear_color, 0, null);
         gc.command_list.ClearDepthStencilView(gc.dsv_dheap_start, .{ .DEPTH = true }, 1.0, 0, 0, null);
 
@@ -619,14 +622,18 @@ const GameState = struct {
 
         gc.end_command_list();
 
-        gc.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(gc.command_list)});
+        gc.command_queue.ExecuteCommandLists(1, &.{@ptrCast(gc.command_list)});
         gc.present_frame();
     }
 
     fn d2d_test(game: *GameState) void {
+        const background_desc = game.background_texture.GetDesc();
+        const width: u32 = @intCast(background_desc.Width);
+        const height: u32 = background_desc.Height;
+
         var readback_bitmap: *d2d1.IBitmap1 = undefined;
         vhr(game.d2d.device_context.CreateBitmap1(
-            .{ .width = cgen.map_size_x, .height = cgen.map_size_y },
+            .{ .width = width, .height = height },
             null,
             0,
             &.{
@@ -645,7 +652,7 @@ const GameState = struct {
 
         var rt_bitmap: *d2d1.IBitmap1 = undefined;
         vhr(game.d2d.device_context.CreateBitmap1(
-            .{ .width = cgen.map_size_x, .height = cgen.map_size_y },
+            .{ .width = width, .height = height },
             null,
             0,
             &.{
@@ -678,7 +685,7 @@ const GameState = struct {
         game.d2d.device_context.Clear(&d2d1.COLOR_F.init(.LightSkyBlue, 1.0));
         game.d2d.device_context.DrawLine(
             .{ .x = 10.0, .y = 10.0 },
-            .{ .x = cgen.map_size_x - 10.0, .y = cgen.map_size_y - 10.0 },
+            .{ .x = @as(f32, @floatFromInt(width)) - 10.0, .y = @as(f32, @floatFromInt(height)) - 10.0 },
             @ptrCast(brush),
             17.0,
             null,
@@ -692,40 +699,49 @@ const GameState = struct {
             vhr(readback_bitmap.Map(.{ .READ = true }, &rect));
             defer vhr(readback_bitmap.Unmap());
 
-            const desc = game.background_texture.GetDesc();
-
             var layout: [1]d3d12.PLACED_SUBRESOURCE_FOOTPRINT = undefined;
             var required_size: u64 = undefined;
-            game.gpu_context.device.GetCopyableFootprints(&desc, 0, 1, 0, &layout, null, null, &required_size);
+            game.gpu_context.device.GetCopyableFootprints(
+                &background_desc,
+                0,
+                1,
+                0,
+                &layout,
+                null,
+                null,
+                &required_size,
+            );
 
-            std.debug.print("{any}\n", .{layout[0]});
-
-            const upload_mem, const buffer, const offset = game.gpu_context.allocate_upload_buffer_region(u8, @intCast(required_size));
+            const upload_mem, const buffer, const offset =
+                game.gpu_context.allocate_upload_buffer_region(u8, @intCast(required_size));
             layout[0].Offset = offset;
 
-            for (0..cgen.map_size_y) |y| {
-                @memcpy(upload_mem[y * 5632 ..][0..5600], rect.bits + (y * 5600));
+            for (0..height) |y| {
+                @memcpy(
+                    upload_mem[y * layout[0].Footprint.RowPitch ..][0 .. width * 4],
+                    rect.bits[y * rect.pitch ..][0 .. width * 4],
+                );
             }
 
             vhr(game.gpu_context.command_allocators[0].Reset());
             vhr(game.gpu_context.command_list.Reset(game.gpu_context.command_allocators[0], null));
 
-            game.gpu_context.command_list.CopyTextureRegion(&d3d12.TEXTURE_COPY_LOCATION{
+            game.gpu_context.command_list.CopyTextureRegion(&.{
                 .pResource = game.background_texture,
                 .Type = .SUBRESOURCE_INDEX,
                 .u = .{ .SubresourceIndex = 0 },
-            }, 0, 0, 0, &d3d12.TEXTURE_COPY_LOCATION{
+            }, 0, 0, 0, &.{
                 .pResource = buffer,
                 .Type = .PLACED_FOOTPRINT,
                 .u = .{ .PlacedFootprint = layout[0] },
             }, null);
 
             vhr(game.gpu_context.command_list.Close());
-            game.gpu_context.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(game.gpu_context.command_list)});
+            game.gpu_context.command_queue.ExecuteCommandLists(1, &.{@ptrCast(game.gpu_context.command_list)});
             game.gpu_context.finish_gpu_commands();
         }
 
-        {
+        if (false) {
             var stream: *wic.IStream = undefined;
             vhr(game.wic_factory.CreateStream(@ptrCast(&stream)));
             defer _ = stream.Release();

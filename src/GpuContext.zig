@@ -23,7 +23,7 @@ pub const display_target_format = if (msaa_target_num_samples > 1)
 else
     swap_chain_target_view_format;
 
-pub const upload_heap_capacity = 16 * 1024 * 1024;
+pub const upload_heap_capacity = 64 * 1024 * 1024;
 
 const max_rtv_descriptors = 64;
 const max_dsv_descriptors = 64;
