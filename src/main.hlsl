@@ -1,9 +1,15 @@
 #include "cpu_gpu_shared.h"
 
-#ifdef _S00
-
 #define root_signature "RootFlags(CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED), " \
-    "RootConstants(b0, num32BitConstants = 3)"
+    "RootConstants(b0, num32BitConstants = 3), " \
+    "StaticSampler(" \
+    "   s0, " \
+    "   filter = FILTER_MIN_MAG_LINEAR_MIP_POINT, " \
+    "   visibility = SHADER_VISIBILITY_ALL, " \
+    "   addressU = TEXTURE_ADDRESS_CLAMP, " \
+    "   addressV = TEXTURE_ADDRESS_CLAMP, " \
+    "   addressW = TEXTURE_ADDRESS_CLAMP" \
+    ")"
 
 struct RootConst {
     uint first_vertex;
@@ -11,6 +17,10 @@ struct RootConst {
     uint submesh_index;
 };
 ConstantBuffer<RootConst> root_const : register(b0);
+
+SamplerState sam_bilinear : register(s0);
+
+#ifdef _S00
 
 float4 unpack_color(uint color) {
     return float4(
@@ -79,6 +89,32 @@ void s00_pixel(
 
 #elif _S01
 
+[RootSignature(root_signature)]
+void s01_vertex(
+    uint vertex_id : SV_VertexID,
+    out float4 out_position : SV_Position,
+    out float2 out_uv : _Uv
+) {
+    StructuredBuffer<Vertex> vertex_buffer = ResourceDescriptorHeap[rdh_vertex_buffer];
+    ConstantBuffer<FrameState> frame_state = ResourceDescriptorHeap[rdh_frame_state_buffer];
 
+    const uint first_vertex = root_const.first_vertex;
+    const uint object_id = root_const.object_id;
+
+    const Vertex vertex = vertex_buffer[vertex_id + first_vertex];
+
+    out_position = mul(float4(vertex.x, vertex.y, 0.0, 1.0), frame_state.proj);
+    out_uv = float2(vertex.u, vertex.v);
+}
+
+[RootSignature(root_signature)]
+void s01_pixel(
+    float4 position : SV_Position,
+    float2 uv : _Uv,
+    out float4 out_color : SV_Target0
+) {
+    Texture2D texture = ResourceDescriptorHeap[rdh_background_texture];
+    out_color = 1.0 - texture.SampleLevel(sam_bilinear, uv, 0);
+}
 
 #endif

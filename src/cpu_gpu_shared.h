@@ -2,6 +2,7 @@
 #define rdh_vertex_buffer 1
 #define rdh_object_buffer 2
 #define rdh_frame_state_buffer 3
+#define rdh_background_texture 4
 
 #define obj_flag_is_food 1
 #define obj_flag_is_dead 2
@@ -13,6 +14,7 @@ typedef float float4x4[16];
 
 struct Vertex {
     float x, y;
+    float u, v;
 };
 
 struct Object {

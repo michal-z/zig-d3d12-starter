@@ -10,6 +10,7 @@ const GUID = w32.GUID;
 const BOOL = w32.BOOL;
 const LPCWSTR = w32.LPCWSTR;
 const UINT64 = w32.UINT64;
+const BYTE = w32.BYTE;
 const dxgi = @import("dxgi.zig");
 const wic = @import("wincodec.zig");
 
@@ -18,6 +19,13 @@ pub const RECT_F = extern struct {
     top: FLOAT,
     right: FLOAT,
     bottom: FLOAT,
+};
+
+pub const RECT_U = extern struct {
+    left: UINT32,
+    top: UINT32,
+    right: UINT32,
+    bottom: UINT32,
 };
 
 pub const VECTOR_2F = extern struct {
@@ -111,22 +119,34 @@ pub const MATRIX_3X2_F = extern struct {
     }
 };
 
-// TODO: packed struct
-pub const DEVICE_CONTEXT_OPTIONS = UINT;
-pub const DEVICE_CONTEXT_OPTIONS_NONE = 0;
-pub const DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS = 0x1;
+pub const DEVICE_CONTEXT_OPTIONS = packed struct(UINT) {
+    ENABLE_MULTITHREADED_OPTIMIZATIONS: bool = false,
+    __unused: u31 = 0,
+};
 
-// TODO: packed struct
-pub const BITMAP_OPTIONS = UINT;
-pub const BITMAP_OPTIONS_NONE = 0;
-pub const BITMAP_OPTIONS_TARGET = 0x1;
-pub const BITMAP_OPTIONS_CANNOT_DRAW = 0x2;
-pub const BITMAP_OPTIONS_CPU_READ = 0x4;
-pub const BITMAP_OPTIONS_GDI_COMPATIBLE = 0x8;
+pub const BITMAP_OPTIONS = packed struct(UINT) {
+    TARGET: bool = false,
+    CANNOT_DRAW: bool = false,
+    CPU_READ: bool = false,
+    GDI_COMPATIBLE: bool = false,
+    __unused: u28 = 0,
+};
+
+pub const MAP_OPTIONS = packed struct(UINT) {
+    READ: bool = false,
+    WRITE: bool = false,
+    DISCARD: bool = false,
+    __unused: u29 = 0,
+};
 
 pub const POINT_2F = extern struct {
     x: FLOAT,
     y: FLOAT,
+};
+
+pub const POINT_2U = extern struct {
+    x: UINT32,
+    y: UINT32,
 };
 
 pub const TRIANGLE = extern struct {
@@ -494,13 +514,38 @@ pub const IBitmap = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const CopyFromBitmap = IBitmap.Methods(@This()).CopyFromBitmap;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CopyFromBitmap(
+                self: *T,
+                dest_point: ?*const POINT_2U,
+                bitmap: *IBitmap,
+                src_rect: ?*const RECT_U,
+            ) HRESULT {
+                return @as(*const IBitmap.VTable, @ptrCast(self.__v)).CopyFromBitmap(
+                    @ptrCast(self),
+                    dest_point,
+                    bitmap,
+                    src_rect,
+                );
+            }
+        };
+    }
+
     pub const VTable = extern struct {
         base: IImage.VTable,
         GetSize: *anyopaque,
         GetPixelSize: *anyopaque,
         GetPixelFormat: *anyopaque,
         GetPixelDpi: *anyopaque,
-        CopyFromBitmap: *anyopaque,
+        CopyFromBitmap: *const fn (
+            *IBitmap,
+            ?*const POINT_2U,
+            *IBitmap,
+            ?*const RECT_U,
+        ) callconv(WINAPI) HRESULT,
         CopyFromRenderTarget: *anyopaque,
         CopyFromMemory: *anyopaque,
     };
@@ -1643,6 +1688,11 @@ pub const IColorContext = extern struct {
     };
 };
 
+pub const MAPPED_RECT = extern struct {
+    pitch: UINT32,
+    bits: [*]BYTE,
+};
+
 pub const IBitmap1 = extern struct {
     __v: *const VTable,
 
@@ -1650,13 +1700,39 @@ pub const IBitmap1 = extern struct {
     pub const AddRef = IUnknown.Methods(@This()).AddRef;
     pub const Release = IUnknown.Methods(@This()).Release;
 
+    pub const CopyFromBitmap = IBitmap.Methods(@This()).CopyFromBitmap;
+
+    pub const Map = IBitmap1.Methods(@This()).Map;
+    pub const Unmap = IBitmap1.Methods(@This()).Unmap;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn Map(
+                self: *T,
+                options: MAP_OPTIONS,
+                mapped_rect: *MAPPED_RECT,
+            ) HRESULT {
+                return @as(*const IBitmap1.VTable, @ptrCast(self.__v)).Map(
+                    @ptrCast(self),
+                    options,
+                    mapped_rect,
+                );
+            }
+            pub inline fn Unmap(self: *T) HRESULT {
+                return @as(*const IBitmap1.VTable, @ptrCast(self.__v)).Unmap(
+                    @ptrCast(self),
+                );
+            }
+        };
+    }
+
     pub const VTable = extern struct {
         base: IBitmap.VTable,
         GetColorContext: *anyopaque,
         GetOptions: *anyopaque,
         GetSurface: *anyopaque,
-        Map: *anyopaque,
-        Unmap: *anyopaque,
+        Map: *const fn (*IBitmap1, MAP_OPTIONS, *MAPPED_RECT) callconv(WINAPI) HRESULT,
+        Unmap: *const fn (*IBitmap1) callconv(WINAPI) HRESULT,
     };
 };
 

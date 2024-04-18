@@ -16,6 +16,7 @@ pub const Mesh = struct {
     pub const invalid: u32 = 0;
     pub var player: u32 = undefined;
     pub var food: u32 = undefined;
+    pub var fullscreen_rect: u32 = undefined;
 
     var circle_40: u32 = undefined;
     var circle_40_stroke: u32 = undefined;
@@ -29,7 +30,6 @@ pub const Mesh = struct {
     var arm_450_stroke: u32 = undefined;
     var arm_300: u32 = undefined;
     var arm_300_stroke: u32 = undefined;
-    var fullscreen_rect: u32 = undefined;
 
     var gear_12_150: u32 = undefined;
     var gear_12_150_stroke: u32 = undefined;
@@ -95,12 +95,20 @@ pub fn define_and_upload_level(
     var objects = std.ArrayList(cpu_gpu.Object).init(allocator);
     var num_food_objects: u32 = 0;
 
-    // Background must be the first object (for correct drawing order).
+    // Index 0 is invalid object.
     try objects.append(.{
-        .colors = .{ 0xff_fd_f6_e3, 0 },
-        .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
-        .flags = cpu_gpu.obj_flag_no_shadow,
+        .colors = .{ 0, 0 },
+        .mesh_indices = .{ Mesh.invalid, Mesh.invalid },
+        .flags = cpu_gpu.obj_flag_is_dead,
     });
+
+    if (false) {
+        try objects.append(.{
+            .colors = .{ 0xff_fd_f6_e3, 0 },
+            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
+            .flags = cpu_gpu.obj_flag_no_shadow,
+        });
+    }
 
     switch (level_name) {
         .rotating_arm_and_gear => {
@@ -263,7 +271,7 @@ pub fn define_and_upload_level(
         },
     }
 
-    // Player must be the last object (for correct drawing order).
+    // Player MUST be the last object.
     try objects.append(.{
         .colors = .{ 0xff_bb_00_00, 0 },
         .mesh_indices = .{ Mesh.player, Mesh.invalid },
@@ -492,19 +500,23 @@ pub fn define_and_upload_meshes(
     }
 
     {
-        var geo: *d2d1.IRectangleGeometry = undefined;
-        vhr(d2d_factory.CreateRectangleGeometry(
-            &.{
-                .left = -map_size_x / 2,
-                .top = 0.0,
-                .right = map_size_x / 2,
-                .bottom = map_size_y,
-            },
-            @ptrCast(&geo),
-        ));
-        defer _ = geo.Release();
+        const first_vertex = vertices.items.len;
 
-        Mesh.fullscreen_rect = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes, false);
+        try vertices.append(.{ .x = -map_size_x / 2, .y = 0.0, .u = 0.0, .v = 0.0 });
+        try vertices.append(.{ .x = map_size_x / 2, .y = 0.0, .u = 1.0, .v = 0.0 });
+        try vertices.append(.{ .x = map_size_x / 2, .y = map_size_y, .u = 1.0, .v = 1.0 });
+        try vertices.append(.{ .x = -map_size_x / 2, .y = 0.0, .u = 0.0, .v = 0.0 });
+        try vertices.append(.{ .x = map_size_x / 2, .y = map_size_y, .u = 1.0, .v = 1.0 });
+        try vertices.append(.{ .x = -map_size_x / 2, .y = map_size_y, .u = 0.0, .v = 1.0 });
+
+        const mesh_index: u32 = @intCast(meshes.items.len);
+        try meshes.append(.{
+            .first_vertex = @intCast(first_vertex),
+            .num_vertices = @intCast(vertices.items.len - first_vertex),
+            .geometry = null,
+        });
+
+        Mesh.fullscreen_rect = mesh_index;
     }
 
     {

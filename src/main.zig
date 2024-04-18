@@ -35,6 +35,8 @@ const random = random_state.random();
 
 const pso_color = 0;
 const pso_shadow = 1;
+const pso_background = 2;
+const pso_num = 3;
 
 pub fn main() !void {
     _ = w32.SetProcessDPIAware();
@@ -73,8 +75,10 @@ const GameState = struct {
     vertex_buffer: *d3d12.IResource,
     frame_state_buffer: *d3d12.IResource,
 
-    pso: [2]*d3d12.IPipelineState,
+    pso: [pso_num]*d3d12.IPipelineState,
     pso_rs: *d3d12.IRootSignature,
+
+    background_texture: *d3d12.IResource,
 
     wic_factory: *wic.IImagingFactory2,
 
@@ -145,6 +149,33 @@ const GameState = struct {
                 gpu_context.shader_dheap_descriptor_size },
         );
 
+        var background_texture: *d3d12.IResource = undefined;
+        vhr(gpu_context.device.CreateCommittedResource3(
+            &.{ .Type = .DEFAULT },
+            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            &.{
+                .Dimension = .TEXTURE2D,
+                .Width = cgen.map_size_x,
+                .Height = cgen.map_size_y,
+                .Format = .B8G8R8A8_UNORM,
+            },
+            .COPY_DEST,
+            null,
+            null,
+            0,
+            null,
+            &d3d12.IResource.IID,
+            @ptrCast(&background_texture),
+        ));
+
+        gpu_context.device.CreateShaderResourceView(
+            background_texture,
+            null,
+            .{ .ptr = gpu_context.shader_dheap_start_cpu.ptr +
+                @as(u32, @intCast(cpu_gpu.rdh_background_texture)) *
+                gpu_context.shader_dheap_descriptor_size },
+        );
+
         var wic_factory: *wic.IImagingFactory2 = undefined;
         vhr(w32.CoCreateInstance(
             &wic.CLSID_ImagingFactory2,
@@ -190,7 +221,7 @@ const GameState = struct {
             vhr(d2d_factory.CreateDevice5(dxgi_device, @ptrCast(&d2d_device)));
 
             var d2d_device_context: *d2d1.IDeviceContext5 = undefined;
-            vhr(d2d_device.CreateDeviceContext5(0, @ptrCast(&d2d_device_context)));
+            vhr(d2d_device.CreateDeviceContext5(.{}, @ptrCast(&d2d_device_context)));
 
             break :blk .{ d2d_device, d2d_device_context };
         };
@@ -208,6 +239,7 @@ const GameState = struct {
             .frame_state_buffer = frame_state_buffer,
             .pso = pso,
             .pso_rs = pso_rs,
+            .background_texture = background_texture,
             .meshes = meshes,
             .wic_factory = wic_factory,
             .d2d = .{
@@ -241,6 +273,7 @@ const GameState = struct {
         _ = game.pso_rs.Release();
         _ = game.vertex_buffer.Release();
         _ = game.frame_state_buffer.Release();
+        _ = game.background_texture.Release();
 
         game.gpu_context.deinit();
 
@@ -502,11 +535,25 @@ const GameState = struct {
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);
         gc.command_list.SetGraphicsRootSignature(game.pso_rs);
 
+        // Draw background.
+        {
+            const mesh = &game.meshes.items[cgen.Mesh.fullscreen_rect];
+
+            gc.command_list.SetPipelineState(game.pso[pso_background]);
+            gc.command_list.SetGraphicsRoot32BitConstants(
+                0,
+                3,
+                &[_]u32{ mesh.first_vertex, 0, 0 },
+                0,
+            );
+            gc.command_list.DrawInstanced(mesh.num_vertices, 1, 0, 0);
+        }
+
+        const objects = level.objects_cpu.items[0..];
+
         gc.command_list.SetPipelineState(game.pso[pso_color]);
 
-        const objects = level.objects_cpu.items[0..level.objects_cpu.items.len];
-
-        // Draw objects that don't cast shadows (background)
+        // Draw objects that don't cast shadows.
         for (objects, 0..) |object, object_id| {
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
             if (object.flags & cpu_gpu.obj_flag_no_shadow == 0) continue;
@@ -526,7 +573,7 @@ const GameState = struct {
             }
         }
 
-        // Draw shadows
+        // Draw shadows.
         gc.command_list.SetPipelineState(game.pso[pso_shadow]);
 
         for (objects, 0..) |object, object_id| {
@@ -548,7 +595,7 @@ const GameState = struct {
             }
         }
 
-        // Draw objects that do cast shadows
+        // Draw objects that do cast shadows.
         gc.command_list.SetPipelineState(game.pso[pso_color]);
 
         for (objects, 0..) |object, object_id| {
@@ -577,6 +624,25 @@ const GameState = struct {
     }
 
     fn d2d_test(game: *GameState) void {
+        var readback_bitmap: *d2d1.IBitmap1 = undefined;
+        vhr(game.d2d.device_context.CreateBitmap1(
+            .{ .width = cgen.map_size_x, .height = cgen.map_size_y },
+            null,
+            0,
+            &.{
+                .pixelFormat = .{
+                    .format = .B8G8R8A8_UNORM,
+                    .alphaMode = .IGNORE,
+                },
+                .dpiX = 96.0,
+                .dpiY = 96.0,
+                .bitmapOptions = .{ .CPU_READ = true, .CANNOT_DRAW = true },
+                .colorContext = null,
+            },
+            @ptrCast(&readback_bitmap),
+        ));
+        defer _ = readback_bitmap.Release();
+
         var rt_bitmap: *d2d1.IBitmap1 = undefined;
         vhr(game.d2d.device_context.CreateBitmap1(
             .{ .width = cgen.map_size_x, .height = cgen.map_size_y },
@@ -589,7 +655,7 @@ const GameState = struct {
                 },
                 .dpiX = 96.0,
                 .dpiY = 96.0,
-                .bitmapOptions = d2d1.BITMAP_OPTIONS_TARGET,
+                .bitmapOptions = .{ .TARGET = true },
                 .colorContext = null,
             },
             @ptrCast(&rt_bitmap),
@@ -618,6 +684,14 @@ const GameState = struct {
             null,
         );
         vhr(game.d2d.device_context.EndDraw(null, null));
+
+        vhr(readback_bitmap.CopyFromBitmap(null, @ptrCast(rt_bitmap), null));
+
+        {
+            var rect: d2d1.MAPPED_RECT = undefined;
+            vhr(readback_bitmap.Map(.{ .READ = true }, &rect));
+            defer vhr(readback_bitmap.Unmap());
+        }
 
         {
             var stream: *wic.IStream = undefined;
@@ -652,11 +726,13 @@ const GameState = struct {
     }
 };
 
-fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d3d12.IRootSignature } {
+fn create_pso(device: *GpuContext.IDevice) struct { [pso_num]*d3d12.IPipelineState, *d3d12.IRootSignature } {
     const s00_vs = @embedFile("cso/s00.vs.cso");
     const s00_ps = @embedFile("cso/s00.ps.cso");
     const s00_shadow_vs = @embedFile("cso/s00_shadow.vs.cso");
     const s00_shadow_ps = @embedFile("cso/s00_shadow.ps.cso");
+    const s01_vs = @embedFile("cso/s01.vs.cso");
+    const s01_ps = @embedFile("cso/s01.ps.cso");
 
     var pso_rs: *d3d12.IRootSignature = undefined;
     vhr(device.CreateRootSignature(
@@ -667,7 +743,7 @@ fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d
         @ptrCast(&pso_rs),
     ));
 
-    var pso: [2]*d3d12.IPipelineState = undefined;
+    var pso: [pso_num]*d3d12.IPipelineState = undefined;
     vhr(device.CreateGraphicsPipelineState(
         &.{
             .DepthStencilState = .{ .DepthEnable = .FALSE },
@@ -712,6 +788,26 @@ fn create_pso(device: *GpuContext.IDevice) struct { [2]*d3d12.IPipelineState, *d
         },
         &d3d12.IPipelineState.IID,
         @ptrCast(&pso[pso_shadow]),
+    ));
+
+    vhr(device.CreateGraphicsPipelineState(
+        &.{
+            .DepthStencilState = .{ .DepthEnable = .FALSE },
+            .DSVFormat = ds_target_format,
+            .RTVFormats = .{GpuContext.display_target_format} ++ .{.UNKNOWN} ** 7,
+            .NumRenderTargets = 1,
+            .BlendState = .{
+                .RenderTarget = .{.{
+                    .RenderTargetWriteMask = 0x0f,
+                }} ++ .{.{}} ** 7,
+            },
+            .PrimitiveTopologyType = .TRIANGLE,
+            .VS = .{ .pShaderBytecode = s01_vs, .BytecodeLength = s01_vs.len },
+            .PS = .{ .pShaderBytecode = s01_ps, .BytecodeLength = s01_ps.len },
+            .SampleDesc = .{ .Count = GpuContext.display_target_num_samples },
+        },
+        &d3d12.IPipelineState.IID,
+        @ptrCast(&pso[pso_background]),
     ));
 
     return .{ pso, pso_rs };

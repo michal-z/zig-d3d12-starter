@@ -72,6 +72,8 @@ fn build_shaders(b: *std.Build, optimize: std.builtin.OptimizeMode) *std.Build.S
     add_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s00_pixel", "s00.ps.cso", "ps", &.{"_S00"});
     add_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s00_vertex", "s00_shadow.vs.cso", "vs", &.{ "_S00", "SHADOW" });
     add_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s00_pixel", "s00_shadow.ps.cso", "ps", &.{ "_S00", "SHADOW" });
+    add_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s01_vertex", "s01.vs.cso", "vs", &.{"_S01"});
+    add_dxc_cmd(b, optimize, dxc_step, "src/main.hlsl", "s01_pixel", "s01.ps.cso", "ps", &.{"_S01"});
 
     return dxc_step;
 }
