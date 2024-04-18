@@ -691,6 +691,38 @@ const GameState = struct {
             var rect: d2d1.MAPPED_RECT = undefined;
             vhr(readback_bitmap.Map(.{ .READ = true }, &rect));
             defer vhr(readback_bitmap.Unmap());
+
+            const desc = game.background_texture.GetDesc();
+
+            var layout: [1]d3d12.PLACED_SUBRESOURCE_FOOTPRINT = undefined;
+            var required_size: u64 = undefined;
+            game.gpu_context.device.GetCopyableFootprints(&desc, 0, 1, 0, &layout, null, null, &required_size);
+
+            std.debug.print("{any}\n", .{layout[0]});
+
+            const upload_mem, const buffer, const offset = game.gpu_context.allocate_upload_buffer_region(u8, @intCast(required_size));
+            layout[0].Offset = offset;
+
+            for (0..cgen.map_size_y) |y| {
+                @memcpy(upload_mem[y * 5632 ..][0..5600], rect.bits + (y * 5600));
+            }
+
+            vhr(game.gpu_context.command_allocators[0].Reset());
+            vhr(game.gpu_context.command_list.Reset(game.gpu_context.command_allocators[0], null));
+
+            game.gpu_context.command_list.CopyTextureRegion(&d3d12.TEXTURE_COPY_LOCATION{
+                .pResource = game.background_texture,
+                .Type = .SUBRESOURCE_INDEX,
+                .u = .{ .SubresourceIndex = 0 },
+            }, 0, 0, 0, &d3d12.TEXTURE_COPY_LOCATION{
+                .pResource = buffer,
+                .Type = .PLACED_FOOTPRINT,
+                .u = .{ .PlacedFootprint = layout[0] },
+            }, null);
+
+            vhr(game.gpu_context.command_list.Close());
+            game.gpu_context.command_queue.ExecuteCommandLists(1, &[_]*d3d12.ICommandList{@ptrCast(game.gpu_context.command_list)});
+            game.gpu_context.finish_gpu_commands();
         }
 
         {

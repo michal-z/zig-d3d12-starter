@@ -114,7 +114,7 @@ void s01_pixel(
     out float4 out_color : SV_Target0
 ) {
     Texture2D texture = ResourceDescriptorHeap[rdh_background_texture];
-    out_color = 1.0 - texture.SampleLevel(sam_bilinear, uv, 0);
+    out_color = texture.SampleLevel(sam_bilinear, uv, 0);
 }
 
 #endif
