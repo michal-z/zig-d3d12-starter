@@ -271,13 +271,15 @@ const GameState = struct {
                 return false;
             },
             .resized => {
-                _ = game.background_texture.Release();
-                game.background_texture = try gen_background.define_and_upload_background(
-                    &game.gpu_context,
-                    game.current_level_name,
-                    game.d2d.device_context,
-                    game.meshes,
-                );
+                if (false) {
+                    _ = game.background_texture.Release();
+                    game.background_texture = try gen_background.define_and_upload_background(
+                        &game.gpu_context,
+                        game.current_level_name,
+                        game.d2d.device_context,
+                        game.meshes,
+                    );
+                }
             },
             .unchanged => {},
         }
@@ -391,6 +393,7 @@ const GameState = struct {
         for (level.objects_cpu.items) |*object| {
             if (object == player) continue;
             if (object.flags & cpu_gpu.obj_flag_is_dead != 0) continue;
+            if (object.flags & cpu_gpu.obj_flag_is_non_blocking != 0) continue;
 
             const parent = level.objects_cpu.items[object.parent];
 
@@ -540,7 +543,10 @@ const GameState = struct {
         });
 
         gc.command_list.OMSetRenderTargets(1, &.{gc.display_target_descriptor()}, .TRUE, &gc.dsv_dheap_start);
-        gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &window_clear_color, 0, null);
+        {
+            const c = d2d1.COLOR_F.init(.RoyalBlue, 1.0);
+            gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &.{ c.r, c.g, c.b, c.a }, 0, null);
+        }
         gc.command_list.ClearDepthStencilView(gc.dsv_dheap_start, .{ .DEPTH = true }, 1.0, 0, 0, null);
 
         gc.command_list.IASetPrimitiveTopology(.TRIANGLELIST);

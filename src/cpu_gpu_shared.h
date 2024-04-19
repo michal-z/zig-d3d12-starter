@@ -7,6 +7,7 @@
 #define obj_flag_is_food 1
 #define obj_flag_is_dead 2
 #define obj_flag_no_shadow 4
+#define obj_flag_is_non_blocking 8
 
 #ifndef HLSL
 typedef float float4x4[16];

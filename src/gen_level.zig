@@ -105,7 +105,8 @@ pub fn define_and_upload_level(
                 );
             }
             try objects.append(.{
-                .colors = .{ 0xee_22_44_99, 0xff_00_00_00 },
+                //.colors = .{ 0xee_22_44_99, 0xff_00_00_00 },
+                .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                 .mesh_indices = .{ Mesh.gear_12_150, Mesh.gear_12_150_stroke },
                 .x = 0.0,
                 .y = map_size_y / 2,
@@ -113,14 +114,16 @@ pub fn define_and_upload_level(
                 .flags = cpu_gpu.obj_flag_no_shadow,
             });
             try objects.append(.{
-                .colors = .{ 0xff_00_00_00, 0 },
+                //.colors = .{ 0xff_00_00_00, 0 },
+                .colors = .{ 0xaa_ff_ff_ff, 0 },
                 .mesh_indices = .{ Mesh.circle_150_stroke, Mesh.invalid },
                 .x = 0.0,
                 .y = map_size_y / 2,
                 .flags = cpu_gpu.obj_flag_no_shadow,
             });
             try objects.append(.{
-                .colors = .{ 0xff_fd_f6_e3, 0xff_00_00_00 },
+                //.colors = .{ 0xff_fd_f6_e3, 0xff_00_00_00 },
+                .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .x = 0.0,
                 .y = map_size_y / 2,
@@ -130,29 +133,37 @@ pub fn define_and_upload_level(
             {
                 const parent_index: u32 = @intCast(objects.items.len);
                 try objects.append(.{
-                    .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.arm_450, Mesh.arm_450_stroke },
                     .x = 0.0,
                     .y = map_size_y / 2,
                     .rotation_speed = 0.01,
+                    .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
-                    .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.arm_300, Mesh.arm_300_stroke },
                     .x = 450.0,
                     .rotation_speed = 0.015,
                     .parent = parent_index,
+                    .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
-                    .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                     .parent = parent_index,
+                    .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
-                    .colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
+                    .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                     .parent = parent_index,
                     .x = 450.0,
+                    .flags = cpu_gpu.obj_flag_no_shadow,
                 });
             }
         },

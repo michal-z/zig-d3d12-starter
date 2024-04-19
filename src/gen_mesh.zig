@@ -52,7 +52,6 @@ fn tessellate_geometry(
     vertices: std.ArrayList(cpu_gpu.Vertex),
     tessellation_sink: *TessellationSink,
     meshes: *std.ArrayList(Mesh),
-    is_blocking: bool,
 ) !u32 {
     const first_vertex = vertices.items.len;
 
@@ -62,7 +61,7 @@ fn tessellate_geometry(
     try meshes.append(.{
         .first_vertex = @intCast(first_vertex),
         .num_vertices = @intCast(vertices.items.len - first_vertex),
-        .geometry = if (is_blocking) geo else null,
+        .geometry = geo,
     });
     return mesh_index;
 }
@@ -128,7 +127,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo),
         ));
-        Mesh.player = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes, true);
+        Mesh.player = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
     }
 
     {
@@ -141,7 +140,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo),
         ));
-        Mesh.food = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes, true);
+        Mesh.food = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
     }
 
     {
@@ -154,7 +153,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo_fill),
         ));
-        Mesh.ellipse_50_35 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
+        Mesh.ellipse_50_35 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
         Mesh.ellipse_50_35_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
@@ -175,7 +174,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo_fill),
         ));
-        Mesh.circle_40 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
+        Mesh.circle_40 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
         Mesh.circle_40_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
@@ -196,7 +195,7 @@ pub fn define_and_upload_meshes(
             },
             @ptrCast(&geo_fill),
         ));
-        Mesh.circle_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
+        Mesh.circle_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
         Mesh.circle_150_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
@@ -255,7 +254,6 @@ pub fn define_and_upload_meshes(
             vertices,
             &tessellation_sink,
             &meshes,
-            true,
         );
         Mesh.round_rect_900_50_stroke = try tessellate_geometry_stroke(
             d2d_factory,
@@ -296,7 +294,6 @@ pub fn define_and_upload_meshes(
             vertices,
             &tessellation_sink,
             &meshes,
-            true,
         );
         Mesh.arm_450_stroke = try tessellate_geometry_stroke(
             d2d_factory,
@@ -337,7 +334,6 @@ pub fn define_and_upload_meshes(
             vertices,
             &tessellation_sink,
             &meshes,
-            true,
         );
         Mesh.arm_300_stroke = try tessellate_geometry_stroke(
             d2d_factory,
@@ -353,7 +349,6 @@ pub fn define_and_upload_meshes(
     {
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
-        defer _ = geo_fill.Release();
         {
             const path9 = [_]f32{
                 266.3,  -39.11, 284,    -37.39, 333.9,  -14.82, 333.9,  14.82,
@@ -392,7 +387,7 @@ pub fn define_and_upload_meshes(
             geo_sink.AddLines(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.POINT_2F));
             geo_sink.EndFigure(.CLOSED);
         }
-        Mesh.gear_12_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, false);
+        Mesh.gear_12_150 = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
         Mesh.gear_12_150_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
@@ -407,7 +402,6 @@ pub fn define_and_upload_meshes(
     {
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
-        defer _ = geo_fill.Release();
         {
             const path9 = [_]f32{
                 -89.49, 177.3, -90.59, 177.6, -91.69, 178.2,
@@ -437,7 +431,7 @@ pub fn define_and_upload_meshes(
             geo_sink.AddBeziers(@ptrCast(&path9), @sizeOf(@TypeOf(path9)) / @sizeOf(d2d1.BEZIER_SEGMENT));
             geo_sink.EndFigure(.CLOSED);
         }
-        Mesh.star = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, false);
+        Mesh.star = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
         Mesh.star_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
@@ -452,7 +446,6 @@ pub fn define_and_upload_meshes(
     {
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
-        defer _ = geo_fill.Release();
         {
             const path1_0 = [_]f32{
                 -244.8, 95.16, -257.1, 97.17, -271,   101,
@@ -520,7 +513,6 @@ pub fn define_and_upload_meshes(
             vertices,
             &tessellation_sink,
             &meshes,
-            false,
         );
         Mesh.strange_star_and_wall_stroke = try tessellate_geometry_stroke(
             d2d_factory,
@@ -589,7 +581,7 @@ pub fn define_and_upload_meshes(
             geo_sink.AddBeziers(@ptrCast(&path2), @sizeOf(@TypeOf(path2)) / @sizeOf(d2d1.BEZIER_SEGMENT));
             geo_sink.EndFigure(.CLOSED);
         }
-        Mesh.spiral = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes, true);
+        Mesh.spiral = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
     }
 
     var vertex_buffer: *d3d12.IResource = undefined;

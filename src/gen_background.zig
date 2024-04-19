@@ -17,8 +17,6 @@ fn draw_level_background(
     d2d_device_context: *d2d1.IDeviceContext5,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) void {
-    _ = meshes;
-
     d2d_device_context.BeginDraw();
     d2d_device_context.Clear(&d2d1.COLOR_F.init(.White, 1.0));
 
@@ -26,23 +24,44 @@ fn draw_level_background(
         .rotating_arm_and_gear => {
             var brush: *d2d1.ISolidColorBrush = undefined;
             vhr(d2d_device_context.CreateSolidColorBrush(
-                &d2d1.COLOR_F.init(.Red, 1.0),
+                &d2d1.COLOR_F.init(.White, 1.0),
                 &.{
-                    .opacity = 0.5,
+                    .opacity = 0.15,
                     .transform = d2d1.MATRIX_3X2_F.identity,
                 },
                 @ptrCast(&brush),
             ));
             defer _ = brush.Release();
 
-            d2d_device_context.Clear(&d2d1.COLOR_F.init(.LightSkyBlue, 1.0));
+            d2d_device_context.Clear(&d2d1.COLOR_F.init(.RoyalBlue, 1.0));
             d2d_device_context.DrawLine(
-                .{ .x = 10.0, .y = 10.0 },
-                .{ .x = 500.0, .y = 500.0 },
+                .{ .x = gen_level.map_size_x / 2, .y = 0.0 },
+                .{ .x = gen_level.map_size_x / 2, .y = gen_level.map_size_y },
                 @ptrCast(brush),
-                17.0,
+                3.0,
                 null,
             );
+            d2d_device_context.DrawLine(
+                .{ .x = 0.0, .y = gen_level.map_size_y / 2 },
+                .{ .x = gen_level.map_size_x, .y = gen_level.map_size_y / 2 },
+                @ptrCast(brush),
+                3.0,
+                null,
+            );
+            d2d_device_context.DrawEllipse(
+                &.{
+                    .point = .{ .x = 800.0, .y = 130.0 },
+                    .radiusX = 50.0,
+                    .radiusY = 50.0,
+                },
+                @ptrCast(brush),
+                3.0,
+                null,
+            );
+            d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.translation(500.0, 500.0));
+            d2d_device_context.DrawGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), 17.0, null);
+            d2d_device_context.FillGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), null);
+            d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.identity);
         },
         .star => {},
         .long_rotating_blocks => {},
@@ -59,9 +78,9 @@ pub fn define_and_upload_background(
     d2d_device_context: *d2d1.IDeviceContext5,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) !*d3d12.IResource {
-    const window_height: f32 = @floatFromInt(gc.window_height);
-    const width: u32 = @intFromFloat(window_height * 1.333);
-    const height: u32 = @intFromFloat(window_height);
+    //const window_height: f32 = @floatFromInt(gc.window_height);
+    const width: u32 = gen_level.map_size_x; //@intFromFloat(window_height * 1.333);
+    const height: u32 = gen_level.map_size_y; //@intFromFloat(window_height);
 
     var background_texture: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
