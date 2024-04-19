@@ -177,6 +177,26 @@ pub fn define_and_upload_background(
         .u = .{ .PlacedFootprint = layout[0] },
     }, null);
 
+    gc.command_list.Barrier(1, &.{
+        .{
+            .Type = .TEXTURE,
+            .NumBarriers = 1,
+            .u = .{
+                .pTextureBarriers = &.{
+                    .{
+                        .SyncBefore = .{ .COPY = true },
+                        .SyncAfter = .{},
+                        .AccessBefore = .{ .COPY_DEST = true },
+                        .AccessAfter = .{ .NO_ACCESS = true },
+                        .LayoutBefore = .COPY_DEST,
+                        .LayoutAfter = .SHADER_RESOURCE,
+                        .pResource = background_texture,
+                    },
+                },
+            },
+        },
+    });
+
     vhr(gc.command_list.Close());
     gc.command_queue.ExecuteCommandLists(1, &.{@ptrCast(gc.command_list)});
     gc.finish_gpu_commands();
