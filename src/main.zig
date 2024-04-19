@@ -441,23 +441,30 @@ const GameState = struct {
 
         gc.begin_command_list();
 
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .BUFFER,
-            .NumBarriers = 2,
-            .u = .{ .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{ .{
-                .SyncBefore = .{},
-                .SyncAfter = .{ .COPY = true },
-                .AccessBefore = .{ .NO_ACCESS = true },
-                .AccessAfter = .{ .COPY_DEST = true },
-                .pResource = game.frame_state_buffer,
-            }, .{
-                .SyncBefore = .{},
-                .SyncAfter = .{ .COPY = true },
-                .AccessBefore = .{ .NO_ACCESS = true },
-                .AccessAfter = .{ .COPY_DEST = true },
-                .pResource = level.objects_gpu,
-            } } },
-        }});
+        gc.command_list.Barrier(1, &.{
+            .{
+                .Type = .BUFFER,
+                .NumBarriers = 2,
+                .u = .{
+                    .pBufferBarriers = &.{
+                        .{
+                            .SyncBefore = .{},
+                            .SyncAfter = .{ .COPY = true },
+                            .AccessBefore = .{ .NO_ACCESS = true },
+                            .AccessAfter = .{ .COPY_DEST = true },
+                            .pResource = game.frame_state_buffer,
+                        },
+                        .{
+                            .SyncBefore = .{},
+                            .SyncAfter = .{ .COPY = true },
+                            .AccessBefore = .{ .NO_ACCESS = true },
+                            .AccessAfter = .{ .COPY_DEST = true },
+                            .pResource = level.objects_gpu,
+                        },
+                    },
+                },
+            },
+        });
 
         {
             const proj = proj: {
@@ -507,28 +514,30 @@ const GameState = struct {
             );
         }
 
-        gc.command_list.Barrier(1, &.{.{
-            .Type = .BUFFER,
-            .NumBarriers = 2,
-            .u = .{
-                .pBufferBarriers = &.{
-                    .{
-                        .SyncBefore = .{ .COPY = true },
-                        .SyncAfter = .{ .DRAW = true },
-                        .AccessBefore = .{ .COPY_DEST = true },
-                        .AccessAfter = .{ .CONSTANT_BUFFER = true },
-                        .pResource = game.frame_state_buffer,
-                    },
-                    .{
-                        .SyncBefore = .{ .COPY = true },
-                        .SyncAfter = .{ .DRAW = true },
-                        .AccessBefore = .{ .COPY_DEST = true },
-                        .AccessAfter = .{ .SHADER_RESOURCE = true },
-                        .pResource = level.objects_gpu,
+        gc.command_list.Barrier(1, &.{
+            .{
+                .Type = .BUFFER,
+                .NumBarriers = 2,
+                .u = .{
+                    .pBufferBarriers = &.{
+                        .{
+                            .SyncBefore = .{ .COPY = true },
+                            .SyncAfter = .{ .DRAW = true },
+                            .AccessBefore = .{ .COPY_DEST = true },
+                            .AccessAfter = .{ .CONSTANT_BUFFER = true },
+                            .pResource = game.frame_state_buffer,
+                        },
+                        .{
+                            .SyncBefore = .{ .COPY = true },
+                            .SyncAfter = .{ .DRAW = true },
+                            .AccessBefore = .{ .COPY_DEST = true },
+                            .AccessAfter = .{ .SHADER_RESOURCE = true },
+                            .pResource = level.objects_gpu,
+                        },
                     },
                 },
             },
-        }});
+        });
 
         gc.command_list.OMSetRenderTargets(1, &.{gc.display_target_descriptor()}, .TRUE, &gc.dsv_dheap_start);
         gc.command_list.ClearRenderTargetView(gc.display_target_descriptor(), &window_clear_color, 0, null);

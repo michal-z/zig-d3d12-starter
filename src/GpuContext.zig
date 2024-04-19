@@ -150,63 +150,76 @@ pub fn begin_command_list(gc: *GpuContext) void {
     }});
 
     if (msaa_target_num_samples <= 1) {
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .TEXTURE,
-            .NumBarriers = 1,
-            .u = .{
-                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{.{
-                    .SyncBefore = .{},
-                    .SyncAfter = .{ .RENDER_TARGET = true },
-                    .AccessBefore = .{ .NO_ACCESS = true },
-                    .AccessAfter = .{ .RENDER_TARGET = true },
-                    .LayoutBefore = .PRESENT,
-                    .LayoutAfter = .RENDER_TARGET,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                }},
+        gc.command_list.Barrier(1, &.{
+            .{
+                .Type = .TEXTURE,
+                .NumBarriers = 1,
+                .u = .{
+                    .pTextureBarriers = &.{
+                        .{
+                            .SyncBefore = .{},
+                            .SyncAfter = .{ .RENDER_TARGET = true },
+                            .AccessBefore = .{ .NO_ACCESS = true },
+                            .AccessAfter = .{ .RENDER_TARGET = true },
+                            .LayoutBefore = .PRESENT,
+                            .LayoutAfter = .RENDER_TARGET,
+                            .pResource = gc.swap_chain_targets[gc.frame_index],
+                        },
+                    },
+                },
             },
-        }});
+        });
     }
 
-    gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-        .Type = .BUFFER,
-        .NumBarriers = 1,
-        .u = .{
-            .pBufferBarriers = &[_]d3d12.BUFFER_BARRIER{.{
-                .SyncBefore = .{},
-                .SyncAfter = .{ .COPY = true },
-                .AccessBefore = .{ .NO_ACCESS = true },
-                .AccessAfter = .{ .COPY_SOURCE = true },
-                .pResource = gc.upload_heaps[gc.frame_index].buffer,
-            }},
+    gc.command_list.Barrier(1, &.{
+        .{
+            .Type = .BUFFER,
+            .NumBarriers = 1,
+            .u = .{
+                .pBufferBarriers = &.{
+                    .{
+                        .SyncBefore = .{},
+                        .SyncAfter = .{ .COPY = true },
+                        .AccessBefore = .{ .NO_ACCESS = true },
+                        .AccessAfter = .{ .COPY_SOURCE = true },
+                        .pResource = gc.upload_heaps[gc.frame_index].buffer,
+                    },
+                },
+            },
         },
-    }});
+    });
 }
 
 pub fn end_command_list(gc: *GpuContext) void {
     if (msaa_target_num_samples > 1) {
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .TEXTURE,
-            .NumBarriers = 2,
-            .u = .{
-                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{ .{
-                    .SyncBefore = .{ .RENDER_TARGET = true },
-                    .SyncAfter = .{ .RESOLVE = true },
-                    .AccessBefore = .{ .RENDER_TARGET = true },
-                    .AccessAfter = .{ .RESOLVE_SOURCE = true },
-                    .LayoutBefore = .RENDER_TARGET,
-                    .LayoutAfter = .RESOLVE_SOURCE,
-                    .pResource = gc.msaa_target,
-                }, .{
-                    .SyncBefore = .{},
-                    .SyncAfter = .{ .RESOLVE = true },
-                    .AccessBefore = .{ .NO_ACCESS = true },
-                    .AccessAfter = .{ .RESOLVE_DEST = true },
-                    .LayoutBefore = .PRESENT,
-                    .LayoutAfter = .RESOLVE_DEST,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                } },
+        gc.command_list.Barrier(1, &.{
+            .{
+                .Type = .TEXTURE,
+                .NumBarriers = 2,
+                .u = .{
+                    .pTextureBarriers = &.{
+                        .{
+                            .SyncBefore = .{ .RENDER_TARGET = true },
+                            .SyncAfter = .{ .RESOLVE = true },
+                            .AccessBefore = .{ .RENDER_TARGET = true },
+                            .AccessAfter = .{ .RESOLVE_SOURCE = true },
+                            .LayoutBefore = .RENDER_TARGET,
+                            .LayoutAfter = .RESOLVE_SOURCE,
+                            .pResource = gc.msaa_target,
+                        },
+                        .{
+                            .SyncBefore = .{},
+                            .SyncAfter = .{ .RESOLVE = true },
+                            .AccessBefore = .{ .NO_ACCESS = true },
+                            .AccessAfter = .{ .RESOLVE_DEST = true },
+                            .LayoutBefore = .PRESENT,
+                            .LayoutAfter = .RESOLVE_DEST,
+                            .pResource = gc.swap_chain_targets[gc.frame_index],
+                        },
+                    },
+                },
             },
-        }});
+        });
         gc.command_list.ResolveSubresource(
             gc.swap_chain_targets[gc.frame_index],
             0,
@@ -214,45 +227,54 @@ pub fn end_command_list(gc: *GpuContext) void {
             0,
             swap_chain_target_format,
         );
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .TEXTURE,
-            .NumBarriers = 2,
-            .u = .{
-                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{ .{
-                    .SyncBefore = .{ .RESOLVE = true },
-                    .SyncAfter = .{},
-                    .AccessBefore = .{ .RESOLVE_SOURCE = true },
-                    .AccessAfter = .{ .NO_ACCESS = true },
-                    .LayoutBefore = .RESOLVE_SOURCE,
-                    .LayoutAfter = .RENDER_TARGET,
-                    .pResource = gc.msaa_target,
-                }, .{
-                    .SyncBefore = .{ .RESOLVE = true },
-                    .SyncAfter = .{},
-                    .AccessBefore = .{ .RESOLVE_DEST = true },
-                    .AccessAfter = .{ .NO_ACCESS = true },
-                    .LayoutBefore = .RESOLVE_DEST,
-                    .LayoutAfter = .PRESENT,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                } },
+        gc.command_list.Barrier(1, &.{
+            .{
+                .Type = .TEXTURE,
+                .NumBarriers = 2,
+                .u = .{
+                    .pTextureBarriers = &.{
+                        .{
+                            .SyncBefore = .{ .RESOLVE = true },
+                            .SyncAfter = .{},
+                            .AccessBefore = .{ .RESOLVE_SOURCE = true },
+                            .AccessAfter = .{ .NO_ACCESS = true },
+                            .LayoutBefore = .RESOLVE_SOURCE,
+                            .LayoutAfter = .RENDER_TARGET,
+                            .pResource = gc.msaa_target,
+                        },
+                        .{
+                            .SyncBefore = .{ .RESOLVE = true },
+                            .SyncAfter = .{},
+                            .AccessBefore = .{ .RESOLVE_DEST = true },
+                            .AccessAfter = .{ .NO_ACCESS = true },
+                            .LayoutBefore = .RESOLVE_DEST,
+                            .LayoutAfter = .PRESENT,
+                            .pResource = gc.swap_chain_targets[gc.frame_index],
+                        },
+                    },
+                },
             },
-        }});
+        });
     } else {
-        gc.command_list.Barrier(1, &[_]d3d12.BARRIER_GROUP{.{
-            .Type = .TEXTURE,
-            .NumBarriers = 1,
-            .u = .{
-                .pTextureBarriers = &[_]d3d12.TEXTURE_BARRIER{.{
-                    .SyncBefore = .{ .RENDER_TARGET = true },
-                    .SyncAfter = .{},
-                    .AccessBefore = .{ .RENDER_TARGET = true },
-                    .AccessAfter = .{ .NO_ACCESS = true },
-                    .LayoutBefore = .RENDER_TARGET,
-                    .LayoutAfter = .PRESENT,
-                    .pResource = gc.swap_chain_targets[gc.frame_index],
-                }},
+        gc.command_list.Barrier(1, &.{
+            .{
+                .Type = .TEXTURE,
+                .NumBarriers = 1,
+                .u = .{
+                    .pTextureBarriers = &.{
+                        .{
+                            .SyncBefore = .{ .RENDER_TARGET = true },
+                            .SyncAfter = .{},
+                            .AccessBefore = .{ .RENDER_TARGET = true },
+                            .AccessAfter = .{ .NO_ACCESS = true },
+                            .LayoutBefore = .RENDER_TARGET,
+                            .LayoutAfter = .PRESENT,
+                            .pResource = gc.swap_chain_targets[gc.frame_index],
+                        },
+                    },
+                },
             },
-        }});
+        });
     }
     vhr(gc.command_list.Close());
 }
