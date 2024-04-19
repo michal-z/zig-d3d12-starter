@@ -7,8 +7,10 @@ const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const xa2 = @import("win32/xaudio2.zig");
 const wic = @import("win32/wincodec.zig");
-const cgen = @import("content_generation.zig");
 const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
+const gen_level = @import("gen_level.zig");
+const gen_mesh = @import("gen_mesh.zig");
+const gen_background = @import("gen_background.zig");
 
 pub const std_options = .{
     .log_level = .info,
@@ -51,8 +53,6 @@ pub fn main() !void {
     var game = try GameState.init(allocator);
     defer game.deinit();
 
-    game.d2d_test();
-
     while (true) {
         var message = std.mem.zeroes(w32.MSG);
         if (w32.PeekMessageA(&message, null, 0, 0, w32.PM_REMOVE) == .TRUE) {
@@ -88,13 +88,13 @@ const GameState = struct {
         device_context: *d2d1.IDeviceContext5,
     },
 
-    meshes: std.ArrayList(cgen.Mesh),
+    meshes: std.ArrayList(gen_mesh.Mesh),
 
     player_is_dead: f32 = 0.0,
     player_to_next_level: f32 = 0.0,
 
-    current_level_name: cgen.LevelName,
-    current_level: cgen.LevelState,
+    current_level_name: gen_level.LevelName,
+    current_level: gen_level.LevelState,
 
     eat_sounds: [2]AudioContext.SoundHandle,
 
@@ -149,37 +149,6 @@ const GameState = struct {
                 gpu_context.shader_dheap_descriptor_size },
         );
 
-        const window_height: f32 = @floatFromInt(gpu_context.window_height);
-        const width: u32 = @intFromFloat(window_height * 1.333);
-        const height: u32 = @intFromFloat(window_height);
-
-        var background_texture: *d3d12.IResource = undefined;
-        vhr(gpu_context.device.CreateCommittedResource3(
-            &.{ .Type = .DEFAULT },
-            d3d12.HEAP_FLAGS.ALLOW_ALL_BUFFERS_AND_TEXTURES,
-            &.{
-                .Dimension = .TEXTURE2D,
-                .Width = width,
-                .Height = height,
-                .Format = .B8G8R8A8_UNORM,
-            },
-            .COPY_DEST,
-            null,
-            null,
-            0,
-            null,
-            &d3d12.IResource.IID,
-            @ptrCast(&background_texture),
-        ));
-
-        gpu_context.device.CreateShaderResourceView(
-            background_texture,
-            null,
-            .{ .ptr = gpu_context.shader_dheap_start_cpu.ptr +
-                @as(u32, @intCast(cpu_gpu.rdh_background_texture)) *
-                gpu_context.shader_dheap_descriptor_size },
-        );
-
         var wic_factory: *wic.IImagingFactory2 = undefined;
         vhr(w32.CoCreateInstance(
             &wic.CLSID_ImagingFactory2,
@@ -230,10 +199,20 @@ const GameState = struct {
             break :blk .{ d2d_device, d2d_device_context };
         };
 
-        const meshes, const vertex_buffer = try cgen.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
+        const meshes, const vertex_buffer = try gen_mesh.define_and_upload_meshes(allocator, &gpu_context, d2d_factory);
 
         const current_level_name = .rotating_arm_and_gear;
-        const current_level = try cgen.define_and_upload_level(allocator, &gpu_context, current_level_name);
+        const current_level = try gen_level.define_and_upload_level(
+            allocator,
+            &gpu_context,
+            current_level_name,
+        );
+        const background_texture = try gen_background.define_and_upload_background(
+            &gpu_context,
+            current_level_name,
+            d2d_device_context,
+            meshes,
+        );
 
         return .{
             .allocator = allocator,
@@ -286,9 +265,21 @@ const GameState = struct {
 
     fn update(game: *GameState) bool {
         const status = game.gpu_context.handle_window_resize();
-        if (status == .minimized) {
-            w32.Sleep(10);
-            return false;
+        switch (status) {
+            .minimized => {
+                w32.Sleep(10);
+                return false;
+            },
+            .resized => {
+                _ = game.background_texture.Release();
+                game.background_texture = try gen_background.define_and_upload_background(
+                    &game.gpu_context,
+                    game.current_level_name,
+                    game.d2d.device_context,
+                    game.meshes,
+                );
+            },
+            .unchanged => {},
         }
 
         _, const delta_time = update_frame_stats(game.gpu_context.window, window_name);
@@ -302,7 +293,7 @@ const GameState = struct {
                 game.gpu_context.finish_gpu_commands();
 
                 game.current_level.deinit();
-                game.current_level = cgen.define_and_upload_level(
+                game.current_level = gen_level.define_and_upload_level(
                     game.allocator,
                     &game.gpu_context,
                     game.current_level_name,
@@ -332,7 +323,7 @@ const GameState = struct {
                 game.gpu_context.finish_gpu_commands();
 
                 game.current_level.deinit();
-                game.current_level = cgen.define_and_upload_level(
+                game.current_level = gen_level.define_and_upload_level(
                     game.allocator,
                     &game.gpu_context,
                     game.current_level_name,
@@ -367,25 +358,25 @@ const GameState = struct {
                 object.x += @cos(object.move_direction) * object.move_speed * delta_time;
                 object.y += @sin(object.move_direction) * object.move_speed * delta_time;
 
-                if (object.x < -0.5 * cgen.map_size_y * window_aspect or
-                    object.x > 0.5 * cgen.map_size_y * window_aspect or
+                if (object.x < -0.5 * gen_level.map_size_y * window_aspect or
+                    object.x > 0.5 * gen_level.map_size_y * window_aspect or
                     object.y < 0.0 or
-                    object.y > cgen.map_size_y)
+                    object.y > gen_level.map_size_y)
                 {
                     object.move_direction += std.math.pi;
                 }
             }
         }
 
-        if (player.x < -0.5 * cgen.map_size_y * window_aspect) {
-            player.x = 0.5 * cgen.map_size_y * window_aspect;
-        } else if (player.x > 0.5 * cgen.map_size_y * window_aspect) {
-            player.x = -0.5 * cgen.map_size_y * window_aspect;
+        if (player.x < -0.5 * gen_level.map_size_y * window_aspect) {
+            player.x = 0.5 * gen_level.map_size_y * window_aspect;
+        } else if (player.x > 0.5 * gen_level.map_size_y * window_aspect) {
+            player.x = -0.5 * gen_level.map_size_y * window_aspect;
         }
 
         if (player.y < 0.0) {
-            player.y = cgen.map_size_y;
-        } else if (player.y > cgen.map_size_y) {
+            player.y = gen_level.map_size_y;
+        } else if (player.y > gen_level.map_size_y) {
             player.y = 0.0;
         }
 
@@ -396,7 +387,7 @@ const GameState = struct {
             const parent = level.objects_cpu.items[object.parent];
 
             for (0..object.mesh_indices.len) |submesh| {
-                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+                if (object.mesh_indices[submesh] == gen_mesh.Mesh.invalid) continue;
 
                 if (game.meshes.items[object.mesh_indices[submesh]].geometry) |geometry| {
                     var contains: w32.BOOL = .FALSE;
@@ -467,10 +458,10 @@ const GameState = struct {
                 const aspect = width / height;
 
                 break :proj orthographic_off_center(
-                    -0.5 * cgen.map_size_y * aspect,
-                    0.5 * cgen.map_size_y * aspect,
+                    -0.5 * gen_level.map_size_y * aspect,
+                    0.5 * gen_level.map_size_y * aspect,
                     0.0,
-                    cgen.map_size_y,
+                    gen_level.map_size_y,
                     0.0,
                     1.0,
                 );
@@ -540,7 +531,7 @@ const GameState = struct {
 
         // Draw background.
         {
-            const mesh = &game.meshes.items[cgen.Mesh.fullscreen_rect];
+            const mesh = &game.meshes.items[gen_mesh.Mesh.fullscreen_rect];
 
             gc.command_list.SetPipelineState(game.pso[pso_background]);
             gc.command_list.SetGraphicsRoot32BitConstants(
@@ -562,7 +553,7 @@ const GameState = struct {
             if (object.flags & cpu_gpu.obj_flag_no_shadow == 0) continue;
 
             for (0..object.mesh_indices.len) |submesh| {
-                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+                if (object.mesh_indices[submesh] == gen_mesh.Mesh.invalid) continue;
 
                 const mesh = &game.meshes.items[object.mesh_indices[submesh]];
 
@@ -584,7 +575,7 @@ const GameState = struct {
             if (object.flags & cpu_gpu.obj_flag_no_shadow != 0) continue;
 
             for (0..object.mesh_indices.len) |submesh| {
-                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+                if (object.mesh_indices[submesh] == gen_mesh.Mesh.invalid) continue;
 
                 const mesh = &game.meshes.items[object.mesh_indices[submesh]];
 
@@ -606,7 +597,7 @@ const GameState = struct {
             if (object.flags & cpu_gpu.obj_flag_no_shadow != 0) continue;
 
             for (0..object.mesh_indices.len) |submesh| {
-                if (object.mesh_indices[submesh] == cgen.Mesh.invalid) continue;
+                if (object.mesh_indices[submesh] == gen_mesh.Mesh.invalid) continue;
 
                 const mesh = &game.meshes.items[object.mesh_indices[submesh]];
 
@@ -624,153 +615,6 @@ const GameState = struct {
 
         gc.command_queue.ExecuteCommandLists(1, &.{@ptrCast(gc.command_list)});
         gc.present_frame();
-    }
-
-    fn d2d_test(game: *GameState) void {
-        const background_desc = game.background_texture.GetDesc();
-        const width: u32 = @intCast(background_desc.Width);
-        const height: u32 = background_desc.Height;
-
-        var readback_bitmap: *d2d1.IBitmap1 = undefined;
-        vhr(game.d2d.device_context.CreateBitmap1(
-            .{ .width = width, .height = height },
-            null,
-            0,
-            &.{
-                .pixelFormat = .{
-                    .format = .B8G8R8A8_UNORM,
-                    .alphaMode = .IGNORE,
-                },
-                .dpiX = 96.0,
-                .dpiY = 96.0,
-                .bitmapOptions = .{ .CPU_READ = true, .CANNOT_DRAW = true },
-                .colorContext = null,
-            },
-            @ptrCast(&readback_bitmap),
-        ));
-        defer _ = readback_bitmap.Release();
-
-        var rt_bitmap: *d2d1.IBitmap1 = undefined;
-        vhr(game.d2d.device_context.CreateBitmap1(
-            .{ .width = width, .height = height },
-            null,
-            0,
-            &.{
-                .pixelFormat = .{
-                    .format = .B8G8R8A8_UNORM,
-                    .alphaMode = .IGNORE,
-                },
-                .dpiX = 96.0,
-                .dpiY = 96.0,
-                .bitmapOptions = .{ .TARGET = true },
-                .colorContext = null,
-            },
-            @ptrCast(&rt_bitmap),
-        ));
-        defer _ = rt_bitmap.Release();
-
-        var brush: *d2d1.ISolidColorBrush = undefined;
-        vhr(game.d2d.device_context.CreateSolidColorBrush(
-            &d2d1.COLOR_F.init(.Red, 1.0),
-            &.{
-                .opacity = 0.5,
-                .transform = d2d1.MATRIX_3X2_F.identity,
-            },
-            @ptrCast(&brush),
-        ));
-        defer _ = brush.Release();
-
-        game.d2d.device_context.SetTarget(@ptrCast(rt_bitmap));
-        game.d2d.device_context.BeginDraw();
-        game.d2d.device_context.Clear(&d2d1.COLOR_F.init(.LightSkyBlue, 1.0));
-        game.d2d.device_context.DrawLine(
-            .{ .x = 10.0, .y = 10.0 },
-            .{ .x = @as(f32, @floatFromInt(width)) - 10.0, .y = @as(f32, @floatFromInt(height)) - 10.0 },
-            @ptrCast(brush),
-            17.0,
-            null,
-        );
-        vhr(game.d2d.device_context.EndDraw(null, null));
-
-        vhr(readback_bitmap.CopyFromBitmap(null, @ptrCast(rt_bitmap), null));
-
-        {
-            var rect: d2d1.MAPPED_RECT = undefined;
-            vhr(readback_bitmap.Map(.{ .READ = true }, &rect));
-            defer vhr(readback_bitmap.Unmap());
-
-            var layout: [1]d3d12.PLACED_SUBRESOURCE_FOOTPRINT = undefined;
-            var required_size: u64 = undefined;
-            game.gpu_context.device.GetCopyableFootprints(
-                &background_desc,
-                0,
-                1,
-                0,
-                &layout,
-                null,
-                null,
-                &required_size,
-            );
-
-            const upload_mem, const buffer, const offset =
-                game.gpu_context.allocate_upload_buffer_region(u8, @intCast(required_size));
-            layout[0].Offset = offset;
-
-            for (0..height) |y| {
-                @memcpy(
-                    upload_mem[y * layout[0].Footprint.RowPitch ..][0 .. width * 4],
-                    rect.bits[y * rect.pitch ..][0 .. width * 4],
-                );
-            }
-
-            vhr(game.gpu_context.command_allocators[0].Reset());
-            vhr(game.gpu_context.command_list.Reset(game.gpu_context.command_allocators[0], null));
-
-            game.gpu_context.command_list.CopyTextureRegion(&.{
-                .pResource = game.background_texture,
-                .Type = .SUBRESOURCE_INDEX,
-                .u = .{ .SubresourceIndex = 0 },
-            }, 0, 0, 0, &.{
-                .pResource = buffer,
-                .Type = .PLACED_FOOTPRINT,
-                .u = .{ .PlacedFootprint = layout[0] },
-            }, null);
-
-            vhr(game.gpu_context.command_list.Close());
-            game.gpu_context.command_queue.ExecuteCommandLists(1, &.{@ptrCast(game.gpu_context.command_list)});
-            game.gpu_context.finish_gpu_commands();
-        }
-
-        if (false) {
-            var stream: *wic.IStream = undefined;
-            vhr(game.wic_factory.CreateStream(@ptrCast(&stream)));
-            defer _ = stream.Release();
-
-            vhr(stream.InitializeFromFilename(
-                std.unicode.utf8ToUtf16LeStringLiteral("image.png"),
-                w32.GENERIC_WRITE,
-            ));
-
-            var encoder: *wic.IBitmapEncoder = undefined;
-            vhr(game.wic_factory.CreateEncoder(&wic.GUID_ContainerFormatPng, null, @ptrCast(&encoder)));
-            defer _ = encoder.Release();
-
-            vhr(encoder.Initialize(@ptrCast(stream), .NoCache));
-
-            var frame_encode: *wic.IBitmapFrameEncode = undefined;
-            vhr(encoder.CreateNewFrame(@ptrCast(&frame_encode), null));
-            defer _ = frame_encode.Release();
-
-            vhr(frame_encode.Initialize(null));
-
-            var image_encoder: *wic.IImageEncoder = undefined;
-            vhr(game.wic_factory.CreateImageEncoder(@ptrCast(game.d2d.device), @ptrCast(&image_encoder)));
-            defer _ = image_encoder.Release();
-
-            vhr(image_encoder.WriteFrame(@ptrCast(rt_bitmap), frame_encode, null));
-            vhr(frame_encode.Commit());
-            vhr(encoder.Commit());
-        }
     }
 };
 
