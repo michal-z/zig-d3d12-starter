@@ -106,7 +106,7 @@ pub fn define_and_upload_level(
             }
             try objects.append(.{
                 //.colors = .{ 0xee_22_44_99, 0xff_00_00_00 },
-                .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
+                .colors = .{ 0x22_ff_ff_ff, 0xaa_ff_ff_ff },
                 .mesh_indices = .{ Mesh.gear_12_150, Mesh.gear_12_150_stroke },
                 .x = 0.0,
                 .y = map_size_y / 2,
@@ -138,7 +138,7 @@ pub fn define_and_upload_level(
                     .mesh_indices = .{ Mesh.arm_450, Mesh.arm_450_stroke },
                     .x = 0.0,
                     .y = map_size_y / 2,
-                    .rotation_speed = 0.01,
+                    .rotation_speed = -0.01,
                     .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
@@ -146,7 +146,7 @@ pub fn define_and_upload_level(
                     .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.arm_300, Mesh.arm_300_stroke },
                     .x = 450.0,
-                    .rotation_speed = 0.015,
+                    .rotation_speed = -0.015,
                     .parent = parent_index,
                     .flags = cpu_gpu.obj_flag_no_shadow,
                 });

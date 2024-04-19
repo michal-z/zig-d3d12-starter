@@ -59,8 +59,18 @@ fn draw_level_background(
                 null,
             );
             d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.translation(500.0, 500.0));
-            d2d_device_context.DrawGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), 17.0, null);
-            d2d_device_context.FillGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), null);
+            d2d_device_context.DrawGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), 7.0, null);
+            //d2d_device_context.FillGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), null);
+            d2d_device_context.DrawEllipse(
+                &.{
+                    .point = .{ .x = 0.0, .y = 0.0 },
+                    .radiusX = 150.0,
+                    .radiusY = 150.0,
+                },
+                @ptrCast(brush),
+                7.0,
+                null,
+            );
             d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.identity);
         },
         .star => {},
