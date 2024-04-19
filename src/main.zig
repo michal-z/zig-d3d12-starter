@@ -328,6 +328,14 @@ const GameState = struct {
                     &game.gpu_context,
                     game.current_level_name,
                 ) catch unreachable;
+
+                _ = game.background_texture.Release();
+                game.background_texture = gen_background.define_and_upload_background(
+                    &game.gpu_context,
+                    game.current_level_name,
+                    game.d2d.device_context,
+                    game.meshes,
+                ) catch unreachable;
             }
             return true;
         }

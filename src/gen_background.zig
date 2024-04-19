@@ -20,6 +20,7 @@ fn draw_level_background(
     _ = meshes;
 
     d2d_device_context.BeginDraw();
+    d2d_device_context.Clear(&d2d1.COLOR_F.init(.White, 1.0));
 
     switch (level_name) {
         .rotating_arm_and_gear => {
