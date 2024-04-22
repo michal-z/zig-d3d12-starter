@@ -20,6 +20,7 @@ pub const Mesh = struct {
     pub const invalid: u32 = 0;
     pub var player: u32 = undefined;
     pub var food: u32 = undefined;
+    pub var food_stroke: u32 = undefined;
     pub var fullscreen_rect: u32 = undefined;
 
     pub var circle_40: u32 = undefined;
@@ -130,7 +131,7 @@ pub fn define_and_upload_meshes(
         Mesh.player = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
     }
 
-    {
+    if (false) {
         var geo: *d2d1.IEllipseGeometry = undefined;
         vhr(d2d_factory.CreateEllipseGeometry(
             &.{
@@ -141,6 +142,45 @@ pub fn define_and_upload_meshes(
             @ptrCast(&geo),
         ));
         Mesh.food = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
+        Mesh.food_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo),
+            3.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
+    }
+
+    // food
+    if (true) {
+        var geo_fill: *d2d1.IPathGeometry = undefined;
+        vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
+        {
+            var geo_sink: *d2d1.IGeometrySink = undefined;
+            vhr(geo_fill.Open(@ptrCast(&geo_sink)));
+            defer {
+                vhr(geo_sink.Close());
+                _ = geo_sink.Release();
+            }
+            const s = 12.5;
+            geo_sink.BeginFigure(.{ .x = -s, .y = -s }, .HOLLOW);
+            geo_sink.AddLine(.{ .x = s, .y = s });
+            geo_sink.EndFigure(.OPEN);
+
+            geo_sink.BeginFigure(.{ .x = -s, .y = s }, .HOLLOW);
+            geo_sink.AddLine(.{ .x = s, .y = -s });
+            geo_sink.EndFigure(.OPEN);
+        }
+        Mesh.food = try tessellate_geometry(@ptrCast(geo_fill), vertices, &tessellation_sink, &meshes);
+        Mesh.food_stroke = try tessellate_geometry_stroke(
+            d2d_factory,
+            @ptrCast(geo_fill),
+            5.0,
+            vertices,
+            &tessellation_sink,
+            &meshes,
+        );
     }
 
     {

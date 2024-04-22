@@ -42,11 +42,12 @@ pub const LevelState = struct {
 };
 
 fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: f32, y: f32) void {
-    const fc = 0xff_0f_6c_0b;
+    //const fc = 0xff_0f_6c_0b;
+    const fc = 0xff_00_00_00;
     objects.append(.{
         .flags = cpu_gpu.obj_flag_is_food | cpu_gpu.obj_flag_no_shadow,
         .colors = .{ fc, 0 },
-        .mesh_indices = .{ Mesh.food, Mesh.invalid },
+        .mesh_indices = .{ Mesh.food_stroke, Mesh.invalid },
         .x = x,
         .y = y,
     }) catch unreachable;
@@ -78,32 +79,16 @@ pub fn define_and_upload_level(
 
     switch (level_name) {
         .rotating_arm_and_gear => {
-            {
-                const num = 13;
-                for (0..num) |i| {
-                    if (i % 3 == 0) {
-                        const f = std.math.tau * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num - 1));
-                        const r = 320.0;
-                        add_food(
-                            &objects,
-                            &num_food_objects,
-                            r * @cos(f),
-                            map_size_y / 2 + r * @sin(f),
-                        );
-                    }
-                }
-            }
-            const num = 10;
-            for (0..num) |i| {
-                const f = std.math.tau * @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(num - 1));
-                const r = 500.0;
-                add_food(
-                    &objects,
-                    &num_food_objects,
-                    r * @cos(f),
-                    map_size_y / 2 + r * @sin(f),
-                );
-            }
+            add_food(&objects, &num_food_objects, 325.0, map_size_y / 2 + 25.0);
+            add_food(&objects, &num_food_objects, -325.0, map_size_y / 2 - 25.0);
+            add_food(&objects, &num_food_objects, 25.0, map_size_y / 2 + 325.0);
+            add_food(&objects, &num_food_objects, -25.0, map_size_y / 2 - 325.0);
+
+            add_food(&objects, &num_food_objects, -475.0, map_size_y / 2 - 125.0);
+            add_food(&objects, &num_food_objects, -475.0, map_size_y / 2 - 75.0);
+            add_food(&objects, &num_food_objects, 475.0, map_size_y / 2 + 75.0);
+            add_food(&objects, &num_food_objects, 525.0, map_size_y / 2 + 175.0);
+
             try objects.append(.{
                 //.colors = .{ 0xee_22_44_99, 0xff_00_00_00 },
                 .colors = .{ 0x22_ff_ff_ff, 0xaa_ff_ff_ff },

@@ -216,6 +216,7 @@ pub const IFactory = extern struct {
 };
 
 pub const CreateFactory = DWriteCreateFactory;
+
 extern "dwrite" fn DWriteCreateFactory(
     factory_type: FACTORY_TYPE,
     guid: *const GUID,

@@ -52,7 +52,7 @@ fn draw_level_background(
 
             d2d_device_context.Clear(&d2d1.COLOR_F.init(.RoyalBlue, 1.0));
             d2d_device_context.DrawText(
-                L("v = \u{03c9} \u{00d7} r"),
+                L("v = \u{03c9} \u{22c5} r"),
                 9,
                 math_font,
                 &.{
@@ -65,6 +65,9 @@ fn draw_level_background(
                 .{},
                 .NATURAL,
             );
+            //
+            // Grid
+            //
             d2d_device_context.DrawLine(
                 .{ .x = gen_level.map_size_x / 2, .y = 0.0 },
                 .{ .x = gen_level.map_size_x / 2, .y = gen_level.map_size_y },
@@ -103,6 +106,9 @@ fn draw_level_background(
                     );
                 }
             }
+            //
+            // Shapes
+            //
             d2d_device_context.DrawEllipse(
                 &.{
                     .point = .{ .x = 800.0, .y = 75.0 },
@@ -113,14 +119,32 @@ fn draw_level_background(
                 3.0,
                 null,
             );
+            d2d_device_context.DrawRectangle(
+                &.{
+                    .left = 100.0,
+                    .top = 825.0,
+                    .right = 300.0,
+                    .bottom = 925.0,
+                },
+                @ptrCast(brush),
+                3.5,
+                null,
+            );
+            //
+            // Gear
+            //
             d2d_device_context.SetTransform(
                 &d2d1.MATRIX_3X2_F.mul(
                     d2d1.MATRIX_3X2_F.scaling(0.5, 0.5),
                     d2d1.MATRIX_3X2_F.translation(1200.0, 250.0),
                 ),
             );
-            d2d_device_context.DrawGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), 7.0, null);
-            //d2d_device_context.FillGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), null);
+            d2d_device_context.DrawGeometry(
+                meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?,
+                @ptrCast(brush),
+                7.0,
+                null,
+            );
             d2d_device_context.DrawEllipse(
                 &.{
                     .point = .{ .x = 0.0, .y = 0.0 },
