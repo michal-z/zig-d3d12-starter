@@ -65,7 +65,6 @@ fn draw_level_background(
                 .{},
                 .NATURAL,
             );
-
             d2d_device_context.DrawLine(
                 .{ .x = gen_level.map_size_x / 2, .y = 0.0 },
                 .{ .x = gen_level.map_size_x / 2, .y = gen_level.map_size_y },
@@ -80,9 +79,33 @@ fn draw_level_background(
                 3.0,
                 null,
             );
+            {
+                var x: f32 = 0.0;
+                while (x <= gen_level.map_size_x) : (x += 50.0) {
+                    d2d_device_context.DrawLine(
+                        .{ .x = x, .y = 0.0 },
+                        .{ .x = x, .y = gen_level.map_size_y },
+                        @ptrCast(brush),
+                        1.0,
+                        null,
+                    );
+                }
+            }
+            {
+                var y: f32 = 25.0;
+                while (y <= gen_level.map_size_y) : (y += 50.0) {
+                    d2d_device_context.DrawLine(
+                        .{ .x = 0.0, .y = y },
+                        .{ .x = gen_level.map_size_x, .y = y },
+                        @ptrCast(brush),
+                        1.0,
+                        null,
+                    );
+                }
+            }
             d2d_device_context.DrawEllipse(
                 &.{
-                    .point = .{ .x = 800.0, .y = 130.0 },
+                    .point = .{ .x = 800.0, .y = 75.0 },
                     .radiusX = 50.0,
                     .radiusY = 50.0,
                 },
