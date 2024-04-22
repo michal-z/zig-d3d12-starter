@@ -13,6 +13,7 @@ const UINT64 = w32.UINT64;
 const BYTE = w32.BYTE;
 const dxgi = @import("dxgi.zig");
 const wic = @import("wincodec.zig");
+const dwrite = @import("dwrite.zig");
 
 pub const RECT_F = extern struct {
     left: FLOAT,
@@ -83,6 +84,16 @@ pub const MATRIX_3X2_F = extern struct {
                 .{ 1.0, 0.0 },
                 .{ 0.0, 1.0 },
                 .{ x, y },
+            },
+        };
+    }
+
+    pub fn scaling(sx: f32, sy: f32) MATRIX_3X2_F {
+        return .{
+            .m = [_][2]FLOAT{
+                .{ sx, 0.0 },
+                .{ 0.0, sy },
+                .{ 0.0, 0.0 },
             },
         };
     }
@@ -429,25 +440,6 @@ pub const COLOR_F = extern struct {
             .g = @as(f32, @floatFromInt((color_u32 & green_mask) >> green_shift)) / 255.0,
             .b = @as(f32, @floatFromInt((color_u32 & blue_mask) >> blue_shift)) / 255.0,
             .a = alpha,
-        };
-    }
-
-    fn toSrgb(s: FLOAT) FLOAT {
-        var l: FLOAT = undefined;
-        if (s > 0.0031308) {
-            l = 1.055 * (std.math.pow(FLOAT, s, (1.0 / 2.4))) - 0.055;
-        } else {
-            l = 12.92 * s;
-        }
-        return l;
-    }
-
-    pub fn linearToSrgb(r: FLOAT, g: FLOAT, b: FLOAT, a: FLOAT) COLOR_F {
-        return COLOR_F{
-            .r = toSrgb(r),
-            .g = toSrgb(g),
-            .b = toSrgb(b),
-            .a = a,
         };
     }
 };
@@ -1346,6 +1338,14 @@ pub const IRadialGradientBrush = extern struct {
     };
 };
 
+pub const DRAW_TEXT_OPTIONS = packed struct(UINT) {
+    NO_SNAP: bool = false,
+    CLIP: bool = false,
+    ENABLE_COLOR_FONT: bool = false,
+    DISABLE_COLOR_BITMAP_SNAPPING: bool = false,
+    __unused: u28 = 0,
+};
+
 pub const TAG = UINT64;
 
 pub const IRenderTarget = extern struct {
@@ -1368,6 +1368,7 @@ pub const IRenderTarget = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
@@ -1536,6 +1537,27 @@ pub const IRenderTarget = extern struct {
                     src_rect,
                 );
             }
+            pub inline fn DrawText(
+                self: *T,
+                string: LPCWSTR,
+                length: UINT,
+                format: *dwrite.ITextFormat,
+                layout_rect: *const RECT_F,
+                brush: *IBrush,
+                options: DRAW_TEXT_OPTIONS,
+                measuring_mode: dwrite.MEASURING_MODE,
+            ) void {
+                @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).DrawText(
+                    @ptrCast(self),
+                    string,
+                    length,
+                    format,
+                    layout_rect,
+                    brush,
+                    options,
+                    measuring_mode,
+                );
+            }
             pub inline fn SetTransform(self: *T, m: *const MATRIX_3X2_F) void {
                 @as(*const IRenderTarget.VTable, @ptrCast(self.__v)).SetTransform(@ptrCast(self), m);
             }
@@ -1620,7 +1642,16 @@ pub const IRenderTarget = extern struct {
             BITMAP_INTERPOLATION_MODE,
             ?*const RECT_F,
         ) callconv(WINAPI) void,
-        DrawText: *anyopaque,
+        DrawText: *const fn (
+            *T,
+            LPCWSTR,
+            UINT,
+            *dwrite.ITextFormat,
+            *const RECT_F,
+            *IBrush,
+            DRAW_TEXT_OPTIONS,
+            dwrite.MEASURING_MODE,
+        ) callconv(WINAPI) void,
         DrawTextLayout: *anyopaque,
         DrawGlyphRun: *anyopaque,
         SetTransform: *const fn (*T, *const MATRIX_3X2_F) callconv(WINAPI) void,
@@ -1756,6 +1787,7 @@ pub const IDeviceContext = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
@@ -1894,6 +1926,7 @@ pub const IDeviceContext1 = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
@@ -2036,6 +2069,7 @@ pub const IDeviceContext2 = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
@@ -2114,6 +2148,7 @@ pub const IDeviceContext3 = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
@@ -2151,6 +2186,7 @@ pub const IDeviceContext4 = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;
@@ -2193,6 +2229,7 @@ pub const IDeviceContext5 = extern struct {
     pub const DrawGeometry = IRenderTarget.Methods(@This()).DrawGeometry;
     pub const FillGeometry = IRenderTarget.Methods(@This()).FillGeometry;
     pub const DrawBitmap = IRenderTarget.Methods(@This()).DrawBitmap;
+    pub const DrawText = IRenderTarget.Methods(@This()).DrawText;
     pub const SetTransform = IRenderTarget.Methods(@This()).SetTransform;
     pub const Clear = IRenderTarget.Methods(@This()).Clear;
     pub const BeginDraw = IRenderTarget.Methods(@This()).BeginDraw;

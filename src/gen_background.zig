@@ -5,6 +5,7 @@ const d3d12 = @import("win32/d3d12.zig");
 const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const wic = @import("win32/wincodec.zig");
+const dwrite = @import("win32/dwrite.zig");
 const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
 const gen_level = @import("gen_level.zig");
 const gen_mesh = @import("gen_mesh.zig");
@@ -12,13 +13,29 @@ const gen_mesh = @import("gen_mesh.zig");
 const GpuContext = @import("GpuContext.zig");
 const vhr = GpuContext.vhr;
 
+const L = std.unicode.utf8ToUtf16LeStringLiteral;
+
 fn draw_level_background(
     level_name: gen_level.LevelName,
     d2d_device_context: *d2d1.IDeviceContext5,
+    dwrite_factory: *dwrite.IFactory,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) void {
     d2d_device_context.BeginDraw();
     d2d_device_context.Clear(&d2d1.COLOR_F.init(.White, 1.0));
+
+    var math_font: *dwrite.ITextFormat = undefined;
+    vhr(dwrite_factory.CreateTextFormat(
+        L("Cambria Math"),
+        null,
+        .NORMAL,
+        .NORMAL,
+        .NORMAL,
+        96.0,
+        L("en-us"),
+        @ptrCast(&math_font),
+    ));
+    defer _ = math_font.Release();
 
     switch (level_name) {
         .rotating_arm_and_gear => {
@@ -34,6 +51,21 @@ fn draw_level_background(
             defer _ = brush.Release();
 
             d2d_device_context.Clear(&d2d1.COLOR_F.init(.RoyalBlue, 1.0));
+            d2d_device_context.DrawText(
+                L("v = \u{03c9} \u{00d7} r"),
+                9,
+                math_font,
+                &.{
+                    .left = 0.0,
+                    .top = 0.0,
+                    .right = std.math.inf(f32),
+                    .bottom = std.math.inf(f32),
+                },
+                @ptrCast(brush),
+                .{},
+                .NATURAL,
+            );
+
             d2d_device_context.DrawLine(
                 .{ .x = gen_level.map_size_x / 2, .y = 0.0 },
                 .{ .x = gen_level.map_size_x / 2, .y = gen_level.map_size_y },
@@ -58,7 +90,12 @@ fn draw_level_background(
                 3.0,
                 null,
             );
-            d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.translation(500.0, 500.0));
+            d2d_device_context.SetTransform(
+                &d2d1.MATRIX_3X2_F.mul(
+                    d2d1.MATRIX_3X2_F.scaling(0.5, 0.5),
+                    d2d1.MATRIX_3X2_F.translation(1200.0, 250.0),
+                ),
+            );
             d2d_device_context.DrawGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), 7.0, null);
             //d2d_device_context.FillGeometry(meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?, @ptrCast(brush), null);
             d2d_device_context.DrawEllipse(
@@ -86,6 +123,7 @@ pub fn define_and_upload_background(
     gc: *GpuContext,
     level_name: gen_level.LevelName,
     d2d_device_context: *d2d1.IDeviceContext5,
+    dwrite_factory: *dwrite.IFactory,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) !*d3d12.IResource {
     //const window_height: f32 = @floatFromInt(gc.window_height);
@@ -161,7 +199,7 @@ pub fn define_and_upload_background(
 
     d2d_device_context.SetTarget(@ptrCast(rt_bitmap));
 
-    draw_level_background(level_name, d2d_device_context, meshes);
+    draw_level_background(level_name, d2d_device_context, dwrite_factory, meshes);
 
     vhr(readback_bitmap.CopyFromBitmap(null, @ptrCast(rt_bitmap), null));
 

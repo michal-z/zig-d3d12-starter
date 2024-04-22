@@ -317,6 +317,8 @@ pub const SECURITY_ATTRIBUTES = extern struct {
     bInheritHandle: BOOL,
 };
 
+pub extern "kernel32" fn OutputDebugStringW(lpOutputString: ?LPCWSTR) callconv(WINAPI) void;
+
 pub extern "kernel32" fn GetModuleHandleA(lpModuleName: ?LPCSTR) callconv(WINAPI) ?HMODULE;
 
 pub extern "kernel32" fn LoadLibraryA(lpLibFileName: LPCSTR) callconv(WINAPI) ?HMODULE;

@@ -7,6 +7,7 @@ const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const xa2 = @import("win32/xaudio2.zig");
 const wic = @import("win32/wincodec.zig");
+const dwrite = @import("win32/dwrite.zig");
 const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
 const gen_level = @import("gen_level.zig");
 const gen_mesh = @import("gen_mesh.zig");
@@ -81,6 +82,7 @@ const GameState = struct {
     background_texture: *d3d12.IResource,
 
     wic_factory: *wic.IImagingFactory2,
+    dwrite_factory: *dwrite.IFactory,
 
     d2d: struct {
         factory: *d2d1.IFactory6,
@@ -158,6 +160,13 @@ const GameState = struct {
             @ptrCast(&wic_factory),
         ));
 
+        var dwrite_factory: *dwrite.IFactory = undefined;
+        vhr(dwrite.CreateFactory(
+            .SHARED,
+            &dwrite.IFactory.IID,
+            @ptrCast(&dwrite_factory),
+        ));
+
         var d2d_factory: *d2d1.IFactory6 = undefined;
         vhr(d2d1.CreateFactory(
             .SINGLE_THREADED,
@@ -211,6 +220,7 @@ const GameState = struct {
             &gpu_context,
             current_level_name,
             d2d_device_context,
+            dwrite_factory,
             meshes,
         );
 
@@ -225,6 +235,7 @@ const GameState = struct {
             .background_texture = background_texture,
             .meshes = meshes,
             .wic_factory = wic_factory,
+            .dwrite_factory = dwrite_factory,
             .d2d = .{
                 .factory = d2d_factory,
                 .device = d2d_device,
@@ -250,6 +261,7 @@ const GameState = struct {
         _ = game.d2d.device_context.Release();
         _ = game.d2d.device.Release();
         _ = game.d2d.factory.Release();
+        _ = game.dwrite_factory.Release();
         _ = game.wic_factory.Release();
 
         for (game.pso) |pso| _ = pso.Release();
@@ -277,6 +289,7 @@ const GameState = struct {
                         &game.gpu_context,
                         game.current_level_name,
                         game.d2d.device_context,
+                        game.dwrite_factory,
                         game.meshes,
                     );
                 }
@@ -336,6 +349,7 @@ const GameState = struct {
                     &game.gpu_context,
                     game.current_level_name,
                     game.d2d.device_context,
+                    game.dwrite_factory,
                     game.meshes,
                 ) catch unreachable;
             }
