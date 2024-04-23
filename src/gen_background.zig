@@ -31,7 +31,7 @@ fn draw_level_background(
         .NORMAL,
         .NORMAL,
         .NORMAL,
-        96.0,
+        64.0,
         L("en-us"),
         @ptrCast(&math_font),
     ));
@@ -51,20 +51,23 @@ fn draw_level_background(
             defer _ = brush.Release();
 
             d2d_device_context.Clear(&d2d1.COLOR_F.init(.RoyalBlue, 1.0));
-            d2d_device_context.DrawText(
-                L("v = \u{03c9} \u{22c5} r"),
-                9,
-                math_font,
-                &.{
-                    .left = 0.0,
-                    .top = 0.0,
-                    .right = std.math.inf(f32),
-                    .bottom = std.math.inf(f32),
-                },
-                @ptrCast(brush),
-                .{},
-                .NATURAL,
-            );
+            {
+                const t = L("Linear velocity: v = \u{03c9} \u{22c5} r");
+                d2d_device_context.DrawText(
+                    t,
+                    t.len,
+                    math_font,
+                    &.{
+                        .left = 0.0,
+                        .top = 0.0,
+                        .right = std.math.inf(f32),
+                        .bottom = std.math.inf(f32),
+                    },
+                    @ptrCast(brush),
+                    .{},
+                    .NATURAL,
+                );
+            }
             //
             // Grid
             //

@@ -131,29 +131,8 @@ pub fn define_and_upload_meshes(
         Mesh.player = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
     }
 
-    if (false) {
-        var geo: *d2d1.IEllipseGeometry = undefined;
-        vhr(d2d_factory.CreateEllipseGeometry(
-            &.{
-                .point = .{ .x = 0.0, .y = 0.0 },
-                .radiusX = 15.0,
-                .radiusY = 15.0,
-            },
-            @ptrCast(&geo),
-        ));
-        Mesh.food = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
-        Mesh.food_stroke = try tessellate_geometry_stroke(
-            d2d_factory,
-            @ptrCast(geo),
-            3.0,
-            vertices,
-            &tessellation_sink,
-            &meshes,
-        );
-    }
-
     // food
-    if (true) {
+    {
         var geo_fill: *d2d1.IPathGeometry = undefined;
         vhr(d2d_factory.CreatePathGeometry(@ptrCast(&geo_fill)));
         {
@@ -176,7 +155,7 @@ pub fn define_and_upload_meshes(
         Mesh.food_stroke = try tessellate_geometry_stroke(
             d2d_factory,
             @ptrCast(geo_fill),
-            5.0,
+            7.0,
             vertices,
             &tessellation_sink,
             &meshes,
@@ -267,28 +246,17 @@ pub fn define_and_upload_meshes(
     }
 
     {
-        const geo_fill: *d2d1.IGeometry = blk: {
-            const w = 900.0;
-            const h = 50.0;
-            var temp: *d2d1.IRoundedRectangleGeometry = undefined;
-            vhr(d2d_factory.CreateRoundedRectangleGeometry(
-                &.{
-                    .rect = .{ .left = 0.0, .top = 0.0, .right = w, .bottom = h },
-                    .radiusX = 20.0,
-                    .radiusY = 20.0,
-                },
-                @ptrCast(&temp),
-            ));
-            defer _ = temp.Release();
-
-            var geo: *d2d1.ITransformedGeometry = undefined;
-            vhr(d2d_factory.CreateTransformedGeometry(
-                @ptrCast(temp),
-                &d2d1.MATRIX_3X2_F.translation(-w / 2, -h / 2),
-                @ptrCast(&geo),
-            ));
-            break :blk @ptrCast(geo);
-        };
+        const w = 900.0;
+        const h = 50.0;
+        var geo_fill: *d2d1.IRoundedRectangleGeometry = undefined;
+        vhr(d2d_factory.CreateRoundedRectangleGeometry(
+            &.{
+                .rect = .{ .left = -w / 2, .top = -h / 2, .right = w / 2, .bottom = h / 2 },
+                .radiusX = 20.0,
+                .radiusY = 20.0,
+            },
+            @ptrCast(&geo_fill),
+        ));
         Mesh.round_rect_900_50 = try tessellate_geometry(
             @ptrCast(geo_fill),
             vertices,
@@ -306,29 +274,17 @@ pub fn define_and_upload_meshes(
     }
 
     {
-        const geo_fill: *d2d1.IGeometry = blk: {
-            const w = 450.0;
-            const h = 50.0;
-            var temp: *d2d1.IRoundedRectangleGeometry = undefined;
-            vhr(d2d_factory.CreateRoundedRectangleGeometry(
-                &.{
-                    .rect = .{ .left = 0.0, .top = 0.0, .right = w, .bottom = h },
-                    .radiusX = 20.0,
-                    .radiusY = 20.0,
-                },
-                @ptrCast(&temp),
-            ));
-            defer _ = temp.Release();
-
-            var geo: *d2d1.ITransformedGeometry = undefined;
-            vhr(d2d_factory.CreateTransformedGeometry(
-                @ptrCast(temp),
-                &d2d1.MATRIX_3X2_F.translation(0.0, -h / 2),
-                @ptrCast(&geo),
-            ));
-            break :blk @ptrCast(geo);
-        };
-
+        const w = 450.0;
+        const h = 50.0;
+        var geo_fill: *d2d1.IRoundedRectangleGeometry = undefined;
+        vhr(d2d_factory.CreateRoundedRectangleGeometry(
+            &.{
+                .rect = .{ .left = 0.0, .top = -h / 2, .right = w, .bottom = h / 2 },
+                .radiusX = 20.0,
+                .radiusY = 20.0,
+            },
+            @ptrCast(&geo_fill),
+        ));
         Mesh.arm_450 = try tessellate_geometry(
             @ptrCast(geo_fill),
             vertices,
@@ -346,29 +302,17 @@ pub fn define_and_upload_meshes(
     }
 
     {
-        const geo_fill: *d2d1.IGeometry = blk: {
-            const w = 300.0;
-            const h = 50.0;
-            var temp: *d2d1.IRoundedRectangleGeometry = undefined;
-            vhr(d2d_factory.CreateRoundedRectangleGeometry(
-                &.{
-                    .rect = .{ .left = 0.0, .top = 0.0, .right = w, .bottom = h },
-                    .radiusX = 20.0,
-                    .radiusY = 20.0,
-                },
-                @ptrCast(&temp),
-            ));
-            defer _ = temp.Release();
-
-            var geo: *d2d1.ITransformedGeometry = undefined;
-            vhr(d2d_factory.CreateTransformedGeometry(
-                @ptrCast(temp),
-                &d2d1.MATRIX_3X2_F.translation(0.0, -h / 2),
-                @ptrCast(&geo),
-            ));
-            break :blk @ptrCast(geo);
-        };
-
+        const w = 300.0;
+        const h = 50.0;
+        var geo_fill: *d2d1.IRoundedRectangleGeometry = undefined;
+        vhr(d2d_factory.CreateRoundedRectangleGeometry(
+            &.{
+                .rect = .{ .left = 0.0, .top = -h / 2, .right = w, .bottom = h / 2 },
+                .radiusX = 20.0,
+                .radiusY = 20.0,
+            },
+            @ptrCast(&geo_fill),
+        ));
         Mesh.arm_300 = try tessellate_geometry(
             @ptrCast(geo_fill),
             vertices,
