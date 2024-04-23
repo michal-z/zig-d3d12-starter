@@ -18,7 +18,8 @@ pub const Mesh = struct {
     geometry: ?*d2d1.IGeometry,
 
     pub const invalid: u32 = 0;
-    pub var player: u32 = undefined;
+    pub var player_body: u32 = undefined;
+    pub var player_detail: u32 = undefined;
     pub var food: u32 = undefined;
     pub var food_stroke: u32 = undefined;
     pub var fullscreen_rect: u32 = undefined;
@@ -119,16 +120,26 @@ pub fn define_and_upload_meshes(
     try meshes.append(.{ .first_vertex = 0, .num_vertices = 0, .geometry = null });
 
     {
-        var geo: *d2d1.IEllipseGeometry = undefined;
+        var geo_body: *d2d1.IEllipseGeometry = undefined;
         vhr(d2d_factory.CreateEllipseGeometry(
             &.{
                 .point = .{ .x = 0.0, .y = 0.0 },
                 .radiusX = 15.0,
                 .radiusY = 10.0,
             },
-            @ptrCast(&geo),
+            @ptrCast(&geo_body),
         ));
-        Mesh.player = try tessellate_geometry(@ptrCast(geo), vertices, &tessellation_sink, &meshes);
+        var geo_detail: *d2d1.IEllipseGeometry = undefined;
+        vhr(d2d_factory.CreateEllipseGeometry(
+            &.{
+                .point = .{ .x = 7.5, .y = 0.0 },
+                .radiusX = 5.0,
+                .radiusY = 5.0,
+            },
+            @ptrCast(&geo_detail),
+        ));
+        Mesh.player_body = try tessellate_geometry(@ptrCast(geo_body), vertices, &tessellation_sink, &meshes);
+        Mesh.player_detail = try tessellate_geometry(@ptrCast(geo_detail), vertices, &tessellation_sink, &meshes);
     }
 
     // food

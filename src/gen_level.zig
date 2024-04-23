@@ -42,7 +42,6 @@ pub const LevelState = struct {
 };
 
 fn add_food(objects: *std.ArrayList(cpu_gpu.Object), num_food_objects: *u32, x: f32, y: f32) void {
-    //const fc = 0xff_0f_6c_0b;
     const fc = 0xff_00_00_00;
     objects.append(.{
         .flags = cpu_gpu.obj_flag_is_food | cpu_gpu.obj_flag_no_shadow,
@@ -69,14 +68,6 @@ pub fn define_and_upload_level(
         .flags = cpu_gpu.obj_flag_is_dead,
     });
 
-    if (false) {
-        try objects.append(.{
-            .colors = .{ 0xff_fd_f6_e3, 0 },
-            .mesh_indices = .{ Mesh.fullscreen_rect, Mesh.invalid },
-            .flags = cpu_gpu.obj_flag_no_shadow,
-        });
-    }
-
     switch (level_name) {
         .rotating_arm_and_gear => {
             add_food(&objects, &num_food_objects, 325.0, map_size_y / 2 + 25.0);
@@ -90,7 +81,6 @@ pub fn define_and_upload_level(
             add_food(&objects, &num_food_objects, 525.0, map_size_y / 2 + 175.0);
 
             try objects.append(.{
-                //.colors = .{ 0xee_22_44_99, 0xff_00_00_00 },
                 .colors = .{ 0x22_ff_ff_ff, 0xaa_ff_ff_ff },
                 .mesh_indices = .{ Mesh.gear_12_150, Mesh.gear_12_150_stroke },
                 .x = 0.0,
@@ -99,7 +89,6 @@ pub fn define_and_upload_level(
                 .flags = cpu_gpu.obj_flag_no_shadow,
             });
             try objects.append(.{
-                //.colors = .{ 0xff_00_00_00, 0 },
                 .colors = .{ 0xaa_ff_ff_ff, 0 },
                 .mesh_indices = .{ Mesh.circle_150_stroke, Mesh.invalid },
                 .x = 0.0,
@@ -107,7 +96,6 @@ pub fn define_and_upload_level(
                 .flags = cpu_gpu.obj_flag_no_shadow,
             });
             try objects.append(.{
-                //.colors = .{ 0xff_fd_f6_e3, 0xff_00_00_00 },
                 .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                 .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                 .x = 0.0,
@@ -118,7 +106,6 @@ pub fn define_and_upload_level(
             {
                 const parent_index: u32 = @intCast(objects.items.len);
                 try objects.append(.{
-                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                     .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.arm_450, Mesh.arm_450_stroke },
                     .x = 0.0,
@@ -127,7 +114,6 @@ pub fn define_and_upload_level(
                     .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
-                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                     .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.arm_300, Mesh.arm_300_stroke },
                     .x = 450.0,
@@ -136,14 +122,12 @@ pub fn define_and_upload_level(
                     .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
-                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                     .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                     .parent = parent_index,
                     .flags = cpu_gpu.obj_flag_no_shadow,
                 });
                 try objects.append(.{
-                    //.colors = .{ 0xff_22_44_99, 0xff_00_00_00 },
                     .colors = .{ 0x55_ff_ff_ff, 0xaa_ff_ff_ff },
                     .mesh_indices = .{ Mesh.circle_40, Mesh.circle_40_stroke },
                     .parent = parent_index,
@@ -235,8 +219,8 @@ pub fn define_and_upload_level(
 
     // Player MUST be the last object.
     try objects.append(.{
-        .colors = .{ 0xff_bb_00_00, 0 },
-        .mesh_indices = .{ Mesh.player, Mesh.invalid },
+        .colors = .{ 0xff_bb_00_00, 0xff_00_00_00 },
+        .mesh_indices = .{ Mesh.player_body, Mesh.player_detail },
         .x = player_start_x,
         .y = player_start_y,
         .move_speed = 250.0,
