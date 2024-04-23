@@ -158,6 +158,20 @@ fn draw_level_background(
                 7.0,
                 null,
             );
+            //
+            // Spiral
+            //
+            d2d_device_context.SetTransform(
+                &d2d1.MATRIX_3X2_F.mul(
+                    d2d1.MATRIX_3X2_F.scaling(0.25, 0.25),
+                    d2d1.MATRIX_3X2_F.translation(200.0, 100.0),
+                ),
+            );
+            d2d_device_context.FillGeometry(
+                meshes.items[gen_mesh.Mesh.spiral].geometry.?,
+                @ptrCast(brush),
+                null,
+            );
             d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.identity);
         },
         .star => {},
@@ -176,9 +190,8 @@ pub fn define_and_upload_background(
     dwrite_factory: *dwrite.IFactory,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) !*d3d12.IResource {
-    //const window_height: f32 = @floatFromInt(gc.window_height);
-    const width: u32 = gen_level.map_size_x; //@intFromFloat(window_height * 1.333);
-    const height: u32 = gen_level.map_size_y; //@intFromFloat(window_height);
+    const width: u32 = gen_level.map_size_x;
+    const height: u32 = gen_level.map_size_y;
 
     var background_texture: *d3d12.IResource = undefined;
     vhr(gc.device.CreateCommittedResource3(
