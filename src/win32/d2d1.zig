@@ -1317,6 +1317,23 @@ pub const ISolidColorBrush = extern struct {
     };
 };
 
+pub const ILinearGradientBrush = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IBrush.VTable,
+        SetStartPoint: *anyopaque,
+        SetEndPoint: *anyopaque,
+        GetStartPoint: *anyopaque,
+        GetEndPoint: *anyopaque,
+        GetGradientStopCollection: *anyopaque,
+    };
+};
+
 pub const IRadialGradientBrush = extern struct {
     __v: *const VTable,
 

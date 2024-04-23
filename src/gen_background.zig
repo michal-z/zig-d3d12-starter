@@ -18,6 +18,7 @@ const L = std.unicode.utf8ToUtf16LeStringLiteral;
 fn draw_level_background(
     level_name: gen_level.LevelName,
     d2d_device_context: *d2d1.IDeviceContext5,
+    d2d_factory: *d2d1.IFactory6,
     dwrite_factory: *dwrite.IFactory,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) void {
@@ -173,6 +174,44 @@ fn draw_level_background(
                 null,
             );
             d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.identity);
+            if (false) {
+                var path_geo: *d2d1.IPathGeometry = undefined;
+                vhr(d2d_factory.CreatePathGeometry(@ptrCast(&path_geo)));
+                defer _ = path_geo.Release();
+                {
+                    var path_sink: *d2d1.IGeometrySink = undefined;
+                    vhr(path_geo.Open(@ptrCast(&path_sink)));
+                    defer {
+                        vhr(path_sink.Close());
+                        _ = path_sink.Release();
+                    }
+
+                    const p0 = d2d1.POINT_2F{ .x = 0.0, .y = 0.0 };
+                    const a0 = std.math.pi * 0.3;
+                    const r0 = 0.0;
+
+                    const p1 = d2d1.POINT_2F{ .x = 100.0, .y = 100.0 };
+                    const a1 = std.math.pi * 1.0;
+                    const r1 = 100.0;
+
+                    path_sink.BeginFigure(.{ .x = p0.x, .y = p0.y }, .HOLLOW);
+                    path_sink.AddBezier(&.{
+                        .point1 = .{ .x = p0.x + @cos(a0) * r0, .y = p0.y + @sin(a0) * r0 },
+                        .point2 = .{ .x = p1.x, .y = p1.y },
+                        .point3 = .{ .x = p1.x + @cos(a1) * r1, .y = p1.y + @sin(a1) * r1 },
+                    });
+                    path_sink.EndFigure(.OPEN);
+                }
+
+                d2d_device_context.SetTransform(&d2d1.MATRIX_3X2_F.translation(1000.0, 825.0));
+
+                d2d_device_context.DrawGeometry(
+                    @ptrCast(path_geo),
+                    @ptrCast(brush),
+                    7.0,
+                    null,
+                );
+            }
         },
         .star => {},
         .long_rotating_blocks => {},
@@ -187,6 +226,7 @@ pub fn define_and_upload_background(
     gc: *GpuContext,
     level_name: gen_level.LevelName,
     d2d_device_context: *d2d1.IDeviceContext5,
+    d2d_factory: *d2d1.IFactory6,
     dwrite_factory: *dwrite.IFactory,
     meshes: std.ArrayList(gen_mesh.Mesh),
 ) !*d3d12.IResource {
@@ -262,7 +302,7 @@ pub fn define_and_upload_background(
 
     d2d_device_context.SetTarget(@ptrCast(rt_bitmap));
 
-    draw_level_background(level_name, d2d_device_context, dwrite_factory, meshes);
+    draw_level_background(level_name, d2d_device_context, d2d_factory, dwrite_factory, meshes);
 
     vhr(readback_bitmap.CopyFromBitmap(null, @ptrCast(rt_bitmap), null));
 

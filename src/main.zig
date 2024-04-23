@@ -220,6 +220,7 @@ const GameState = struct {
             &gpu_context,
             current_level_name,
             d2d_device_context,
+            d2d_factory,
             dwrite_factory,
             meshes,
         );
@@ -289,6 +290,7 @@ const GameState = struct {
                         &game.gpu_context,
                         game.current_level_name,
                         game.d2d.device_context,
+                        game.d2d.factory,
                         game.dwrite_factory,
                         game.meshes,
                     );
@@ -349,6 +351,7 @@ const GameState = struct {
                     &game.gpu_context,
                     game.current_level_name,
                     game.d2d.device_context,
+                    game.d2d.factory,
                     game.dwrite_factory,
                     game.meshes,
                 ) catch unreachable;
