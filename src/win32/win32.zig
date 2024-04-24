@@ -1,6 +1,7 @@
 const builtin = @import("builtin");
 const native_arch = builtin.cpu.arch;
 const std = @import("std");
+const objidl = @import("objidl.zig");
 
 pub extern "ole32" fn CoInitializeEx(pvReserved: ?LPVOID, dwCoInit: DWORD) callconv(WINAPI) HRESULT;
 pub extern "ole32" fn CoUninitialize() callconv(WINAPI) void;
@@ -581,3 +582,16 @@ pub const IM_VK_KEYPAD_ENTER = VK_RETURN + 256;
 pub const KF_EXTENDED = 0x0100;
 
 pub const GUID_NULL = GUID.parse("{00000000-0000-0000-0000-000000000000}");
+
+pub const STGM_READ = 0;
+pub const STGM_WRITE = 1;
+pub const STGM_READWRITE = 2;
+
+pub extern "shlwapi" fn SHCreateStreamOnFileEx(
+    pszFile: LPCWSTR,
+    grfMode: DWORD,
+    dwAttributes: DWORD,
+    fCreate: BOOL,
+    pstmTemplate: ?*objidl.IStream,
+    ppstm: **objidl.IStream,
+) callconv(WINAPI) HRESULT;

@@ -6,6 +6,7 @@ const dxgi = @import("win32/dxgi.zig");
 const d2d1 = @import("win32/d2d1.zig");
 const wic = @import("win32/wincodec.zig");
 const dwrite = @import("win32/dwrite.zig");
+const objidl = @import("win32/objidl.zig");
 const cpu_gpu = @cImport(@cInclude("cpu_gpu_shared.h"));
 const gen_level = @import("gen_level.zig");
 const gen_mesh = @import("gen_mesh.zig");
@@ -53,13 +54,52 @@ fn draw_level_background(
 
             d2d_device_context.Clear(&d2d1.COLOR_F.init(.RoyalBlue, 1.0));
             {
-                const t = L("Linear velocity: v = \u{03c9} \u{22c5} r");
+                var stream: *objidl.IStream = undefined;
+                vhr(w32.SHCreateStreamOnFileEx(
+                    L("data/svg/test.svg"),
+                    w32.STGM_READ,
+                    0,
+                    .FALSE,
+                    null,
+                    &stream,
+                ));
+                defer _ = stream.Release();
+
+                var svg_document: *d2d1.ISvgDocument = undefined;
+                vhr(d2d_device_context.CreateSvgDocument(
+                    stream,
+                    .{ .width = gen_level.map_size_x, .height = gen_level.map_size_y },
+                    &svg_document,
+                ));
+                defer _ = svg_document.Release();
+
+                d2d_device_context.DrawSvgDocument(svg_document);
+            }
+            {
+                const t = L("v = \u{03c9} \u{22c5} r");
                 d2d_device_context.DrawText(
                     t,
                     t.len,
                     math_font,
                     &.{
                         .left = 0.0,
+                        .top = 0.0,
+                        .right = std.math.inf(f32),
+                        .bottom = std.math.inf(f32),
+                    },
+                    @ptrCast(brush),
+                    .{},
+                    .NATURAL,
+                );
+            }
+            {
+                const t = L("\u{03c9}\u{2081} = \u{03c9}\u{2080} \u{22c5}  N\u{2080} \u{2215} N\u{2081}");
+                d2d_device_context.DrawText(
+                    t,
+                    t.len,
+                    math_font,
+                    &.{
+                        .left = 800.0,
                         .top = 0.0,
                         .right = std.math.inf(f32),
                         .bottom = std.math.inf(f32),
@@ -115,7 +155,7 @@ fn draw_level_background(
             //
             d2d_device_context.DrawEllipse(
                 &.{
-                    .point = .{ .x = 800.0, .y = 75.0 },
+                    .point = .{ .x = 700.0, .y = 75.0 },
                     .radiusX = 50.0,
                     .radiusY = 50.0,
                 },
@@ -137,28 +177,30 @@ fn draw_level_background(
             //
             // Gear
             //
-            d2d_device_context.SetTransform(
-                &d2d1.MATRIX_3X2_F.mul(
-                    d2d1.MATRIX_3X2_F.scaling(0.5, 0.5),
-                    d2d1.MATRIX_3X2_F.translation(1200.0, 250.0),
-                ),
-            );
-            d2d_device_context.DrawGeometry(
-                meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?,
-                @ptrCast(brush),
-                7.0,
-                null,
-            );
-            d2d_device_context.DrawEllipse(
-                &.{
-                    .point = .{ .x = 0.0, .y = 0.0 },
-                    .radiusX = 150.0,
-                    .radiusY = 150.0,
-                },
-                @ptrCast(brush),
-                7.0,
-                null,
-            );
+            if (false) {
+                d2d_device_context.SetTransform(
+                    &d2d1.MATRIX_3X2_F.mul(
+                        d2d1.MATRIX_3X2_F.scaling(0.5, 0.5),
+                        d2d1.MATRIX_3X2_F.translation(1200.0, 250.0),
+                    ),
+                );
+                d2d_device_context.DrawGeometry(
+                    meshes.items[gen_mesh.Mesh.gear_12_150].geometry.?,
+                    @ptrCast(brush),
+                    7.0,
+                    null,
+                );
+                d2d_device_context.DrawEllipse(
+                    &.{
+                        .point = .{ .x = 0.0, .y = 0.0 },
+                        .radiusX = 150.0,
+                        .radiusY = 150.0,
+                    },
+                    @ptrCast(brush),
+                    7.0,
+                    null,
+                );
+            }
             //
             // Spiral
             //

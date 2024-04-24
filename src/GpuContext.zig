@@ -30,7 +30,7 @@ const max_dsv_descriptors = 64;
 const max_shader_descriptors = 32 * 1024;
 
 const swap_chain_target_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
-const swap_chain_target_view_format: dxgi.FORMAT = .R8G8B8A8_UNORM_SRGB;
+const swap_chain_target_view_format: dxgi.FORMAT = .R8G8B8A8_UNORM;
 
 const msaa_target_format = swap_chain_target_view_format;
 const msaa_target_num_samples = @import("build_options").d3d12_msaa;
@@ -359,7 +359,7 @@ pub fn handle_window_resize(gc: *GpuContext) enum { minimized, resized, unchange
 
         if (msaa_target_num_samples > 1) {
             _ = gc.msaa_target.Release();
-            gc.msaa_target = create_msaa_srgb_target(
+            gc.msaa_target = create_msaa_target(
                 gc.device,
                 gc.window_width,
                 gc.window_height,
@@ -696,7 +696,7 @@ pub fn init(window: w32.HWND, args: struct {
     // MSAA render target
     //
     const msaa_target = if (msaa_target_num_samples > 1) blk: {
-        const msaa_target = create_msaa_srgb_target(
+        const msaa_target = create_msaa_target(
             device,
             window_width,
             window_height,
@@ -814,7 +814,7 @@ pub fn vhr(hr: w32.HRESULT) void {
     if (hr != 0) @panic("HRESULT error!");
 }
 
-fn create_msaa_srgb_target(
+fn create_msaa_target(
     device: *IDevice,
     width: u32,
     height: u32,

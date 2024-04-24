@@ -14,6 +14,7 @@ const BYTE = w32.BYTE;
 const dxgi = @import("dxgi.zig");
 const wic = @import("wincodec.zig");
 const dwrite = @import("dwrite.zig");
+const objidl = @import("objidl.zig");
 
 pub const RECT_F = extern struct {
     left: FLOAT,
@@ -2226,6 +2227,29 @@ pub const IDeviceContext4 = extern struct {
     };
 };
 
+pub const ISvgDocument = extern struct {
+    __v: *const VTable,
+
+    pub const QueryInterface = IUnknown.Methods(@This()).QueryInterface;
+    pub const AddRef = IUnknown.Methods(@This()).AddRef;
+    pub const Release = IUnknown.Methods(@This()).Release;
+
+    pub const VTable = extern struct {
+        base: IResource.VTable,
+        SetViewportSize: *anyopaque,
+        GetViewportSize: *anyopaque,
+        SetRoot: *anyopaque,
+        GetRoot: *anyopaque,
+        FindElementById: *anyopaque,
+        Serialize: *anyopaque,
+        Deserialize: *anyopaque,
+        CreatePaint: *anyopaque,
+        CreateStrokeDashArray: *anyopaque,
+        CreatePointCollection: *anyopaque,
+        CreatePathData: *anyopaque,
+    };
+};
+
 pub const IDeviceContext5 = extern struct {
     __v: *const VTable,
 
@@ -2257,10 +2281,29 @@ pub const IDeviceContext5 = extern struct {
     pub const CreateBitmapFromWicBitmap1 = IDeviceContext.Methods(@This()).CreateBitmapFromWicBitmap1;
     pub const SetTarget = IDeviceContext.Methods(@This()).SetTarget;
 
+    pub const CreateSvgDocument = IDeviceContext5.Methods(@This()).CreateSvgDocument;
+    pub const DrawSvgDocument = IDeviceContext5.Methods(@This()).DrawSvgDocument;
+
+    pub fn Methods(comptime T: type) type {
+        return extern struct {
+            pub inline fn CreateSvgDocument(self: *T, input_xml_stream: ?*objidl.IStream, viewport_size: SIZE_F, document: **ISvgDocument) HRESULT {
+                return @as(*const IDeviceContext5.VTable, @ptrCast(self.__v)).CreateSvgDocument(
+                    @ptrCast(self),
+                    input_xml_stream,
+                    viewport_size,
+                    document,
+                );
+            }
+            pub inline fn DrawSvgDocument(self: *T, document: *ISvgDocument) void {
+                @as(*const IDeviceContext5.VTable, @ptrCast(self.__v)).DrawSvgDocument(@ptrCast(self), document);
+            }
+        };
+    }
+
     pub const VTable = extern struct {
         base: IDeviceContext4.VTable,
-        CreateSvgDocument: *anyopaque,
-        DrawSvgDocument: *anyopaque,
+        CreateSvgDocument: *const fn (*IDeviceContext5, ?*objidl.IStream, SIZE_F, **ISvgDocument) callconv(WINAPI) HRESULT,
+        DrawSvgDocument: *const fn (*IDeviceContext5, *ISvgDocument) callconv(WINAPI) void,
         CreateColorContextFromDxgiColorSpace: *anyopaque,
         CreateColorContextFromSimpleColorProfile: *anyopaque,
     };
