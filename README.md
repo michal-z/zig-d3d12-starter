@@ -6,7 +6,7 @@ cd zig-d3d12-starter
 zig build run
 ```
 * Simple game written from scratch
-* D3D12 for runtime rendering (fully bindless)
+* Modern D3D12 for rendering (fully bindless, ehnanced barriers)
 * Direct2D for 2D shape tessellation
 * Audio support using XAudio2
 * No dependency except [Zig compiler (master)](https://ziglang.org/download/)
