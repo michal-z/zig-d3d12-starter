@@ -1,21 +1,21 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    ensure_zig_version(.{ .major = 0, .minor = 13, .patch = 0, .pre = "dev.46" }) catch return;
+    ensure_zig_version(.{ .major = 0, .minor = 13, .patch = 0, .pre = "dev.267" }) catch return;
 
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
     const exe = b.addExecutable(.{
         .name = "zig-d3d12-starter",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
         .link_libc = false,
         .strip = if (optimize == .ReleaseFast) true else null,
     });
     exe.rdynamic = true;
-    exe.addIncludePath(.{ .path = "src" });
+    exe.addIncludePath(b.path("src"));
 
     const d3d12_debug = b.option(bool, "d3d12-debug", "Enable D3D12 debug layer") orelse false;
     const d3d12_debug_gpu = b.option(bool, "d3d12-debug-gpu", "Enable D3D12 GPU-based validation") orelse false;
@@ -42,22 +42,19 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     exe.step.dependOn(&b.addInstallDirectory(.{
-        .source_dir = .{ .path = "bin/d3d12" },
+        .source_dir = b.path("bin/d3d12"),
         .install_dir = .bin,
         .install_subdir = "d3d12",
     }).step);
 
     exe.step.dependOn(&b.addInstallDirectory(.{
-        .source_dir = .{ .path = "bin/data" },
+        .source_dir = b.path("bin/data"),
         .install_dir = .bin,
         .install_subdir = "data",
     }).step);
 
     exe.step.dependOn(&b.addInstallBinFile(
-        .{ .path = if (audio_debug)
-            "bin/xaudio2_9redist_debug.dll"
-        else
-            "bin/xaudio2_9redist.dll" },
+        b.path(if (audio_debug) "bin/xaudio2_9redist_debug.dll" else "bin/xaudio2_9redist.dll"),
         "xaudio2_9redist.dll",
     ).step);
 
@@ -109,7 +106,7 @@ fn add_dxc_cmd(
         if (define.len > 0) cmd_step.addArg("/D " ++ define);
     }
 
-    cmd_step.addFileArg(.{ .path = input_path });
+    cmd_step.addFileArg(b.path(input_path));
     const cso_path = cmd_step.addPrefixedOutputFileArg("/Fo ", output_filename);
 
     dxc_step.dependOn(&b.addInstallFile(cso_path, "../src/cso/" ++ output_filename).step);
