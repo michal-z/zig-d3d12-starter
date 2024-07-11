@@ -5,6 +5,9 @@ git clone https://github.com/michal-z/zig-d3d12-starter.git
 cd zig-d3d12-starter
 zig build run
 ```
+
+Requires [Zig 0.13.0](https://ziglang.org/download/#release-0.13.0) to build.
+
 * Simple game written from scratch
 * Modern D3D12 for rendering (fully bindless, ehnanced barriers)
 * Direct2D for 2D shape tessellation

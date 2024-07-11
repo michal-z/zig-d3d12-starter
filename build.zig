@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    ensure_zig_version(.{ .major = 0, .minor = 14, .patch = 0, .pre = "dev.15" }) catch return;
+    ensure_zig_version(.{ .major = 0, .minor = 13, .patch = 0 }) catch return;
 
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
