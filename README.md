@@ -12,7 +12,7 @@ Requires [Zig 0.13.0](https://ziglang.org/download/#release-0.13.0) to build.
 * Modern D3D12 for rendering (fully bindless, ehnanced barriers)
 * Direct2D for 2D shape tessellation
 * Audio support using XAudio2
-* No dependency except [Zig compiler (master)](https://ziglang.org/download/#release-master)
+* No dependency except [Zig compiler](https://ziglang.org/download/#release-0.13-0)
 * DXC compiler included - Zig's caching mechanism integrated to support shader compilation
 * Shaders embeded in the output binary
 * D3D12 Agility SDK included and integrated
